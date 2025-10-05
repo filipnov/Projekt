@@ -29,7 +29,7 @@ export default function HomeScreen() {
           <Text style={styles.alebo_text}>ALEBO</Text>
           <Pressable style={({pressed}) =>
           pressed ? styles.button_register_pressed : styles.button_register} onPress={() => navigation.navigate("RegistrationScreen")}>
-            <Text style={styles.button_text_register}>Registrovať sa!</Text>
+            <Text style={styles.button_text_register}>gistrovať sa!</Text>
           </Pressable>
         </View>
         
