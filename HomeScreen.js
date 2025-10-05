@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 20,
     textAlign: "center",
-    elevation: 5
+    elevation: 6
   },
   button_login:{
     backgroundColor: "hsla(129, 56%, 43%, 1.00)",
