@@ -1,55 +1,97 @@
 // HomeScreen.js
-import React from 'react';
-import { StyleSheet, Text, View, ImageBackground, Image, TextInput, Pressable, Linking } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ImageBackground,
+  Image,
+  TextInput,
+  Pressable,
+  Linking,
+  Alert,
+} from "react-native";
 import background from "./assets/background.png";
 import logo from "./assets/logo.png";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from "@react-navigation/native";
+import { useState } from "react";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleLogin() {
+
+    if (condition) {
+      
+    }
+
+    Alert.alert("Prihlásenie", `Email: ${email}\nHeslo: ${password}`);
+  }
+
   return (
     <View style={styles.layout}>
       <ImageBackground source={background} style={styles.image}>
-        
         <Image style={styles.avatar} source={logo} />
         <View style={styles.container}>
           <Text style={styles.text}>Vitaj!</Text>
           <Text style={styles.info_text}>Tu vyplň svoje údaje:</Text>
 
-          <TextInput placeholder='e-mail' style={styles.input_email} />
-          <TextInput placeholder='heslo' style={styles.input_password} />
+          <TextInput
+            placeholder="e-mail"
+            style={styles.input_email}
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            placeholder="heslo"
+            style={styles.input_password}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-          <Text onPress={() => Linking.openURL('https://google.com')} style={styles.forget_text}>Zabudnuté heslo?</Text>
+          <Text
+            onPress={() => Linking.openURL("https://google.com")}
+            style={styles.forget_text}
+          >
+            Zabudnuté heslo?
+          </Text>
 
-          <Pressable style={({pressed}) =>
-          pressed ?  styles.button_login_pressed :  styles.button_login}>
+          <Pressable
+            style={({ pressed }) =>
+              pressed ? styles.button_login_pressed : styles.button_login
+            }
+            onPress={handleLogin}
+          >
             <Text style={styles.button_text_login}>Prihlásiť sa!</Text>
           </Pressable>
           <Text style={styles.alebo_text}>ALEBO</Text>
-          <Pressable style={({pressed}) =>
-          pressed ? styles.button_register_pressed : styles.button_register} onPress={() => navigation.navigate("RegistrationScreen")}>
-            <Text style={styles.button_text_register}>gistrovať sa!</Text>
+          <Pressable
+            style={({ pressed }) =>
+              pressed ? styles.button_register_pressed : styles.button_register
+            }
+            onPress={() => navigation.navigate("RegistrationScreen")}
+          >
+            <Text style={styles.button_text_register}>Registrovať sa!</Text>
           </Pressable>
         </View>
-        
-        
       </ImageBackground>
-      
     </View>
   );
 }
 const styles = StyleSheet.create({
   layout: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     flexDirection: "column",
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: "center",
+    justifyContent: "space-between",
     width: "100%",
-    height: "100%"
+    height: "100%",
   },
-  image:{
+  image: {
     flex: 1,
     resizeMode: "cover",
     width: "100%",
@@ -58,14 +100,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatar:{
+  avatar: {
     height: 300,
     width: 300,
     marginBottom: 20,
     backgroundColor: "hsla(0, 0%, 100%, 1)",
-    borderRadius: 50,  
+    borderRadius: 50,
   },
-  text:{
+  text: {
     fontSize: 60,
     fontWeight: "900",
     borderBottomColor: "black",
@@ -83,7 +125,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  input_email:{
+  input_email: {
     backgroundColor: "white",
     fontSize: 25,
     fontWeight: "200",
@@ -94,9 +136,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 5,
     textAlign: "center",
-    elevation: 6
+    elevation: 6,
   },
-  input_password:{
+  input_password: {
     backgroundColor: "white",
     fontSize: 25,
     fontWeight: "200",
@@ -107,9 +149,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 20,
     textAlign: "center",
-    elevation: 6
+    elevation: 6,
   },
-  button_login:{
+  button_login: {
     backgroundColor: "hsla(129, 56%, 43%, 1.00)",
     width: 200,
     height: 50,
@@ -118,10 +160,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     marginTop: 15,
-    elevation: 6
-    
-    },
-     button_login_pressed:{
+    elevation: 6,
+  },
+  button_login_pressed: {
     backgroundColor: "hsla(129, 56%, 43%, 0.8)",
     width: 200,
     height: 50,
@@ -130,10 +171,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     marginTop: 15,
-    elevation: 6
-    
-    },
-    button_register:{
+    elevation: 6,
+  },
+  button_register: {
     backgroundColor: "hsla(129, 56%, 43%, 1.00)",
     width: 225,
     height: 55,
@@ -142,9 +182,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     marginTop: 10,
-    elevation: 6
-    },
-    button_register_pressed:{
+    elevation: 6,
+  },
+  button_register_pressed: {
     backgroundColor: "hsla(129, 56%, 43%, 0.8)",
     width: 225,
     height: 55,
@@ -153,19 +193,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     marginTop: 10,
-    elevation: 6
-    },
-  button_text_login:{
+    elevation: 6,
+  },
+  button_text_login: {
     color: "white",
     fontSize: 25,
     fontWeight: "900",
   },
-  button_text_register:{
+  button_text_register: {
     color: "white",
     fontSize: 28,
     fontWeight: "900",
   },
-  forget_text:{
+  forget_text: {
     fontWeight: "900",
     fontStyle: "italic",
     fontSize: 18,
@@ -175,16 +215,16 @@ const styles = StyleSheet.create({
     textDecorationStyle: "solid",
     textDecorationLine: "underline",
   },
-  info_text:{
+  info_text: {
     fontWeight: "800",
     fontSize: 16,
     marginTop: 20,
     alignSelf: "flex-start",
-    marginLeft: 40
+    marginLeft: 40,
   },
-  alebo_text:{
+  alebo_text: {
     fontSize: 18,
     fontWeight: "900",
-    marginTop: 10
-  }
+    marginTop: 10,
+  },
 });
