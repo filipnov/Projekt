@@ -10,6 +10,7 @@ import {
   Pressable,
   Linking,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import background from "./assets/background.png";
 import logo from "./assets/logo.png";
@@ -23,34 +24,83 @@ export default function HomeScreen() {
   const [personNick, setNick] = useState("");
   const [personPassword, setPassword] = useState("");
   const [personAPassword, setAPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleRegistration() {
-    const newRegistration = {
-      email: personEmail,
-      nick: personNick,
-      password: personPassword,
-    };
+  // ADJUST THIS if you test on a real device / different emulator:
+  // Android emulator (Android Studio) -> 10.0.2.2
+  // Genymotion -> 10.0.3.2
+  // iOS simulator -> http://localhost:3000
+  // Physical phone -> http://<PC_IP>:3000
+  const SERVER = "http://10.0.2.2:3000";
+  const REGISTER_URL = `${SERVER}/api/register`;
 
-    if (personAPassword !== personPassword) {
-      Alert.alert("Registrácia nebola úspešná!", "Heslá sa nezhodujú!");
-    } else if (!personEmail || !personNick || !personAPassword) {
+  async function handleRegistration() {
+    // basic client-side validation
+    const email = personEmail.trim();
+    const nick = personNick.trim();
+    const pass = personPassword;
+    const pass2 = personAPassword;
+
+    if (!email || !nick || !pass || !pass2) {
       Alert.alert("Registrácia nebola úspešná!", "Prosím vyplň všetky polia!");
-    } else {
-      setRegistration((r) => [...r, newRegistration]);
-      setEmail("");
-      setNick("");
-      setPassword("");
-      setAPassword("");
+      return;
+    }
+    if (pass !== pass2) {
+      Alert.alert("Registrácia nebola úspešná!", "Heslá sa nezhodujú!");
+      return;
+    }
 
+    // optional: simple email regex (very basic)
+    /* const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert("Chybný email", "Zadaj platný e-mail.");
+      return;
+    }
+    */
+    // prepare body
+    const body = { email, nick, password: pass };
+
+    setLoading(true);
+    try {
+      const resp = await fetch(REGISTER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await resp.json().catch(() => ({}));
+
+      if (resp.ok) {
+        // push to local state (optional)
+        setRegistration((r) => [...r, { email, nick }]);
+
+        // clear inputs
+        setEmail("");
+        setNick("");
+        setPassword("");
+        setAPassword("");
+
+        Alert.alert("Registrácia bola úspešná!", `Vitaj, ${nick}!`);
+        // optional: navigate to login or home
+        // navigation.navigate("HomeScreen");
+      } else {
+        // show server-provided message or generic one
+        const msg = data.error || data.message || "Server vrátil chybu.";
+        Alert.alert("Registrácia zlyhala", msg);
+      }
+    } catch (err) {
       Alert.alert(
-        "Registrácia bola úspešná!",
-        `Email: ${personEmail}\nNick: ${personNick}\nHeslo: ${personPassword}`
+        "Network error",
+        err.message || "Nepodarilo sa spojiť so serverom."
       );
+    } finally {
+      setLoading(false);
     }
   }
 
   function Test() {
-    console.log(registration);
+    console.log("Local registrations:", registration);
+    Alert.alert("Debug", `Lokálnych registrácií: ${registration.length}`);
   }
 
   return (
@@ -66,6 +116,9 @@ export default function HomeScreen() {
             style={styles.input_email}
             value={personEmail}
             onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoComplete="email"
           />
           <Text style={styles.info_text}>Zadaj ako ťa máme volať:</Text>
           <TextInput
@@ -73,6 +126,7 @@ export default function HomeScreen() {
             style={styles.input_password}
             value={personNick}
             onChangeText={setNick}
+            autoCapitalize="words"
           />
           <Text style={styles.info_text}>Zadaj svoje heslo:</Text>
           <TextInput
@@ -80,6 +134,8 @@ export default function HomeScreen() {
             style={styles.input_password}
             value={personPassword}
             onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
           />
           <Text style={styles.info_text}>Zopakuj heslo:</Text>
           <TextInput
@@ -87,22 +143,33 @@ export default function HomeScreen() {
             style={styles.input_password}
             value={personAPassword}
             onChangeText={setAPassword}
+            secureTextEntry
+            autoCapitalize="none"
           />
 
           <Pressable
             style={({ pressed }) =>
               pressed ? styles.button_register_pressed : styles.button_register
             }
-            onPress={handleRegistration}
+            onPress={() => {
+              if (!loading) handleRegistration();
+            }}
+            disabled={loading}
           >
-            <Text style={styles.button_text_register}>Registrovať sa!</Text>
+            {loading ? (
+              <ActivityIndicator size="small" />
+            ) : (
+              <Text style={styles.button_text_register}>Registrovať sa!</Text>
+            )}
           </Pressable>
-          <Pressable onPress={Test}>
+
+          <Pressable onPress={Test} style={{ marginTop: 8 }}>
             <Text>Test</Text>
           </Pressable>
         </View>
+
         <Pressable
-          style={({ pressed }) => (pressed ? styles.arrow_pressed : "")}
+          style={({ pressed }) => (pressed ? styles.arrow_pressed : null)}
           onPress={() => navigation.navigate("HomeScreen")}
         >
           <Image source={arrow} style={styles.arrow}></Image>
@@ -111,6 +178,7 @@ export default function HomeScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   layout: {
     flex: 1,

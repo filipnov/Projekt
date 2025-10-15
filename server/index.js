@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
-import bcrypt from "bcryptjs";
+// import bcrypt from "bcryptjs";   // <-- HASHING COMMENTED OUT FOR TESTING
 
 const app = express();
 app.use(cors());
@@ -27,8 +27,13 @@ async function start() {
       const { email, password } = req.body;
       if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
-      // hash password before saving (do not store plaintext in prod)
-      const hashed = await bcrypt.hash(password, 10);
+      // ----- HASHING RELATED LINES (COMMENTED OUT) -----
+      // const hashed = await bcrypt.hash(password, 10);
+      // --------------------------------------------------
+      // For testing we directly use the plain password (so DB will contain the raw password).
+      // Remember to restore hashing after testing.
+      const hashed = password; // <<< temporary: store plaintext for testing
+      // --------------------------------------------------
 
       const result = await users.insertOne({ email, password: hashed, createdAt: new Date() });
       return res.status(201).json({ ok: true, id: result.insertedId });
