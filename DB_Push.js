@@ -1,6 +1,7 @@
 import { emailDB } from "./test.js";
 
-console.log(exportEmail);
+
+
 // index.js
 import { MongoClient } from "mongodb";
 

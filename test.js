@@ -1,4 +1,2 @@
-import { exportEmail } from "./HomeScreen.js";
-
-export const emailDB = exportEmail;
+export const emailDB = "exportEmail";
 
