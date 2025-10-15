@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
-// import bcrypt from "bcryptjs";   // <-- HASHING COMMENTED OUT FOR TESTING
+import bcrypt from "bcryptjs";   // <-- HASHING COMMENTED OUT FOR TESTING
 
 const app = express();
 app.use(cors());
@@ -28,11 +28,11 @@ async function start() {
       if (!email || !password) return res.status(400).json({ error: "Missing fields" });
 
       // ----- HASHING RELATED LINES (COMMENTED OUT) -----
-      // const hashed = await bcrypt.hash(password, 10);
+       const hashed = await bcrypt.hash(password, 10);
       // --------------------------------------------------
       // For testing we directly use the plain password (so DB will contain the raw password).
       // Remember to restore hashing after testing.
-      const hashed = password; // <<< temporary: store plaintext for testing
+      
       // --------------------------------------------------
 
       const result = await users.insertOne({ email, password: hashed, createdAt: new Date() });
@@ -43,12 +43,38 @@ async function start() {
       return res.status(500).json({ error: "Server error" });
     }
   });
+  // LOGIN endpoint
+app.post("/api/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password)
+      return res.status(400).json({ error: "Missing fields" });
 
-  // optional: simple list endpoint for testing (do NOT expose in production)
+    const user = await users.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    // Compare passwords (currently plain text for testing)
+    const isMatch = await bcrypt.compare(password, user.password)
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    // Optional: Generate token later, for now just confirm success
+    return res.json({ ok: true, message: "Login successful", user: { email } });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+  /* optional: simple list endpoint for testing (do NOT expose in production)
   app.get("/api/users", async (req, res) => {
     const list = await users.find({}, { projection: { password: 0 } }).toArray();
     res.json(list);
-  });
+  });*/
 
   app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 }

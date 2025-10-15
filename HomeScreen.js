@@ -20,11 +20,37 @@ export default function HomeScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  function handleLogin() {
-    Alert.alert("Nefunguje!!!!!!!!!");
-
-    //Alert.alert("Prihlásenie", `Email: ${email}\nHeslo: ${password}`);
+  
+    async function handleLogin() {
+  if (!email || !password) {
+    Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
+    return;
   }
+
+  try {
+    const response = await fetch("http://10.0.2.2:3000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      Alert.alert("Chyba", data.error || "Prihlásenie zlyhalo!");
+      return;
+    }
+
+    Alert.alert("Úspech", "Prihlásenie bolo úspešné!");
+
+    // Optionally navigate after login
+    //navigation.navigate("MainScreen"); // change to your actual screen
+  } catch (error) {
+    console.error(error);
+    Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
+  }
+}
+  
 
   return (
     <View style={styles.layout}>

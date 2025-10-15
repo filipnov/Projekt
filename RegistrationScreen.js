@@ -1,5 +1,5 @@
 // HomeScreen.js
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -72,7 +72,7 @@ export default function HomeScreen() {
 
       if (resp.ok) {
         // push to local state (optional)
-        setRegistration((r) => [...r, { email, nick }]);
+        //setRegistration((r) => [...r, { email, nick }]);
 
         // clear inputs
         setEmail("");
