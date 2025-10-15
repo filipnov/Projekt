@@ -15,6 +15,11 @@ import logo from "./assets/logo.png";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 
+//export const exportEmail = "email";
+
+export const exportEmail = "TESTTT";
+
+
 export default function HomeScreen() {
   const navigation = useNavigation();
 
