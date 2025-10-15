@@ -19,21 +19,57 @@ import { useState } from "react";
 
 export const exportEmail = "TESTTT";
 
-
 export default function HomeScreen() {
   const navigation = useNavigation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  function handleLogin() {
+  // v rámci HomeScreen.js
+  async function handleLogin() {
+    // Pre Android emulátor (Android Studio) používame 10.0.2.2
+    const SERVER = "http://10.0.2.2:3000";
+    const url = `${SERVER}/api/register`;
+
+    // jednoduchá validácia
+    if (!email || !password) {
+      Alert.alert("Chyba", "Vyplň e-mail aj heslo.");
+      return;
+    }
+
+    try {
+      // voliteľne zablokovať tlačidlo / zobraziť loader tu
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert("Úspech", "Údaje boli odoslané a uložené.");
+        // prípadne navigácia ďalej: navigation.navigate('Home')
+      } else {
+        // zobrazíme chybu zo servera
+        Alert.alert("Chyba", data.error || "Server vrátil chybu");
+      }
+    } catch (err) {
+      // bežné chyby: server beží? firewall? zlá URL?
+      Alert.alert("Network error", err.message);
+    } finally {
+      // zrušiť loader / odblokovať tlačidlo
+    }
+  }
+
+  /*function handleLogin() {
 
     if (condition) {
       
     }
 
     Alert.alert("Prihlásenie", `Email: ${email}\nHeslo: ${password}`);
-  }
+  }*/
 
   return (
     <View style={styles.layout}>
