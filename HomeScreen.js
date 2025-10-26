@@ -42,6 +42,7 @@ export default function HomeScreen() {
     }
 
     Alert.alert("Úspech", "Prihlásenie bolo úspešné!");
+    navigation.navigate("Dashboard");
 
     // Optionally navigate after login
     //navigation.navigate("MainScreen"); // change to your actual screen

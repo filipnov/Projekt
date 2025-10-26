@@ -72,7 +72,7 @@ export default function HomeScreen() {
 
       if (resp.ok) {
         // push to local state (optional)
-        //setRegistration((r) => [...r, { email, nick }]);
+        setRegistration((r) => [...r, { email, nick }]);
 
         // clear inputs
         setEmail("");
@@ -82,7 +82,7 @@ export default function HomeScreen() {
 
         Alert.alert("Registrácia bola úspešná!", `Vitaj, ${nick}!`);
         // optional: navigate to login or home
-        // navigation.navigate("HomeScreen");
+        navigation.navigate("HomeScreen");
       } else {
         // show server-provided message or generic one
         const msg = data.error || data.message || "Server vrátil chybu.";
@@ -161,10 +161,6 @@ export default function HomeScreen() {
             ) : (
               <Text style={styles.button_text_register}>Registrovať sa!</Text>
             )}
-          </Pressable>
-
-          <Pressable onPress={Test} style={{ marginTop: 8 }}>
-            <Text>Test</Text>
           </Pressable>
         </View>
 
