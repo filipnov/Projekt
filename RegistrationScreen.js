@@ -1,4 +1,4 @@
-// HomeScreen.js
+// RegistrationScreen.js
 import { useState } from "react";
 import {
   StyleSheet,
@@ -8,59 +8,46 @@ import {
   Image,
   TextInput,
   Pressable,
-  Linking,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+
 import background from "./assets/background.png";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
-import { useNavigation } from "@react-navigation/native";
 
-export default function HomeScreen() {
+export default function RegistrationScreen() {
   const navigation = useNavigation();
-  const [registration, setRegistration] = useState([]);
-  const [personEmail, setEmail] = useState("");
-  const [personNick, setNick] = useState("");
-  const [personPassword, setPassword] = useState("");
-  const [personAPassword, setAPassword] = useState("");
+
+  // State for user input
+  const [email, setEmail] = useState("");
+  const [nick, setNick] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ADJUST THIS if you test on a real device / different emulator:
-  // Android emulator (Android Studio) -> 10.0.2.2
-  // Genymotion -> 10.0.3.2
-  // iOS simulator -> http://localhost:3000
-  // Physical phone -> http://<PC_IP>:3000
-  const SERVER = "http://10.0.2.2:3000";
+  const SERVER = "http://10.0.2.2:3000"; // adjust if using different emulator or device
   const REGISTER_URL = `${SERVER}/api/register`;
 
+  // Handle registration
   async function handleRegistration() {
-    // basic client-side validation
-    const email = personEmail.trim();
-    const nick = personNick.trim();
-    const pass = personPassword;
-    const pass2 = personAPassword;
+    const trimmedEmail = email.trim();
+    const trimmedNick = nick.trim();
 
-    if (!email || !nick || !pass || !pass2) {
+    // Basic validation
+    if (!trimmedEmail || !trimmedNick || !password || !passwordConfirm) {
       Alert.alert("Registrácia nebola úspešná!", "Prosím vyplň všetky polia!");
       return;
     }
-    if (pass !== pass2) {
+    if (password !== passwordConfirm) {
       Alert.alert("Registrácia nebola úspešná!", "Heslá sa nezhodujú!");
       return;
     }
 
-    // optional: simple email regex (very basic)
-    /* const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert("Chybný email", "Zadaj platný e-mail.");
-      return;
-    }
-    */
-    // prepare body
-    const body = { email, nick, password: pass };
-
+    const body = { email: trimmedEmail, password, nick: trimmedNick };
     setLoading(true);
+
     try {
       const resp = await fetch(REGISTER_URL, {
         method: "POST",
@@ -71,20 +58,15 @@ export default function HomeScreen() {
       const data = await resp.json().catch(() => ({}));
 
       if (resp.ok) {
-        // push to local state (optional)
-        setRegistration((r) => [...r, { email, nick }]);
-
-        // clear inputs
+        // Clear inputs
         setEmail("");
         setNick("");
         setPassword("");
-        setAPassword("");
+        setPasswordConfirm("");
 
-        Alert.alert("Registrácia bola úspešná!", `Vitaj, ${nick}!`);
-        // optional: navigate to login or home
+        Alert.alert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
         navigation.navigate("HomeScreen");
       } else {
-        // show server-provided message or generic one
         const msg = data.error || data.message || "Server vrátil chybu.";
         Alert.alert("Registrácia zlyhala", msg);
       }
@@ -98,99 +80,91 @@ export default function HomeScreen() {
     }
   }
 
-  function Test() {
-    console.log("Local registrations:", registration);
-    Alert.alert("Debug", `Lokálnych registrácií: ${registration.length}`);
-  }
-
   return (
     <View style={styles.layout}>
       <ImageBackground source={background} style={styles.image}>
         <Image style={styles.avatar} source={logo} />
+
         <View style={styles.container}>
           <Text style={styles.text}>Registruj sa!</Text>
-          <Text style={styles.info_text}>Zadaj email:</Text>
 
+          <Text style={styles.info_text}>Zadaj email:</Text>
           <TextInput
             placeholder="e-mail"
-            style={styles.input_email}
-            value={personEmail}
+            style={styles.input}
+            value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
           />
+
           <Text style={styles.info_text}>Zadaj ako ťa máme volať:</Text>
           <TextInput
             placeholder="prezývka"
-            style={styles.input_password}
-            value={personNick}
+            style={styles.input}
+            value={nick}
             onChangeText={setNick}
             autoCapitalize="words"
           />
+
           <Text style={styles.info_text}>Zadaj svoje heslo:</Text>
           <TextInput
             placeholder="heslo"
-            style={styles.input_password}
-            value={personPassword}
+            style={styles.input}
+            value={password}
             onChangeText={setPassword}
             secureTextEntry
             autoCapitalize="none"
           />
+
           <Text style={styles.info_text}>Zopakuj heslo:</Text>
           <TextInput
             placeholder="heslo znova"
-            style={styles.input_password}
-            value={personAPassword}
-            onChangeText={setAPassword}
+            style={styles.input}
+            value={passwordConfirm}
+            onChangeText={setPasswordConfirm}
             secureTextEntry
             autoCapitalize="none"
           />
 
           <Pressable
             style={({ pressed }) =>
-              pressed ? styles.button_register_pressed : styles.button_register
+              pressed ? styles.button_pressed : styles.button
             }
-            onPress={() => {
-              if (!loading) handleRegistration();
-            }}
+            onPress={() => !loading && handleRegistration()}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator size="small" />
             ) : (
-              <Text style={styles.button_text_register}>Registrovať sa!</Text>
+              <Text style={styles.button_text}>Registrovať sa!</Text>
             )}
           </Pressable>
         </View>
 
-        <Pressable
-          style={({ pressed }) => (pressed ? styles.arrow_pressed : null)}
-          onPress={() => navigation.navigate("HomeScreen")}
-        >
-          <Image source={arrow} style={styles.arrow}></Image>
+        <Pressable onPress={() => navigation.navigate("HomeScreen")}>
+          <Image source={arrow} style={styles.arrow} />
         </Pressable>
       </ImageBackground>
     </View>
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   layout: {
     flex: 1,
-    backgroundColor: "#fff",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-between",
     width: "100%",
     height: "100%",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   image: {
     flex: 1,
     resizeMode: "cover",
     width: "100%",
     height: "100%",
-    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -198,7 +172,7 @@ const styles = StyleSheet.create({
     height: 300,
     width: 300,
     marginBottom: 20,
-    backgroundColor: "hsla(0, 0%, 100%, 1)",
+    backgroundColor: "white",
     borderRadius: 50,
   },
   arrow: {
@@ -208,13 +182,9 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginTop: 10,
   },
-  arrow_pressed: {
-    opacity: 0.8,
-  },
   text: {
     fontSize: 50,
     fontWeight: "900",
-    borderBottomColor: "black",
   },
   container: {
     backgroundColor: "hsla(0, 0%, 85%, 0.7)",
@@ -224,12 +194,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     height: 500,
     width: 340,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
-  input_email: {
+  input: {
     backgroundColor: "white",
     fontSize: 20,
     fontWeight: "200",
@@ -242,54 +210,36 @@ const styles = StyleSheet.create({
     textAlign: "center",
     elevation: 6,
   },
-  input_password: {
-    backgroundColor: "white",
-    fontSize: 20,
-    fontWeight: "200",
-    width: 240,
-    height: 55,
-    borderRadius: 10,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 5,
-    textAlign: "center",
-    elevation: 6,
-  },
-
-  button_register: {
-    backgroundColor: "hsla(129, 56%, 43%, 1.00)",
-    width: 225,
-    height: 55,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 10,
-    marginTop: 15,
-    elevation: 6,
-  },
-  button_register_pressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: 225,
-    height: 55,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 10,
-    marginTop: 15,
-    elevation: 6,
-  },
-
-  button_text_register: {
-    color: "white",
-    fontSize: 28,
-    fontWeight: "900",
-  },
-
   info_text: {
     fontWeight: "800",
     fontSize: 14,
     marginTop: 5,
     alignSelf: "flex-start",
     marginLeft: 40,
+  },
+  button: {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    width: 225,
+    height: 55,
+    borderRadius: 10,
+    marginTop: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  button_pressed: {
+    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
+    width: 225,
+    height: 55,
+    borderRadius: 10,
+    marginTop: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  button_text: {
+    color: "white",
+    fontSize: 28,
+    fontWeight: "900",
   },
 });

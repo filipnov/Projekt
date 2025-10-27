@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -9,49 +10,50 @@ import {
   Linking,
   Alert,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import background from "./assets/background.png";
 import logo from "./assets/logo.png";
-import { useNavigation } from "@react-navigation/native";
-import { useState } from "react";
 
 export default function HomeScreen() {
   const navigation = useNavigation();
 
+  // State for user input
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  
-    async function handleLogin() {
-  if (!email || !password) {
-    Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
-    return;
-  }
-
-  try {
-    const response = await fetch("http://10.0.2.2:3000/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      Alert.alert("Chyba", data.error || "Prihlásenie zlyhalo!");
+  // Handle login process
+  async function handleLogin() {
+    if (!email || !password) {
+      Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
       return;
     }
 
-    Alert.alert("Úspech", "Prihlásenie bolo úspešné!");
-    navigation.navigate("Dashboard");
+    try {
+      const response = await fetch("http://10.0.2.2:3000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-    // Optionally navigate after login
-    //navigation.navigate("MainScreen"); // change to your actual screen
-  } catch (error) {
-    console.error(error);
-    Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert("Chyba", data.error || "Prihlásenie zlyhalo!");
+        return;
+      }
+
+      // Navigate to Dashboard with email and nick
+      navigation.navigate("Dashboard", {
+        email: data.user.email,
+        nick: data.user.nick,
+      });
+
+      Alert.alert("Úspech", "Prihlásenie bolo úspešné!");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
+    }
   }
-}
-  
 
   return (
     <View style={styles.layout}>
@@ -61,12 +63,15 @@ export default function HomeScreen() {
           <Text style={styles.text}>Vitaj!</Text>
           <Text style={styles.info_text}>Tu vyplň svoje údaje:</Text>
 
+          {/* Email input */}
           <TextInput
             placeholder="e-mail"
             style={styles.input_email}
             value={email}
             onChangeText={setEmail}
           />
+
+          {/* Password input */}
           <TextInput
             placeholder="heslo"
             style={styles.input_password}
@@ -75,6 +80,7 @@ export default function HomeScreen() {
             secureTextEntry
           />
 
+          {/* Forgot password link */}
           <Text
             onPress={() => Linking.openURL("https://google.com")}
             style={styles.forget_text}
@@ -82,6 +88,7 @@ export default function HomeScreen() {
             Zabudnuté heslo?
           </Text>
 
+          {/* Login button */}
           <Pressable
             style={({ pressed }) =>
               pressed ? styles.button_login_pressed : styles.button_login
@@ -90,7 +97,10 @@ export default function HomeScreen() {
           >
             <Text style={styles.button_text_login}>Prihlásiť sa!</Text>
           </Pressable>
+
           <Text style={styles.alebo_text}>ALEBO</Text>
+
+          {/* Registration button */}
           <Pressable
             style={({ pressed }) =>
               pressed ? styles.button_register_pressed : styles.button_register
@@ -104,22 +114,22 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+// Styles
 const styles = StyleSheet.create({
   layout: {
     flex: 1,
     backgroundColor: "#fff",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "space-between",
     width: "100%",
     height: "100%",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   image: {
     flex: 1,
     resizeMode: "cover",
     width: "100%",
     height: "100%",
-    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -127,26 +137,23 @@ const styles = StyleSheet.create({
     height: 300,
     width: 300,
     marginBottom: 20,
-    backgroundColor: "hsla(0, 0%, 100%, 1)",
+    backgroundColor: "white",
     borderRadius: 50,
   },
   text: {
     fontSize: 60,
     fontWeight: "900",
-    borderBottomColor: "black",
   },
   container: {
     backgroundColor: "hsla(0, 0%, 85%, 0.7)",
     padding: 10,
     borderRadius: 25,
-    borderColor: "white",
     borderWidth: 2,
+    borderColor: "white",
     height: 500,
     width: 340,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
   input_email: {
     backgroundColor: "white",
@@ -175,47 +182,43 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   button_login: {
-    backgroundColor: "hsla(129, 56%, 43%, 1.00)",
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
     width: 200,
     height: 50,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
     borderRadius: 10,
     marginTop: 15,
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 6,
   },
   button_login_pressed: {
     backgroundColor: "hsla(129, 56%, 43%, 0.8)",
     width: 200,
     height: 50,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
     borderRadius: 10,
     marginTop: 15,
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 6,
   },
   button_register: {
-    backgroundColor: "hsla(129, 56%, 43%, 1.00)",
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
     width: 225,
     height: 55,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
     borderRadius: 10,
     marginTop: 10,
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 6,
   },
   button_register_pressed: {
     backgroundColor: "hsla(129, 56%, 43%, 0.8)",
     width: 225,
     height: 55,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
     borderRadius: 10,
     marginTop: 10,
+    alignItems: "center",
+    justifyContent: "center",
     elevation: 6,
   },
   button_text_login: {
@@ -235,7 +238,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
     alignSelf: "flex-start",
     marginLeft: 40,
-    textDecorationStyle: "solid",
     textDecorationLine: "underline",
   },
   info_text: {
