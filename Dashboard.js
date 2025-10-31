@@ -4,6 +4,11 @@ import { StyleSheet, Text, View, Image, Pressable, ScrollView } from "react-nati
 import { useNavigation, useRoute } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import home from "./assets/home.png";
+import plus from "./assets/plus.png";
+import recipes from "./assets/recipe-book.png";
+import setting from "./assets/settings.png";
+import storage from "./assets/storage.png";
+import speedometer from "./assets/speedometer.png";
 import account from "./assets/avatar.png";
 
 export default function Dashboard() {
@@ -33,39 +38,41 @@ export default function Dashboard() {
 
         {/*Main content*/}
         <View>
-          <Text>SKIBIDIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII</Text>
+          {/*Calories display*/}
+          <View style={styles.caloriesDisplay}></View>
+          <View style={styles.nutriDisplay_container}></View>
         </View>
 
         {/*Nav bar*/}
         <View style={styles.navBar}>
           <Pressable onPress={() => setActiveTab(1)}
                      style={[styles.navBar_tabs, isActive(1) && styles.navBar_tabs_pressed]}>
-            <Image source={home} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(1) && styles.navBar_textWhite]}>Domov</Text>
+            <Image source={speedometer} style={styles.navBar_img}></Image>
+            <Text style={[styles.navBar_text, isActive(1) && styles.navBar_text_pressed]}>Prehľad</Text>
           </Pressable>
 
           <Pressable onPress={() => setActiveTab(2)}
                      style={[styles.navBar_tabs, isActive(2) && styles.navBar_tabs_pressed]}>
-            <Image source={home} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(2) && styles.navBar_textWhite]}>Recepty</Text>
+            <Image source={recipes} style={styles.navBar_img}></Image>
+            <Text style={[styles.navBar_text, isActive(2) && styles.navBar_text_pressed]}>Recepty</Text>
           </Pressable>
 
-          <Pressable onPress={() => setActiveTab(3)}
-                     style={[styles.navBar_tabs, isActive(3) && styles.navBar_tabs_pressed]}>
-            <Image source={home} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(3) && styles.navBar_textWhite]}>Špajza</Text>
+          <Pressable
+                     style={styles.navBar_tab_Add}>
+            <View style={styles.navBar_Add_container}><Image source={plus} style={styles.navBar_Add}></Image></View>
+            <Text style={styles.navBar_text_Add}>Pridať</Text>
           </Pressable>
 
           <Pressable onPress={() => setActiveTab(4)}
                      style={[styles.navBar_tabs, isActive(4) && styles.navBar_tabs_pressed]}>
-            <Image source={home} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(4) && styles.navBar_textWhite]}>Blank</Text>
+            <Image source={storage} style={styles.navBar_img}></Image>
+            <Text style={[styles.navBar_text, isActive(4) && styles.navBar_text_pressed]}>Špajza</Text>
           </Pressable>
 
           <Pressable onPress={() => setActiveTab(5)}
                      style={[styles.navBar_tabs, isActive(5) && styles.navBar_tabs_pressed]}>
-            <Image source={home} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(5) && styles.navBar_textWhite]}>Blank</Text>
+            <Image source={setting} style={styles.navBar_img}></Image>
+            <Text style={[styles.navBar_text, isActive(5) && styles.navBar_text_pressed]}>Blank</Text>
           </Pressable>
         </View>
       </View>
@@ -119,6 +126,25 @@ const styles = StyleSheet.create({
     backgroundColor: "hsl(0, 0%, 95%)",
     borderTopColor: "black",
     borderTopWidth: 1,
+    opacity: 0.7
+  },
+    navBar_tab_Add: {
+   height: 90,
+    width: 82.5,
+    alignItems: "center",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    backgroundColor: "hsl(0, 0%, 95%)",
+    borderTopColor: "black",
+    borderTopWidth: 1,
+    transform: [{ translateY: -10 }],
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderLeftColor: "black",
+    borderLeftWidth: 1,
+    borderRightColor: "black",
+    borderRightWidth: 1
   },
   navBar_tabs_pressed: {
     height: 90,
@@ -127,28 +153,65 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     justifyContent: "center",
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    backgroundColor: "hsl(0, 0%, 95%)",
     borderTopColor: "black",
     borderTopWidth: 1,
-    transform: [{ translateY: -1 }]
+    opacity: 1
   },
   navBar_img: {
     width: 30,
     height: 30
   },
+   navBar_Add: {
+    width: 20,
+    height: 20,
+  },
+  navBar_Add_container: {
+    width: 45,
+    height: 45,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    borderRadius: 25,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
   navBar_text: {
     fontSize: 13,
-    fontWeight: "bold",
     color: "black"
   },
-  navBar_textWhite: {
-    fontSize: 13,
-    fontWeight: "bold",
-    color: "white"
+  navBar_text_pressed: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "black",
   },
+  navBar_text_Add: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "black",
+  },
+  
   contentContainer: {
     height: 791.5,
     display: "flex",
     justifyContent: "space-between"
+  },
+  caloriesDisplay: {
+    marginTop: 20,
+    backgroundColor: "#1E1E1E",
+    width: "90%",
+    height: 200,
+    borderRadius: 15,
+    alignSelf: "center"
+  },
+  nutriDisplay_container: {
+    backgroundColor: "black",
+    width: "90%",
+    height: 50,
+    alignSelf: "center",
+    marginTop: 50
+
+  },
+  nutriDisplay:{
+
   }
 });
