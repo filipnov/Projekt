@@ -11,18 +11,50 @@ import storage from "./assets/storage.png";
 import speedometer from "./assets/speedometer.png";
 import account from "./assets/avatar.png";
 
-export default function Dashboard() {
+export default function Dashboard({setIsLoggedIn}) {
   const navigation = useNavigation();
   const route = useRoute();
 
   // Get the nickname passed via route params, fallback to "User"
   const { nick } = route.params || { nick: "User" };
 
-  // Keep track of which tab is active (1–5)
+  // Keep track of which tab is active (1–4)
   const [activeTab, setActiveTab] = useState(1);
 
   // Function to check if tab is active
   const isActive = (tabIndex) => activeTab === tabIndex;
+
+  const renderContent = () => {
+    switch (activeTab){
+      case 1:
+        return<><Text>Tu bude prehľad</Text>
+          <View style={styles.caloriesDisplay}></View>
+          <View style={styles.nutriDisplay_container}></View>
+        </> 
+        
+
+         case 2:
+        return <Text>Tu budu receptyy</Text>
+
+         case 3:
+        return <Text>Tu bude špajza</Text>
+
+         case 4:
+        return <>
+        <Pressable onPress={() => {
+          setIsLoggedIn(false);
+        navigation.reset({
+      index: 0,
+      routes: [{ name: "HomeScreen"}],
+});
+        }}><Text>Logout</Text></Pressable>
+        <Text>Tu budu nastavenia</Text>
+        </>
+
+        default:
+          return <Text>Oops, niečo sa pokazilo</Text>
+    }
+  }
 
   return (
     <ScrollView style={styles.container}>
@@ -37,10 +69,7 @@ export default function Dashboard() {
       <View style={styles.contentContainer}>
 
         {/*Main content*/}
-        <View>
-          {/*Calories display*/}
-          <View style={styles.caloriesDisplay}></View>
-          <View style={styles.nutriDisplay_container}></View>
+        <View>{renderContent()}
         </View>
 
         {/*Nav bar*/}
@@ -63,16 +92,16 @@ export default function Dashboard() {
             <Text style={styles.navBar_text_Add}>Pridať</Text>
           </Pressable>
 
-          <Pressable onPress={() => setActiveTab(4)}
-                     style={[styles.navBar_tabs, isActive(4) && styles.navBar_tabs_pressed]}>
+          <Pressable onPress={() => setActiveTab(3)}
+                     style={[styles.navBar_tabs, isActive(3) && styles.navBar_tabs_pressed]}>
             <Image source={storage} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(4) && styles.navBar_text_pressed]}>Špajza</Text>
+            <Text style={[styles.navBar_text, isActive(3) && styles.navBar_text_pressed]}>Špajza</Text>
           </Pressable>
 
-          <Pressable onPress={() => setActiveTab(5)}
-                     style={[styles.navBar_tabs, isActive(5) && styles.navBar_tabs_pressed]}>
-            <Image source={setting} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(5) && styles.navBar_text_pressed]}>Blank</Text>
+          <Pressable onPress={() => setActiveTab(4)}
+                     style={[styles.navBar_tabs, isActive(4) && styles.navBar_tabs_pressed]}>
+          <Image source={setting} style={styles.navBar_img}></Image>
+            <Text style={[styles.navBar_text, isActive(4) && styles.navBar_text_pressed]}>Blank</Text>
           </Pressable>
         </View>
       </View>

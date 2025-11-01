@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import background from "./assets/background.png";
 import logo from "./assets/logo.png";
 
-export default function HomeScreen() {
+export default function HomeScreen({setIsLoggedIn}) {
   const navigation = useNavigation();
 
   // State for user input
@@ -41,14 +41,15 @@ export default function HomeScreen() {
         Alert.alert("Chyba", data.error || "Prihlásenie zlyhalo!");
         return;
       }
-
+      setIsLoggedIn(true);
       // Navigate to Dashboard with email and nick
-      navigation.navigate("Dashboard", {
-        email: data.user.email,
-        nick: data.user.nick,
-      });
+      navigation.reset({
+  index: 0,
+  routes: [{ name: "Dashboard", params: { email: data.user.email, nick: data.user.nick } }],
+});
 
       Alert.alert("Úspech", "Prihlásenie bolo úspešné!");
+      
     } catch (error) {
       console.error(error);
       Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
