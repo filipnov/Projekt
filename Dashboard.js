@@ -27,9 +27,14 @@ export default function Dashboard({setIsLoggedIn}) {
   const renderContent = () => {
     switch (activeTab){
       case 1:
-        return<><Text>Tu bude prehľad</Text>
+        return<>
+        <Text>Tu bude prehľad</Text>
           <View style={styles.caloriesDisplay}></View>
-          <View style={styles.nutriDisplay_container}></View>
+          <View style={styles.nutriDisplay_container}>
+            <View style={styles.nutriDisplay}></View>
+            <View style={styles.nutriDisplay}></View>
+            <View style={styles.nutriDisplay}></View>
+          </View>
         </> 
         
 
@@ -101,7 +106,7 @@ export default function Dashboard({setIsLoggedIn}) {
           <Pressable onPress={() => setActiveTab(4)}
                      style={[styles.navBar_tabs, isActive(4) && styles.navBar_tabs_pressed]}>
           <Image source={setting} style={styles.navBar_img}></Image>
-            <Text style={[styles.navBar_text, isActive(4) && styles.navBar_text_pressed]}>Blank</Text>
+            <Text style={[styles.navBar_text, isActive(4) && styles.navBar_text_pressed]}>Nastavenia</Text>
           </Pressable>
         </View>
       </View>
@@ -113,7 +118,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    height: "fit-content"
+    height: "auto"
   },
   topBar: {
     backgroundColor: "hsl(0, 0%, 95%)",
@@ -140,8 +145,7 @@ const styles = StyleSheet.create({
   },
   navBar: {
     width: "100%",
-    height: "fit-content",
-    display: "flex",
+    height: "auto",
     flexDirection: "row",
     justifyContent: "space-between"
   },
@@ -149,7 +153,6 @@ const styles = StyleSheet.create({
     height: 90,
     width: 82.5,
     alignItems: "center",
-    display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     backgroundColor: "hsl(0, 0%, 95%)",
@@ -161,7 +164,6 @@ const styles = StyleSheet.create({
    height: 90,
     width: 82.5,
     alignItems: "center",
-    display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     backgroundColor: "hsl(0, 0%, 95%)",
@@ -179,7 +181,6 @@ const styles = StyleSheet.create({
     height: 90,
     width: 82.5,
     alignItems: "center",
-    display: "flex",
     flexDirection: "column",
     justifyContent: "center",
     backgroundColor: "hsl(0, 0%, 95%)",
@@ -200,7 +201,6 @@ const styles = StyleSheet.create({
     height: 45,
     backgroundColor: "hsla(129, 56%, 43%, 1)",
     borderRadius: 25,
-    display: "flex",
     alignItems: "center",
     justifyContent: "center"
   },
@@ -221,7 +221,6 @@ const styles = StyleSheet.create({
   
   contentContainer: {
     height: 791.5,
-    display: "flex",
     justifyContent: "space-between"
   },
   caloriesDisplay: {
@@ -233,14 +232,19 @@ const styles = StyleSheet.create({
     alignSelf: "center"
   },
   nutriDisplay_container: {
-    backgroundColor: "black",
     width: "90%",
-    height: 50,
+    height: 90,
     alignSelf: "center",
-    marginTop: 50
+    marginTop: 30,
+    borderRadius: 15,
+    flexDirection: "row",
+    justifyContent: "space-between"
 
   },
   nutriDisplay:{
-
+    backgroundColor: "#1E1E1E",
+    height: "100%",
+    width: 115,
+    borderRadius: 15
   }
 });

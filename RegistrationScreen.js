@@ -98,7 +98,7 @@ export default function RegistrationScreen() {
             autoCapitalize="none"
             autoComplete="email"
           />
-
+          
           <Text style={styles.info_text}>Zadaj ako ťa máme volať:</Text>
           <TextInput
             placeholder="prezývka"
