@@ -33,6 +33,8 @@ export default function ProfileCompletition() {
   ]);
 
   const SERVER = "http://172.30.99.111:3000";
+  // "http://10.0.2.2:3000" // Android emulator
+    //"http://localhost:3000"; // iOS simulator
   const UPDATE_URL = `${SERVER}/api/updateProfile`;
 
   useEffect(() => {
