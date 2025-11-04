@@ -30,7 +30,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
     }
 
     try {
-      const response = await fetch("http://10.0.2.2:3000/api/login", {
+      const response = await fetch("http://172.30.99.111:3000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

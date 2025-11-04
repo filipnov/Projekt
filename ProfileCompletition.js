@@ -32,7 +32,7 @@ export default function ProfileCompletition() {
     { label: "Veľmi ťažká - každý deň + fyzická práca", value: 1.9 },
   ]);
 
-  const SERVER = "http://10.0.2.2:3000";
+  const SERVER = "http://172.30.99.111:3000";
   const UPDATE_URL = `${SERVER}/api/updateProfile`;
 
   useEffect(() => {
@@ -75,6 +75,10 @@ export default function ProfileCompletition() {
         setHeight("");
         setAge("");
         Alert.alert("Úspech", "Údaje boli uložené ✅");
+        navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Dashboard" }],
+                });
       } else {
         Alert.alert("Chyba", data.error || "Server error");
       }

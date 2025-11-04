@@ -46,7 +46,7 @@ export default function Dashboard({ setIsLoggedIn }) {
         if (!email) return;
 
         const response = await fetch(
-          `http://10.0.2.2:3000/api/userProfile?email=${email}`
+          `http://172.30.99.111:3000/api/userProfile?email=${email}`
         );
         const data = await response.json();
 
@@ -114,7 +114,6 @@ export default function Dashboard({ setIsLoggedIn }) {
       case 1:
         return (
           <>
-            <Text>Tu bude prehľad</Text>
             <View style={styles.caloriesDisplay}>
               <Text style={{ color: "white", marginBottom: 14 }}>
                 {eatenOutput}
@@ -168,7 +167,6 @@ export default function Dashboard({ setIsLoggedIn }) {
             >
               <Text>Finishment</Text>
             </Pressable>
-            <Text>Tu budu nastavenia</Text>
           </>
         );
 
