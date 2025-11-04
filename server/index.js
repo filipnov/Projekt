@@ -83,8 +83,67 @@ async function start() {
     }
   });
 
+  // ------------------- UPDATE PROFILE -------------------
+  app.post("/api/updateProfile", async (req, res) => {
+    console.log("REQ BODY:", req.body); // ✅ debug log
+    try {
+      const { email, weight, height, age } = req.body;
+
+      if (!email || isNaN(weight) || isNaN(height) || isNaN(age)) {
+        return res.status(400).json({ error: "Invalid or missing fields" });
+      }
+
+      if (!client.topology || !client.topology.isConnected()) {
+        return res.status(500).json({ error: "DB not connected" });
+      }
+
+      const db = client.db("userdb");
+      const users = db.collection("users");
+
+      const result = await users.updateOne(
+        { email },
+        {
+          $set: {
+            weight: Number(weight),
+            height: Number(height),
+            age: Number(age),
+            updatedAt: new Date(),
+          },
+        }
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      return res.json({ ok: true, message: "Profile updated" });
+    } catch (err) {
+      console.error("Update profile error >>>", err); // ✅ debug log
+      console.error("Update profile error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  //--------------------------------------------------------------
+  app.get("/api/userProfile", async (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: "Missing email" });
+
+    const user = await db.collection("users").findOne({ email });
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    res.json({
+      age: user.age,
+      weight: user.weight,
+      height: user.height,
+    });
+  });
+
   // ------------------- START SERVER -------------------
-  app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+  app.listen(PORT, () =>
+    console.log(`🚀 Server running on http://localhost:${PORT}`)
+  );
 }
 
 start().catch((e) => {

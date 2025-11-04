@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './HomeScreen';
 import RegistrationScreen from './RegistrationScreen';
 import Dashboard from './Dashboard';
+import ProfileCompletition from './ProfileCompletition';    
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +21,9 @@ return ( <NavigationContainer>
 <Stack.Screen name="RegistrationScreen" component={RegistrationScreen} />
 <Stack.Screen name="Dashboard">
 {(props) => <Dashboard {...props} setIsLoggedIn={setIsLoggedIn} />}
+</Stack.Screen>
+<Stack.Screen name="ProfileCompletition">
+{(props) => <ProfileCompletition {...props} setIsLoggedIn={setIsLoggedIn} />}
 </Stack.Screen>
 </Stack.Navigator> </NavigationContainer>
 )}

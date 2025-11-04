@@ -13,8 +13,9 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import background from "./assets/background.png";
 import logo from "./assets/logo.png";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function HomeScreen({setIsLoggedIn}) {
+export default function HomeScreen({ setIsLoggedIn }) {
   const navigation = useNavigation();
 
   // State for user input
@@ -44,12 +45,16 @@ export default function HomeScreen({setIsLoggedIn}) {
       setIsLoggedIn(true);
       // Navigate to Dashboard with email and nick
       navigation.reset({
-  index: 0,
-  routes: [{ name: "Dashboard", params: { email: data.user.email, nick: data.user.nick } }],
-});
-
+        index: 0,
+        routes: [
+          {
+            name: "Dashboard",
+            params: { email: data.user.email, nick: data.user.nick },
+          },
+        ],
+      });
+      await AsyncStorage.setItem("userEmail", email);
       Alert.alert("Úspech", "Prihlásenie bolo úspešné!");
-      
     } catch (error) {
       console.error(error);
       Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
