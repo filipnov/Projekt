@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import arrow from "./assets/left-arrow.png";
 import { useNavigation } from "@react-navigation/native";
+import DropDownPicker from "react-native-dropdown-picker";
 
 export default function ProfileCompletition() {
   const navigation = useNavigation();
@@ -19,6 +20,17 @@ export default function ProfileCompletition() {
   const [height, setHeight] = useState("");
   const [age, setAge] = useState("");
   const [email, setEmail] = useState("");
+  const [gender, setGender] = useState("male"); // "male" alebo "female"
+
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState([]);
+  const [items, setItems] = useState([
+    { label: "Žiadna - sedavá", value: 1.2 },
+    { label: "Ľahká - 1–3× týždenne", value: 1.375 },
+    { label: "Stredná - 3–5× týždenne", value: 1.55 },
+    { label: "Ťažká - 6–7× týždenne", value: 1.725 },
+    { label: "Veľmi ťažká - každý deň + fyzická práca", value: 1.9 },
+  ]);
 
   const SERVER = "http://10.0.2.2:3000";
   const UPDATE_URL = `${SERVER}/api/updateProfile`;
@@ -45,6 +57,8 @@ export default function ProfileCompletition() {
       weight: Number(weight.trim()),
       height: Number(height.trim()),
       age: Number(age.trim()),
+      gender: gender,
+      activityLevel: value,
     };
 
     try {
@@ -103,6 +117,42 @@ export default function ProfileCompletition() {
           onChangeText={setAge}
           keyboardType="numeric"
         />
+
+        <Text style={styles.label}>Pohlavie:</Text>
+        <View style={styles.genderContainer}>
+          <Pressable
+            onPress={() => setGender("male")}
+            style={[
+              styles.genderButton,
+              { backgroundColor: gender === "male" ? "#2196F3" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.genderText}>Muž</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setGender("female")}
+            style={[
+              styles.genderButton,
+              { backgroundColor: gender === "female" ? "#E91E63" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.genderText}>Žena</Text>
+          </Pressable>
+        </View>
+
+        <View>
+          <DropDownPicker
+            multiple={false} // umožní vybrať viac položiek
+            open={open}
+            value={value}
+            items={items}
+            setOpen={setOpen}
+            setValue={setValue}
+            setItems={setItems}
+            placeholder="Vyber aktivitu"
+          />
+        </View>
       </View>
 
       <Pressable style={styles.button} onPress={handleCompletion}>
@@ -112,7 +162,6 @@ export default function ProfileCompletition() {
   );
 }
 
-// --- STYLES ---
 const styles = StyleSheet.create({
   inputContainer: {
     margin: 25,
@@ -152,5 +201,20 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 50,
     marginTop: 10,
+  },
+  genderContainer: {
+    flexDirection: "row",
+    marginTop: 5,
+  },
+  genderButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    marginRight: 10,
+    alignItems: "center",
+  },
+  genderText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });

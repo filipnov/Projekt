@@ -85,16 +85,12 @@ async function start() {
 
   // ------------------- UPDATE PROFILE -------------------
   app.post("/api/updateProfile", async (req, res) => {
-    console.log("REQ BODY:", req.body); // ✅ debug log
+    console.log("REQ BODY:", req.body); // debug log
     try {
-      const { email, weight, height, age } = req.body;
+      const { email, weight, height, age, gender, activityLevel } = req.body;
 
-      if (!email || isNaN(weight) || isNaN(height) || isNaN(age)) {
+      if (!email || isNaN(weight) || isNaN(height) || isNaN(age) || !gender) {
         return res.status(400).json({ error: "Invalid or missing fields" });
-      }
-
-      if (!client.topology || !client.topology.isConnected()) {
-        return res.status(500).json({ error: "DB not connected" });
       }
 
       const db = client.db("userdb");
@@ -107,6 +103,8 @@ async function start() {
             weight: Number(weight),
             height: Number(height),
             age: Number(age),
+            gender: gender,
+            activityLevel: activityLevel,
             updatedAt: new Date(),
           },
         }
@@ -118,26 +116,34 @@ async function start() {
 
       return res.json({ ok: true, message: "Profile updated" });
     } catch (err) {
-      console.error("Update profile error >>>", err); // ✅ debug log
-      console.error("Update profile error:", err);
+      console.error("Update profile error >>>", err);
       return res.status(500).json({ error: "Server error" });
     }
   });
 
   //--------------------------------------------------------------
   app.get("/api/userProfile", async (req, res) => {
-    const { email } = req.query;
-    if (!email) return res.status(400).json({ error: "Missing email" });
+    try {
+      const { email } = req.query;
+      if (!email) return res.status(400).json({ error: "Missing email" });
 
-    const user = await db.collection("users").findOne({ email });
+      const db = client.db("userdb");
+      const users = db.collection("users");
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+      const user = await users.findOne({ email });
+      if (!user) return res.status(404).json({ error: "User not found" });
 
-    res.json({
-      age: user.age,
-      weight: user.weight,
-      height: user.height,
-    });
+      res.json({
+        age: user.age,
+        weight: user.weight,
+        height: user.height,
+        gender: user.gender,
+        activityLevel: user.activityLevel,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Server error" });
+    }
   });
 
   // ------------------- START SERVER -------------------

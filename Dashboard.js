@@ -1,5 +1,4 @@
 // Dashboard.js
-import React, { useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -17,7 +16,8 @@ import setting from "./assets/settings.png";
 import storage from "./assets/storage.png";
 import speedometer from "./assets/speedometer.png";
 import account from "./assets/avatar.png";
-//import { multiply } from "react-native/types_generated/Libraries/Animated/AnimatedExports";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
 
 export default function Dashboard({ setIsLoggedIn }) {
   const navigation = useNavigation();
@@ -32,57 +32,80 @@ export default function Dashboard({ setIsLoggedIn }) {
   // Function to check if tab is active
   const isActive = (tabIndex) => activeTab === tabIndex;
 
-  let age = 19;
-  let weight = 64;
-  let height = 175;
+  const [age, setAge] = useState(null);
+  const [weight, setWeight] = useState(null);
+  const [height, setHeight] = useState(null);
+  const [gender, setGender] = useState(null);
+  const [activityLevel, setActivityLevel] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  let activity;
-  let multiplier;
-  switch (activity) {
-    case 1: //sedavá
-      multiplier = 1.2;
-      break;
-    case 2: //ľahká 1–3× týždenne
-      multiplier = 1.375;
-      break;
-    case 3: //stredná 3–5× týždenne
-      multiplier = 1.55;
-      break;
-    case 4: //ťažká 6–7× týždenne
-      multiplier = 1.725;
-      break;
-    case 5: //veľmi ťažká
-      multiplier = 1.9;
-      break;
-  }
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const email = await AsyncStorage.getItem("userEmail");
+        if (!email) return;
 
-  let gender;
-  if (gender) {
-    let manFormula = 10 * weight + 6.25 * height - 5 * age + 5 * multiplier;
+        const response = await fetch(
+          `http://10.0.2.2:3000/api/userProfile?email=${email}`
+        );
+        const data = await response.json();
+
+        if (response.ok) {
+          setAge(data.age);
+          setWeight(data.weight);
+          setHeight(data.height);
+          setGender(data.gender);
+          setActivityLevel(data.activityLevel);
+        } else {
+          console.log("Chyba pri načítaní profilu:", data.error);
+        }
+      } catch (err) {
+        console.log("Network error:", err);
+      }
+
+      setLoading(false);
+    }
+
+    loadProfile();
+  }, []);
+
+  let manFormula;
+  let womanFormula;
+  if (weight && height && age && activityLevel && gender) {
+    if (gender === "male") {
+      manFormula = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
+      caloriesGoal = manFormula.toFixed(0);
+    } else {
+      womanFormula =
+        (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
+      caloriesGoal = womanFormula.toFixed(0);
+    }
+    
+    caloriesConsumed = 500;
+    progressBar = (caloriesConsumed / caloriesGoal) * 100;
+
+    barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
+
+    eatenOutput = `${caloriesConsumed} / ${caloriesGoal} kcal`;
+    if (progressBar < 100) {
+      eatOutput = `Ešte ti chýba ${caloriesGoal - caloriesConsumed} kcal`;
+    } else if (progressBar === 100) {
+      eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
+    } else {
+      eatOutput = `Prekročil/a si svoj denný cieľ o ${
+        caloriesConsumed - caloriesGoal
+      } kcal`;
+    }
   } else {
-    let womanFormula = 10 * weight + 6.25 * height - 5 * age - 161 * multiplier;
+    eatOutput = "Doplň svoj profil pre výpočet denného kalorického cieľa.";
   }
 
-  //
-  //
-  let caloriesGoal = 2000;
-  let caloriesConsumed = 1700;
-  let progressBar = (caloriesConsumed / caloriesGoal) * 100;
-
-  const barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
-
-  let eatOutput;
-  let eatenOutput = `${caloriesConsumed} / ${caloriesGoal} kcal`;
-
-  if (progressBar < 100) {
-    eatOutput = `Ešte ti chýba ${caloriesGoal - caloriesConsumed} kcal`;
-  } else if (progressBar === 100) {
-    eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
-  } else {
-    eatOutput = `Prekročil/a si svoj denný cieľ o ${
-      caloriesConsumed - caloriesGoal
-    } kcal`;
-  }
+  let eatOutput,
+    eatenOutput,
+    progressBar,
+    caloriesGoal,
+    caloriesConsumed,
+    barColor;
 
   let currentDate = Date.now();
 
@@ -140,7 +163,9 @@ export default function Dashboard({ setIsLoggedIn }) {
             >
               <Text>Logout</Text>
             </Pressable>
-            <Pressable onPress={() => navigation.navigate("ProfileCompletition")}>
+            <Pressable
+              onPress={() => navigation.navigate("ProfileCompletition")}
+            >
               <Text>Finishment</Text>
             </Pressable>
             <Text>Tu budu nastavenia</Text>
