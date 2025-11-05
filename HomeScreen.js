@@ -63,7 +63,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
   return (
     <View style={styles.layout}>
-      <ImageBackground source={background} style={styles.image}>
+      <View style={styles.image}>
         <Image style={styles.avatar} source={logo} />
         <View style={styles.container}>
           <Text style={styles.text}>Vitaj!</Text>
@@ -116,7 +116,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
             <Text style={styles.button_text_register}>Registrovať sa!</Text>
           </Pressable>
         </View>
-      </ImageBackground>
+      </View>
     </View>
   );
 }
@@ -125,14 +125,12 @@ export default function HomeScreen({ setIsLoggedIn }) {
 const styles = StyleSheet.create({
   layout: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#618a335d",
     width: "100%",
     height: "100%",
     alignItems: "center",
-    justifyContent: "space-between",
   },
   image: {
-    flex: 1,
     resizeMode: "cover",
     width: "100%",
     height: "100%",
@@ -140,20 +138,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatar: {
-    height: 300,
-    width: 300,
+    height: 200,
+    width: 200,
     marginBottom: 20,
     backgroundColor: "white",
-    borderRadius: 50,
+    borderRadius: 20,
   },
   text: {
-    fontSize: 60,
+    fontSize: 50,
     fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
   container: {
-    backgroundColor: "hsla(0, 0%, 85%, 0.7)",
+    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
     padding: 10,
-    borderRadius: 25,
+    borderRadius: 20,
     borderWidth: 2,
     borderColor: "white",
     height: 500,
@@ -163,11 +162,11 @@ const styles = StyleSheet.create({
   },
   input_email: {
     backgroundColor: "white",
-    fontSize: 25,
+    fontSize: 20,
     fontWeight: "200",
-    width: 250,
-    height: 60,
-    borderRadius: 10,
+    width: 240,
+    height: 55,
+    borderRadius: 5,
     borderColor: "black",
     borderWidth: 1,
     marginTop: 5,
@@ -176,11 +175,11 @@ const styles = StyleSheet.create({
   },
   input_password: {
     backgroundColor: "white",
-    fontSize: 25,
+    fontSize: 20,
     fontWeight: "200",
-    width: 250,
-    height: 60,
-    borderRadius: 10,
+    width: 240,
+    height: 55,
+    borderRadius: 5,
     borderColor: "black",
     borderWidth: 1,
     marginTop: 20,
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
   },
   button_text_register: {
     color: "white",
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: "900",
   },
   forget_text: {
@@ -245,6 +244,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginLeft: 40,
     textDecorationLine: "underline",
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
   info_text: {
     fontWeight: "800",
@@ -252,10 +252,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignSelf: "flex-start",
     marginLeft: 40,
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
   alebo_text: {
     fontSize: 18,
     fontWeight: "900",
     marginTop: 10,
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
 });
