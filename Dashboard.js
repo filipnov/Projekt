@@ -46,7 +46,7 @@ export default function Dashboard({ setIsLoggedIn }) {
         if (!email) return;
 
         const response = await fetch(
-          `http://172.30.99.111:3000/api/userProfile?email=${email}`
+          `http://10.0.2.2:3000/api/userProfile?email=${email}`
         );
         // "http://10.0.2.2:3000" // Android emulator
     //"http://localhost:3000"; // iOS simulator
