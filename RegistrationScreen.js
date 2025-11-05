@@ -69,7 +69,7 @@ export default function RegistrationScreen() {
         Alert.alert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
         navigation.reset({
                   index: 0,
-                  routes: [{ name: "Dashboard" }],
+                  routes: [{ name: "HomeScreen" }],
                 });
       } else {
         const msg = data.error || data.message || "Server vrátil chybu.";
@@ -87,7 +87,7 @@ export default function RegistrationScreen() {
 
   return (
     <View style={styles.layout}>
-      <ImageBackground source={background} style={styles.image}>
+      <View style={styles.image}>
         <Image style={styles.avatar} source={logo} />
 
         <View style={styles.container}>
@@ -151,7 +151,7 @@ export default function RegistrationScreen() {
         <Pressable onPress={() => navigation.navigate("HomeScreen")}>
           <Image source={arrow} style={styles.arrow} />
         </Pressable>
-      </ImageBackground>
+      </View>
     </View>
   );
 }
@@ -159,14 +159,13 @@ export default function RegistrationScreen() {
 // Styles
 const styles = StyleSheet.create({
   layout: {
-    flex: 1,
+   flex: 1,
+    backgroundColor: "#618a335d",
     width: "100%",
     height: "100%",
     alignItems: "center",
-    justifyContent: "space-between",
   },
   image: {
-    flex: 1,
     resizeMode: "cover",
     width: "100%",
     height: "100%",
@@ -174,41 +173,50 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   avatar: {
-    height: 300,
-    width: 300,
+     height: 200,
+    width: 200,
     marginBottom: 20,
-    backgroundColor: "white",
-    borderRadius: 50,
+    ckgroundColor: "white",
+    borderRadius: 20,
   },
   arrow: {
     height: 50,
     width: 50,
     backgroundColor: "white",
     borderRadius: 50,
-    marginTop: 10,
+    marginTop: 30,
+  },
+  arrow_pressed: {
+    height: 50,
+    width: 50,
+    backgroundColor: "white",
+    borderRadius: 50,
+    marginTop: 30,
+    opacity: 0.8
   },
   text: {
-    fontSize: 50,
+   fontSize: 50,
     fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
   container: {
-    backgroundColor: "hsla(0, 0%, 85%, 0.7)",
+    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
     padding: 10,
-    borderRadius: 25,
-    borderColor: "white",
+    borderRadius: 20,
     borderWidth: 2,
+    borderColor: "white",
     height: 500,
     width: 340,
     alignItems: "center",
     justifyContent: "center",
   },
   input: {
-    backgroundColor: "white",
+     backgroundColor: "white",
     fontSize: 20,
     fontWeight: "200",
     width: 240,
     height: 55,
-    borderRadius: 10,
+    borderRadius: 5,
     borderColor: "black",
     borderWidth: 1,
     marginTop: 5,
@@ -221,6 +229,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     alignSelf: "flex-start",
     marginLeft: 40,
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
   button: {
     backgroundColor: "hsla(129, 56%, 43%, 1)",

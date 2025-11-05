@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './HomeScreen';
 import RegistrationScreen from './RegistrationScreen';
 import Dashboard from './Dashboard';
+import ForgetPass from "./ForgetPass";
 import ProfileCompletition from './ProfileCompletition';    
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,6 +23,7 @@ return ( <NavigationContainer>
 <Stack.Screen name="Dashboard">
 {(props) => <Dashboard {...props} setIsLoggedIn={setIsLoggedIn} />}
 </Stack.Screen>
+<Stack.Screen name="ForgetPass" component={ForgetPass}></Stack.Screen>
 <Stack.Screen name="ProfileCompletition">
 {(props) => <ProfileCompletition {...props} setIsLoggedIn={setIsLoggedIn} />}
 </Stack.Screen>
