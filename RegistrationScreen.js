@@ -27,7 +27,7 @@ export default function RegistrationScreen() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const SERVER = "http://172.30.99.111:3000"; 
+  const SERVER = "http://10.0.2.2:3000"; 
   // "http://10.0.2.2:3000" // Android emulator
     //"http://localhost:3000"; // iOS simulator
   const REGISTER_URL = `${SERVER}/api/register`;

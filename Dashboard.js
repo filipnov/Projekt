@@ -46,10 +46,10 @@ export default function Dashboard({ setIsLoggedIn }) {
         if (!email) return;
 
         const response = await fetch(
-          `http://172.30.99.111:3000/api/userProfile?email=${email}`
+          `http://10.0.2.2:3000/api/userProfile?email=${email}`
         );
         // "http://10.0.2.2:3000" // Android emulator
-    //"http://localhost:3000"; // iOS simulator
+        //"http://localhost:3000"; // iOS simulator
         const data = await response.json();
 
         if (response.ok) {
@@ -82,7 +82,7 @@ export default function Dashboard({ setIsLoggedIn }) {
         (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
       caloriesGoal = womanFormula.toFixed(0);
     }
-    
+
     caloriesConsumed = 500;
     progressBar = (caloriesConsumed / caloriesGoal) * 100;
 
@@ -98,6 +98,33 @@ export default function Dashboard({ setIsLoggedIn }) {
         caloriesConsumed - caloriesGoal
       } kcal`;
     }
+
+    fatGoal = ((caloriesGoal * 0.23) / 9).toFixed(0); //23% of calories from fat
+    carbGoal = ((caloriesGoal * 0.65) / 4).toFixed(0); //65% of calories from carbs
+    proteinGoal = ((caloriesGoal * 0.13) / 4).toFixed(0); //13% of calories from protein
+
+    fatConsumed = 20;
+    carbConsumed = 300;
+    proteinConsumed = 80;
+
+    fatBar = ((fatConsumed / fatGoal) * 100).toFixed(0);
+    carbBar = ((carbConsumed / carbGoal) * 100).toFixed(0);
+    proteinBar = ((proteinConsumed / proteinGoal) * 100).toFixed(0);
+
+    bmi = ((weight / (height * height)) * 10000).toFixed(1);
+
+    if (bmi < 18.5) {
+      bmiOutput = `BMI: ${bmi} \nPodváha`;
+      bmiBarColor = "#2196F3";
+    } else if (bmi >= 18.5 && bmi < 24.9) {
+      bmiOutput = `BMI: ${bmi} \nNormálna váha`;
+      bmiBarColor = "#4CAF50";
+    } else if (bmi >= 25 && bmi < 29.9) {
+      bmiOutput = `BMI: ${bmi} \nNadváha`;
+      bmiBarColor = "#FF9800";
+    }
+
+    bmiBar = ((bmi / 40) * 100).toFixed(0); // Assuming 40 as max BMI for bar representation
   } else {
     eatOutput = "Doplň svoj profil pre výpočet denného kalorického cieľa.";
   }
@@ -107,7 +134,21 @@ export default function Dashboard({ setIsLoggedIn }) {
     progressBar,
     caloriesGoal,
     caloriesConsumed,
-    barColor;
+    barColor,
+    fatConsumed,
+    carbConsumed,
+    proteinConsumed,
+    fatGoal,
+    carbGoal,
+    proteinGoal,
+    proteinBar,
+    carbBar,
+    fatBar,
+    bmi,
+    bmiOutput,
+    bmiBar,
+    bmiBarColor
+  ;
 
   let currentDate = Date.now();
 
@@ -137,9 +178,72 @@ export default function Dashboard({ setIsLoggedIn }) {
               </Text>
             </View>
             <View style={styles.nutriDisplay_container}>
-              <View style={styles.nutriDisplay}></View>
-              <View style={styles.nutriDisplay}></View>
-              <View style={styles.nutriDisplay}></View>
+              <View style={styles.nutriDisplay}>
+                <Text style={styles.nutriDisplay_text}>Proteíny:</Text>
+                <View style={styles.caloriesBarContainer}>
+                  <View
+                    style={[
+                      styles.caloriesBar,
+                      { width: `${proteinBar}%` },
+                      {
+                        backgroundColor:
+                          proteinBar >= 100 ? "#FF3B30" : "#4CAF50",
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={{ color: "white", marginBottom: 5 }}>
+                  {proteinConsumed} / {proteinGoal} g
+                </Text>
+              </View>
+              <View style={styles.nutriDisplay}>
+                <Text style={styles.nutriDisplay_text}>Sacharidy:</Text>
+                <View style={styles.caloriesBarContainer}>
+                  <View
+                    style={[
+                      styles.caloriesBar,
+                      { width: `${carbBar}%` },
+                      {
+                        backgroundColor: carbBar >= 100 ? "#FF3B30" : "#4CAF50",
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={{ color: "white", marginBottom: 5 }}>
+                  {carbConsumed} / {carbGoal} g
+                </Text>
+              </View>
+              <View style={styles.nutriDisplay}>
+                <Text style={styles.nutriDisplay_text}>Tuky:</Text>
+                <View style={styles.caloriesBarContainer}>
+                  <View
+                    style={[
+                      styles.caloriesBar,
+                      { width: `${fatBar}%` },
+                      {
+                        backgroundColor: fatBar >= 100 ? "#FF3B30" : "#4CAF50",
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={{ color: "white", marginBottom: 5 }}>
+                  {fatConsumed} / {fatGoal} g
+                </Text>
+              </View>
+            </View>
+            <View style={styles.bmiContainer}>
+              <Text style={{ color: "white", textAlign: "center" }}>{bmiOutput}</Text>
+              <View style={styles.caloriesBarContainer}>
+                <View
+                  style={[
+                    styles.caloriesBar,
+                    { width: `${bmiBar}%` },
+                    {
+                      backgroundColor: bmiBarColor,
+                    },
+                  ]}
+                />
+              </View>
             </View>
           </>
         );
@@ -429,5 +533,22 @@ const styles = StyleSheet.create({
     height: "100%",
     width: 115,
     borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  nutriDisplay_text: {
+    color: "white",
+    alignSelf: "center",
+    marginTop: 10,
+  },
+  bmiContainer: {
+    marginTop: 20,
+    backgroundColor: "#1E1E1E",
+    width: "90%",
+    height: 120,
+    borderRadius: 15,
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
