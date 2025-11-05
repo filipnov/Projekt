@@ -88,7 +88,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
           {/* Forgot password link */}
           <Text
-            onPress={() => Linking.openURL("https://google.com")}
+            onPress={() => navigation.navigate("ForgetPass")}
             style={styles.forget_text}
           >
             Zabudnuté heslo?
