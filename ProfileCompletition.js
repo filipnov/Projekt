@@ -21,11 +21,11 @@ export default function ProfileCompletition() {
   const [height, setHeight] = useState("");
   const [age, setAge] = useState("");
   const [email, setEmail] = useState("");
-  const [gender, setGender] = useState("male"); // "male" alebo "female"
+  const [gender, setGender] = useState("male");
   const [goal, setGoal] = useState("maintain");
+  const [value, setValue] = useState(null);
 
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState([]);
   const [items, setItems] = useState([
     { label: "Žiadna - sedavá", value: 1.2 },
     { label: "Ľahká - 1–3× týždenne", value: 1.375 },
@@ -35,9 +35,6 @@ export default function ProfileCompletition() {
   ]);
 
   const SERVER = "http://10.0.2.2:3000";
-  // "http://172.30.99.111:3000"
-  // "http://10.0.2.2:3000" // Android emulator
-  //"http://localhost:3000"; // iOS simulator
   const UPDATE_URL = `${SERVER}/api/updateProfile`;
 
   useEffect(() => {
@@ -45,6 +42,34 @@ export default function ProfileCompletition() {
       if (value) setEmail(value);
     });
   }, []);
+
+  useEffect(() => {
+    if (!email) return;
+
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(
+          `${SERVER}/api/userProfile?email=${email}`
+        );
+        const data = await response.json();
+
+        if (response.ok) {
+          setWeight(String(data.weight || ""));
+          setHeight(String(data.height || ""));
+          setAge(String(data.age || ""));
+          setGender(data.gender || "male");
+          setGoal(data.goal || "maintain");
+          setValue(data.activityLevel || null);
+        } else {
+          console.warn("Nepodarilo sa načítať profil:", data.error);
+        }
+      } catch (err) {
+        console.error("Chyba pri načítaní profilu:", err);
+      }
+    };
+
+    fetchUserProfile();
+  }, [email]);
 
   async function handleCompletion() {
     if (
@@ -83,9 +108,6 @@ export default function ProfileCompletition() {
       const data = await resp.json().catch(() => ({}));
 
       if (resp.ok) {
-        setWeight("");
-        setHeight("");
-        setAge("");
         Alert.alert("Úspech", "Údaje boli uložené ✅");
         navigation.reset({
           index: 0,
@@ -107,21 +129,21 @@ export default function ProfileCompletition() {
         </Pressable>
         <Text style={styles.header}>Uprav svoj profil</Text>
 
-        <Text style={styles.label}>Váha (kg):</Text>
-        <TextInput
-          placeholder="kg"
-          style={styles.input}
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="numeric"
-        />
-
         <Text style={styles.label}>Výška (cm):</Text>
         <TextInput
           placeholder="cm"
           style={styles.input}
           value={height}
           onChangeText={setHeight}
+          keyboardType="numeric"
+        />
+
+        <Text style={styles.label}>Váha (kg):</Text>
+        <TextInput
+          placeholder="kg"
+          style={styles.input}
+          value={weight}
+          onChangeText={setWeight}
           keyboardType="numeric"
         />
 
@@ -160,7 +182,6 @@ export default function ProfileCompletition() {
         <View>
           <Text style={styles.label}>Úroveň aktivity:</Text>
           <DropDownPicker
-            multiple={false} // umožní vybrať viac položiek
             open={open}
             value={value}
             items={items}
@@ -193,6 +214,7 @@ export default function ProfileCompletition() {
         >
           <Text style={styles.genderText}>Udržať sa</Text>
         </Pressable>
+
         <Pressable
           onPress={() => setGoal("gain")}
           style={[
