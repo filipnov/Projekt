@@ -37,6 +37,7 @@ export default function Dashboard({ setIsLoggedIn }) {
   const [height, setHeight] = useState(null);
   const [gender, setGender] = useState(null);
   const [activityLevel, setActivityLevel] = useState(null);
+  const [goal, setGoal] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function Dashboard({ setIsLoggedIn }) {
           setWeight(data.weight);
           setHeight(data.height);
           setGender(data.gender);
+          setGoal(data.goal);
           setActivityLevel(data.activityLevel);
         } else {
           console.log("Chyba pri načítaní profilu:", data.error);
@@ -81,6 +83,14 @@ export default function Dashboard({ setIsLoggedIn }) {
       womanFormula =
         (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
       caloriesGoal = womanFormula.toFixed(0);
+    }
+
+    if (goal === "lose") {
+      caloriesGoal = Number(caloriesGoal) - 500;
+    } else if (goal === "gain") {
+      caloriesGoal = Number(caloriesGoal) + 500;
+    } else {
+      caloriesGoal = Number(caloriesGoal);
     }
 
     caloriesConsumed = 500;
@@ -116,12 +126,21 @@ export default function Dashboard({ setIsLoggedIn }) {
     if (bmi < 18.5) {
       bmiOutput = `BMI: ${bmi} \nPodváha`;
       bmiBarColor = "#2196F3";
-    } else if (bmi >= 18.5 && bmi < 24.9) {
+    } else if (bmi < 25) {
       bmiOutput = `BMI: ${bmi} \nNormálna váha`;
       bmiBarColor = "#4CAF50";
-    } else if (bmi >= 25 && bmi < 29.9) {
+    } else if (bmi < 30) {
       bmiOutput = `BMI: ${bmi} \nNadváha`;
       bmiBarColor = "#FF9800";
+    } else if (bmi < 35) {
+      bmiOutput = `BMI: ${bmi} \nObezita (I. stupeň)`;
+      bmiBarColor = "#FF3B30";
+    } else if (bmi < 40) {
+      bmiOutput = `BMI: ${bmi} \nObezita (II. stupeň)`;
+      bmiBarColor = "#D32F2F";
+    } else {
+      bmiOutput = `BMI: ${bmi} \nObezita (III. stupeň) — ťažká obezita`;
+      bmiBarColor = "#B00020";
     }
 
     bmiBar = ((bmi / 40) * 100).toFixed(0); // Assuming 40 as max BMI for bar representation
@@ -147,8 +166,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     bmi,
     bmiOutput,
     bmiBar,
-    bmiBarColor
-  ;
+    bmiBarColor;
 
   let currentDate = Date.now();
 
@@ -232,7 +250,9 @@ export default function Dashboard({ setIsLoggedIn }) {
               </View>
             </View>
             <View style={styles.bmiContainer}>
-              <Text style={{ color: "white", textAlign: "center" }}>{bmiOutput}</Text>
+              <Text style={{ color: "white", textAlign: "center" }}>
+                {bmiOutput}
+              </Text>
               <View style={styles.caloriesBarContainer}>
                 <View
                   style={[
@@ -268,11 +288,6 @@ export default function Dashboard({ setIsLoggedIn }) {
             >
               <Text>Logout</Text>
             </Pressable>
-            <Pressable
-              onPress={() => navigation.navigate("ProfileCompletition")}
-            >
-              <Text>Finishment</Text>
-            </Pressable>
           </>
         );
 
@@ -287,7 +302,9 @@ export default function Dashboard({ setIsLoggedIn }) {
       <View style={styles.topBar}>
         <Image source={logo} style={styles.topBar_img} />
         <Text style={styles.topBar_text}>Ahoj {nick}</Text>
-        <Image source={account} style={styles.topBar_img} />
+        <Pressable onPress={() => navigation.navigate("ProfileCompletition")}>
+          <Image source={account} style={styles.topBar_img} />
+        </Pressable>
       </View>
 
       {/*Content container*/}

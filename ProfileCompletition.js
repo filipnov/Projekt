@@ -1,3 +1,4 @@
+// ProfileCompletition.js
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
@@ -21,6 +22,7 @@ export default function ProfileCompletition() {
   const [age, setAge] = useState("");
   const [email, setEmail] = useState("");
   const [gender, setGender] = useState("male"); // "male" alebo "female"
+  const [goal, setGoal] = useState("maintain");
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState([]);
@@ -45,7 +47,13 @@ export default function ProfileCompletition() {
   }, []);
 
   async function handleCompletion() {
-    if (!weight.trim() || !height.trim() || !age.trim()) {
+    if (
+      !weight.trim() ||
+      !height.trim() ||
+      !age.trim() ||
+      !gender.trim() ||
+      !goal.trim()
+    ) {
       Alert.alert("Prosím vyplň všetky polia!");
       return;
     }
@@ -62,6 +70,7 @@ export default function ProfileCompletition() {
       age: Number(age.trim()),
       gender: gender,
       activityLevel: value,
+      goal: goal,
     };
 
     try {
@@ -96,7 +105,7 @@ export default function ProfileCompletition() {
         <Pressable onPress={() => navigation.navigate("Dashboard")}>
           <Image source={arrow} style={styles.arrow} />
         </Pressable>
-        <Text style={styles.header}>Dokončite svoj profil</Text>
+        <Text style={styles.header}>Uprav svoj profil</Text>
 
         <Text style={styles.label}>Váha (kg):</Text>
         <TextInput
@@ -149,6 +158,7 @@ export default function ProfileCompletition() {
         </View>
 
         <View>
+          <Text style={styles.label}>Úroveň aktivity:</Text>
           <DropDownPicker
             multiple={false} // umožní vybrať viac položiek
             open={open}
@@ -160,6 +170,38 @@ export default function ProfileCompletition() {
             placeholder="Vyber aktivitu"
           />
         </View>
+      </View>
+
+      <Text style={styles.label}>Cieľ:</Text>
+      <View style={styles.genderContainer}>
+        <Pressable
+          onPress={() => setGoal("lose")}
+          style={[
+            styles.genderButton,
+            { backgroundColor: goal === "lose" ? "#2196F3" : "#ccc" },
+          ]}
+        >
+          <Text style={styles.genderText}>Chudnúť</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => setGoal("maintain")}
+          style={[
+            styles.genderButton,
+            { backgroundColor: goal === "maintain" ? "#4CAF50" : "#ccc" },
+          ]}
+        >
+          <Text style={styles.genderText}>Udržať sa</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setGoal("gain")}
+          style={[
+            styles.genderButton,
+            { backgroundColor: goal === "gain" ? "#E91E63" : "#ccc" },
+          ]}
+        >
+          <Text style={styles.genderText}>Pribrať</Text>
+        </Pressable>
       </View>
 
       <Pressable style={styles.button} onPress={handleCompletion}>

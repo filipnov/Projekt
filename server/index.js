@@ -87,7 +87,8 @@ async function start() {
   app.post("/api/updateProfile", async (req, res) => {
     console.log("REQ BODY:", req.body); // debug log
     try {
-      const { email, weight, height, age, gender, activityLevel } = req.body;
+      const { email, weight, height, age, gender, activityLevel, goal } =
+        req.body;
 
       if (!email || isNaN(weight) || isNaN(height) || isNaN(age) || !gender) {
         return res.status(400).json({ error: "Invalid or missing fields" });
@@ -105,6 +106,7 @@ async function start() {
             age: Number(age),
             gender: gender,
             activityLevel: activityLevel,
+            goal: goal,
             updatedAt: new Date(),
           },
         }
@@ -138,6 +140,7 @@ async function start() {
         weight: user.weight,
         height: user.height,
         gender: user.gender,
+        goal: user.goal,
         activityLevel: user.activityLevel,
       });
     } catch (err) {
