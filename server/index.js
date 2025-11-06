@@ -3,6 +3,16 @@ import express from "express";
 import cors from "cors";
 import { MongoClient } from "mongodb";
 import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
+import path from "path";
+dotenv.config({ path: path.resolve("./server/.env") });
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+
+
 
 const app = express();
 app.use(cors());
@@ -148,6 +158,109 @@ async function start() {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+  // ------------------FORGOT PASSWORD ------------------
+    app.post("/api/forgot-password", async (req, res) => {
+      try{
+
+        const { email } = req.body;
+        if (!email){
+          return res.status(400).json({ error: "Email required!"});
+        }
+
+        const user = await users.findOne({ email });
+        if (!user) {
+          return res.status(404).json({ error: "User not found!"});
+        }
+
+        //Generate reset token
+        const token = crypto.randomBytes(32).toString("hex");
+        const expiresAt = Date.now() + 15 * 60 * 1000;
+
+        //Save token to user document
+        await users.updateOne(
+          { email },
+          { $set: { resetToken: token, resetTokenExpires: expiresAt } }
+        );
+
+        console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
+        //Setup nodemailer
+        const transporter = nodemailer.createTransport({
+          host: "smtp.gmail.com",
+          port: 465,
+          secure: true,
+          auth:{
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        });
+
+        //Build reset link
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+        //Send email
+        await transporter.sendMail({
+          from: `"Socka" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: "Password Reset Request",
+          html: `
+          <p> You requestet to reset your password </p>
+          <p>Click the link below to reset password (expires in 15 minutes):</p>
+          <a href="${resetLink}">${resetLink}</a>
+          `,
+        });
+
+        res.json({ ok: true, message: "Reset link sent to email. "});
+      }
+      catch (err){
+        console.error("Forgot password error: ", err);
+        res.status(500).json({ error: "Server error "});
+      }
+    });
+
+
+     // ------------------RESET PASSWORD ------------------
+     app.post("/api/reset-password", async (req, res) => {
+      try{
+        const { token, newPassword } = req.body;
+
+         console.log("🔹 Reset Password Request Body:", req.body); // debug
+
+        if (!token || !newPassword){
+           console.warn("⚠️ Missing token or password");
+          return res.status(400).json({ error: "Missing token or password "});
+        }
+
+        const user = await users.findOne({
+            resetToken: token,
+            resetTokenExpires: { $gt: Date.now() },
+        });
+
+        console.log("🔹 User found with token:", user); // debug
+        if (!user){
+          console.warn("⚠️ Invalid or expired token");
+          return res.status(400).json({ error: "Invalid or expired token" });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);  
+
+        await users.updateOne(
+          { email: user.email },
+          {
+            $set: { password: hashedPassword },
+            $unset: { resetToken: "", resetTokenExpires: ""},
+          }
+        );
+        console.log("✅ Password reset successful for user:", user.email); // debug
+        res.json({ ok:true, message: "Password reset succesful." });
+      }
+      catch (err) {
+        console.error("Reset password error: ", err);
+        res.status(500).json({ error: "Server error "});
+      }
+     });
+
 
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>

@@ -1,5 +1,5 @@
 // RegistrationScreen.js
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -13,50 +13,77 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
+import * as Linking from "expo-linking";
 
 
 
 
-
-export default function PasswordForgetScreen() {
+export default function ResetPasswordScreen({ route }) {
   const navigation = useNavigation();
 
-    const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [token, setToken] = useState("");
 
-    const handleForgot = async () => {
-      try{
-        const res = await fetch("http://10.0.2.2:3000/api/forgot-password", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email }),
-    });
-
-    const data = await res.json();
-    if (data.ok) {
-      Alert.alert("Succes", "Check your email for reset link! ");
+  useEffect(() => {
+    //Get token from route params or deep link
+    const params = route.params || {};
+    if (params.token) {
+      setToken(params.token);
     }
     else{
-      Alert.alert("Error", data.error);
+      // fallback: parse initial URL
+      Linking.getInitialURL().then(url => {
+        if (url){
+          const parsed = Linking.parse(url);
+          if (parsed.queryParams?.token){
+            setToken(parsed.queryParams.token);
+          }
+        }
+      });
     }
-      }
-      catch (err){
-        Alert.alert("Error", "Something went wrong");
-        console.error(err);
-      }
-    };
+  }, []);
 
-   
+   const handleReset = async () => {
+    if(!newPassword) {
+      return Alert.alert("Error", "Enter new password");
+    }
+
+    try{
+      const res = await fetch("http://10.0.2.2:3000/api/reset-password", {
+        method: "POST",
+        headers: {"Content-Type" : "application/json" },
+        body: JSON.stringify({ token, newPassword }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok){
+        Alert.alert("Succes", "Password has been reset");
+      }
+      else{
+        Alert.alert("Error", data.error);
+      }
+    }
+
+    catch (err){
+      Alert.alert("Error", "Something went wrong");
+      console.error(err);
+    }
+
+   }
 
   return (
     <View style={styles.layout}>
       <View style={styles.image}>
 
         <View style={styles.container}>
-          <TextInput placeholder="e-mail"
-                     value={email}
-                     onChangeText={setEmail}
+          <TextInput  placeholder="New Password"
+        secureTextEntry
+        value={newPassword}
+        onChangeText={setNewPassword}
+        style={styles.input}
                      ></TextInput>
-          <Pressable onPress={handleForgot}><Text>Resetovat heslo</Text></Pressable>
+          <Pressable onPress={handleReset}><Text>Resetovat heslo</Text></Pressable>
         </View>
 
         <Pressable onPress={() => navigation.navigate("HomeScreen")}>

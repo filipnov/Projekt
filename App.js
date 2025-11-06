@@ -5,6 +5,7 @@ import HomeScreen from './HomeScreen';
 import RegistrationScreen from './RegistrationScreen';
 import Dashboard from './Dashboard';
 import ForgetPass from "./ForgetPass";
+import ResetPass from "./ResetPass";
 import ProfileCompletition from './ProfileCompletition';    
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -24,6 +25,7 @@ return ( <NavigationContainer>
 {(props) => <Dashboard {...props} setIsLoggedIn={setIsLoggedIn} />}
 </Stack.Screen>
 <Stack.Screen name="ForgetPass" component={ForgetPass}></Stack.Screen>
+<Stack.Screen name="ResetPass" component={ResetPass}></Stack.Screen>
 <Stack.Screen name="ProfileCompletition">
 {(props) => <ProfileCompletition {...props} setIsLoggedIn={setIsLoggedIn} />}
 </Stack.Screen>
