@@ -145,7 +145,15 @@ export default function Dashboard({ setIsLoggedIn }) {
 
     bmiBar = ((bmi / 40) * 100).toFixed(0); // Assuming 40 as max BMI for bar representation
   } else {
-    eatOutput = "Doplň svoj profil pre výpočet denného kalorického cieľa.";
+    eatOutput = "Dokonči svoj profil pre výpočet kalórií.";
+    eatenOutput = "— / — kcal";
+    fatConsumed = "—";
+    proteinConsumed = "—";
+    proteinGoal = "—";
+    carbConsumed = "—";
+    carbGoal = "—";
+    fatGoal = "—";
+    bmiOutput = "Dokonči svoj profil pre výpočet BMI.";
   }
 
   let eatOutput,
@@ -166,7 +174,16 @@ export default function Dashboard({ setIsLoggedIn }) {
     bmi,
     bmiOutput,
     bmiBar,
-    bmiBarColor;
+    bmiBarColor,
+    fiberGoal,
+    fiberConsumed,
+    fiberBar,
+    sugarGoal,
+    sugarConsumed,
+    sugarBar,
+    saltGoal,
+    saltConsumed,
+    saltBar;
 
   let currentDate = Date.now();
 
@@ -195,60 +212,128 @@ export default function Dashboard({ setIsLoggedIn }) {
                 {new Date(currentDate).toLocaleDateString()}
               </Text>
             </View>
+
             <View style={styles.nutriDisplay_container}>
-              <View style={styles.nutriDisplay}>
-                <Text style={styles.nutriDisplay_text}>Proteíny:</Text>
-                <View style={styles.caloriesBarContainer}>
-                  <View
-                    style={[
-                      styles.caloriesBar,
-                      { width: `${proteinBar}%` },
-                      {
-                        backgroundColor:
-                          proteinBar >= 100 ? "#FF3B30" : "#4CAF50",
-                      },
-                    ]}
-                  />
+              {/* prvý riadok (bielkoviny, sacharidy, tuky) */}
+              <View style={{ flexDirection: "row" }}>
+                <View style={styles.nutriDisplay}>
+                  <Text style={styles.nutriDisplay_text}>Bielkoviny:</Text>
+                  <View style={styles.caloriesBarContainer}>
+                    <View
+                      style={[
+                        styles.caloriesBar,
+                        { width: `${proteinBar}%` },
+                        {
+                          backgroundColor:
+                            proteinBar >= 100 ? "#FF3B30" : "#4CAF50",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={{ color: "white", marginBottom: 5 }}>
+                    {proteinConsumed} / {proteinGoal} g
+                  </Text>
                 </View>
-                <Text style={{ color: "white", marginBottom: 5 }}>
-                  {proteinConsumed} / {proteinGoal} g
-                </Text>
+
+                <View style={styles.nutriDisplay}>
+                  <Text style={styles.nutriDisplay_text}>Sacharidy:</Text>
+                  <View style={styles.caloriesBarContainer}>
+                    <View
+                      style={[
+                        styles.caloriesBar,
+                        { width: `${carbBar}%` },
+                        {
+                          backgroundColor:
+                            carbBar >= 100 ? "#FF3B30" : "#4CAF50",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={{ color: "white", marginBottom: 5 }}>
+                    {carbConsumed} / {carbGoal} g
+                  </Text>
+                </View>
+
+                <View style={styles.nutriDisplay}>
+                  <Text style={styles.nutriDisplay_text}>Tuky:</Text>
+                  <View style={styles.caloriesBarContainer}>
+                    <View
+                      style={[
+                        styles.caloriesBar,
+                        { width: `${fatBar}%` },
+                        {
+                          backgroundColor:
+                            fatBar >= 100 ? "#FF3B30" : "#4CAF50",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={{ color: "white", marginBottom: 5 }}>
+                    {fatConsumed} / {fatGoal} g
+                  </Text>
+                </View>
               </View>
-              <View style={styles.nutriDisplay}>
-                <Text style={styles.nutriDisplay_text}>Sacharidy:</Text>
-                <View style={styles.caloriesBarContainer}>
-                  <View
-                    style={[
-                      styles.caloriesBar,
-                      { width: `${carbBar}%` },
-                      {
-                        backgroundColor: carbBar >= 100 ? "#FF3B30" : "#4CAF50",
-                      },
-                    ]}
-                  />
+
+              <View style={{ flexDirection: "row" }}>
+                <View style={styles.nutriDisplay}>
+                  <Text style={styles.nutriDisplay_text}>Vláknina:</Text>
+                  <View style={styles.caloriesBarContainer}>
+                    <View
+                      style={[
+                        styles.caloriesBar,
+                        { width: `${fiberBar}%` },
+                        {
+                          backgroundColor:
+                            fiberBar >= 100 ? "#FF3B30" : "#4CAF50",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={{ color: "white", marginBottom: 5 }}>
+                    {fiberConsumed} / {fiberGoal} g
+                  </Text>
                 </View>
-                <Text style={{ color: "white", marginBottom: 5 }}>
-                  {carbConsumed} / {carbGoal} g
-                </Text>
-              </View>
-              <View style={styles.nutriDisplay}>
-                <Text style={styles.nutriDisplay_text}>Tuky:</Text>
-                <View style={styles.caloriesBarContainer}>
-                  <View
-                    style={[
-                      styles.caloriesBar,
-                      { width: `${fatBar}%` },
-                      {
-                        backgroundColor: fatBar >= 100 ? "#FF3B30" : "#4CAF50",
-                      },
-                    ]}
-                  />
+
+                <View style={styles.nutriDisplay}>
+                  <Text style={styles.nutriDisplay_text}>Soľ:</Text>
+                  <View style={styles.caloriesBarContainer}>
+                    <View
+                      style={[
+                        styles.caloriesBar,
+                        { width: `${saltBar}%` },
+                        {
+                          backgroundColor:
+                            saltBar >= 100 ? "#FF3B30" : "#4CAF50",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={{ color: "white", marginBottom: 5 }}>
+                    {saltConsumed} / {saltGoal} g
+                  </Text>
                 </View>
-                <Text style={{ color: "white", marginBottom: 5 }}>
-                  {fatConsumed} / {fatGoal} g
-                </Text>
+
+                <View style={styles.nutriDisplay}>
+                  <Text style={styles.nutriDisplay_text}>Cukry:</Text>
+                  <View style={styles.caloriesBarContainer}>
+                    <View
+                      style={[
+                        styles.caloriesBar,
+                        { width: `${sugarBar}%` },
+                        {
+                          backgroundColor:
+                            sugarBar >= 100 ? "#FF3B30" : "#4CAF50",
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={{ color: "white", marginBottom: 5 }}>
+                    {sugarConsumed} / {sugarGoal} g
+                  </Text>
+                </View>
               </View>
             </View>
+
             <View style={styles.bmiContainer}>
               <Text style={{ color: "white", textAlign: "center" }}>
                 {bmiOutput}
@@ -522,11 +607,12 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginBottom: 27,
   },
+  // change percent height to fixed px for reliable rendering
   caloriesBarContainer: {
     backgroundColor: "white",
     overflow: "hidden",
     width: "90%",
-    height: "8%",
+    height: 12,
     alignItems: "center",
     marginBottom: 15,
     borderRadius: 10,
@@ -538,20 +624,21 @@ const styles = StyleSheet.create({
   },
   nutriDisplay_container: {
     width: "90%",
-    height: 90,
     alignSelf: "center",
-    marginTop: 30,
+    alignItems: "center",
+    marginTop: 5,
     borderRadius: 15,
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
+    paddingVertical: 8,
   },
   nutriDisplay: {
     backgroundColor: "#1E1E1E",
-    height: "100%",
+    height: 100,
     width: 115,
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
+    margin: 5,
   },
   nutriDisplay_text: {
     color: "white",
@@ -559,7 +646,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   bmiContainer: {
-    marginTop: 20,
+    marginTop: 5,
     backgroundColor: "#1E1E1E",
     width: "90%",
     height: 120,
