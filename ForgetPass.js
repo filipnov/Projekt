@@ -50,16 +50,27 @@ export default function PasswordForgetScreen() {
   return (
     <View style={styles.layout}>
       <View style={styles.image}>
-
+            <Image style={styles.avatar} source={logo} />
         <View style={styles.container}>
+          <Text style={styles.text}>Zabudli ste heslo?</Text>
+          <Text style={styles.info_text}
+          >Zadajte do polia nižšie e-mail použitý na registráciu
+           a my Vám pošleme odkaz na zresetovanie vásho hesla.
+           </Text>
           <TextInput placeholder="e-mail"
                      value={email}
                      onChangeText={setEmail}
+                     style={styles.input}
                      ></TextInput>
-          <Pressable onPress={handleForgot}><Text>Resetovat heslo</Text></Pressable>
+          <Pressable style={({pressed}) => 
+                     pressed ? styles.button_pressed : styles.button}
+                     onPress={handleForgot}>
+          <Text style={styles.button_text}>Poslať link</Text>
+          </Pressable>
         </View>
 
-        <Pressable onPress={() => navigation.navigate("HomeScreen")}>
+        <Pressable style={({pressed}) => 
+          pressed ? styles.arrow_pressed : styles.arrow_container} onPress={() => navigation.navigate("HomeScreen")}>
           <Image source={arrow} style={styles.arrow} />
         </Pressable>
       </View>
@@ -87,28 +98,36 @@ const styles = StyleSheet.create({
      height: 200,
     width: 200,
     marginBottom: 20,
-    ckgroundColor: "white",
+    backgroundColor: "white",
     borderRadius: 20,
   },
+  arrow_container: {
+    height: 60,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40
+  },
   arrow: {
-    height: 50,
-    width: 50,
+    height: "100%",
+    width: "100%",
     backgroundColor: "white",
-    borderRadius: 50,
-    marginTop: 30,
+    borderRadius: 50
   },
   arrow_pressed: {
-    height: 50,
-    width: 50,
-    backgroundColor: "white",
-    borderRadius: 50,
-    marginTop: 30,
+    height: 58,
+    width: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
     opacity: 0.8
   },
   text: {
-   fontSize: 50,
+   fontSize: 38,
     fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)"
+    color: "hsla(0, 0%, 15%, 1.00)",
+    marginTop: 15,
+    marginBottom: 15
   },
   container: {
     backgroundColor: "hsla(0, 0%, 100%, 0.65)",
@@ -116,10 +135,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 2,
     borderColor: "white",
-    height: 500,
+    height: 360,
     width: 340,
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    marginTop: 15
   },
   input: {
      backgroundColor: "white",
@@ -131,16 +151,18 @@ const styles = StyleSheet.create({
     borderColor: "black",
     borderWidth: 1,
     marginTop: 5,
+    marginBottom: 15,
     textAlign: "center",
-    elevation: 6,
+    elevation: 6
   },
   info_text: {
-    fontWeight: "800",
-    fontSize: 14,
+    fontWeight: "600",
+    fontSize: 17,
     marginTop: 5,
     alignSelf: "flex-start",
-    marginLeft: 40,
-    color: "hsla(0, 0%, 15%, 1.00)"
+    textAlign: "leftr",
+    color: "hsla(0, 0%, 15%, 1.00)",
+    marginBottom: 20
   },
   button: {
     backgroundColor: "hsla(129, 56%, 43%, 1)",

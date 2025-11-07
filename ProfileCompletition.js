@@ -124,7 +124,8 @@ export default function ProfileCompletition() {
   return (
     <>
       <View style={styles.inputContainer}>
-        <Pressable onPress={() => navigation.navigate("Dashboard")}>
+        <Pressable style={({pressed}) =>
+        pressed ? styles.arrow_pressed : styles.arrow_container} onPress={() => navigation.navigate("Dashboard")}>
           <Image source={arrow} style={styles.arrow} />
         </Pressable>
         <Text style={styles.header}>Uprav svoj profil</Text>
@@ -193,7 +194,10 @@ export default function ProfileCompletition() {
         </View>
       </View>
 
-      <Text style={styles.label}>Cieľ:</Text>
+      <View style={styles.genderContainer}>
+        <Text style={styles.label}>Cieľ:</Text>
+      </View>
+      
       <View style={styles.genderContainer}>
         <Pressable
           onPress={() => setGoal("lose")}
@@ -235,23 +239,33 @@ export default function ProfileCompletition() {
 
 const styles = StyleSheet.create({
   inputContainer: {
-    margin: 25,
+    marginTop: 50,
+    width: "85%",
+    alignSelf: "center"
   },
   header: {
-    fontSize: 20,
-    fontWeight: "bold",
+   fontSize: 25,
+    fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
   label: {
     marginTop: 10,
     fontSize: 16,
+    fontWeight: "700",
+    color: "hsla(0, 0%, 15%, 1.00)"
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
+    backgroundColor: "white",
+    fontSize: 14,
+    fontWeight: "400",
+    width: 160,
+    height: 40,
     borderRadius: 5,
-    padding: 10,
+    borderColor: "black",
+    borderWidth: 1,
     marginTop: 5,
-    width: "50%",
+    textAlign: "center",
+    elevation: 6,
   },
   button: {
     backgroundColor: "#4CAF50",
@@ -260,22 +274,39 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     width: "50%",
     alignItems: "center",
+    alignSelf: "center"
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
+  arrow_container: {
+    height: 60,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 15
+  },
   arrow: {
-    height: 50,
-    width: 50,
+    height: "100%",
+    width: "100%",
     backgroundColor: "white",
-    borderRadius: 50,
-    marginTop: 10,
+    borderRadius: 50
+  },
+  arrow_pressed: {
+    height: 58,
+    width: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
+    opacity: 0.8
   },
   genderContainer: {
     flexDirection: "row",
+    width: "90%",
     marginTop: 5,
+    alignSelf: "center"
   },
   genderButton: {
     flex: 1,
@@ -287,5 +318,6 @@ const styles = StyleSheet.create({
   genderText: {
     color: "white",
     fontWeight: "bold",
+    fontSize: 15
   },
 });

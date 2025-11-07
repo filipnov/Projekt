@@ -148,7 +148,9 @@ export default function RegistrationScreen() {
           </Pressable>
         </View>
 
-        <Pressable onPress={() => navigation.navigate("HomeScreen")}>
+        <Pressable style={({pressed}) => 
+        pressed ? styles.arrow_pressed : styles.arrow_container} 
+        onPress={() => navigation.navigate("HomeScreen")}>
           <Image source={arrow} style={styles.arrow} />
         </Pressable>
       </View>
@@ -179,19 +181,25 @@ const styles = StyleSheet.create({
     ckgroundColor: "white",
     borderRadius: 20,
   },
+ arrow_container: {
+    height: 60,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40
+  },
   arrow: {
-    height: 50,
-    width: 50,
+    height: "100%",
+    width: "100%",
     backgroundColor: "white",
-    borderRadius: 50,
-    marginTop: 30,
+    borderRadius: 50
   },
   arrow_pressed: {
-    height: 50,
-    width: 50,
-    backgroundColor: "white",
-    borderRadius: 50,
-    marginTop: 30,
+    height: 58,
+    width: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
     opacity: 0.8
   },
   text: {

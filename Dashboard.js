@@ -370,8 +370,11 @@ export default function Dashboard({ setIsLoggedIn }) {
                   routes: [{ name: "HomeScreen" }],
                 });
               }}
+              style={({pressed}) => 
+                pressed ? styles.logout_button_pressed : styles.logout_button}
             >
-              <Text>Logout</Text>
+              <Text
+              style={styles.logout_button_text}>Odhlásiť sa</Text>
             </Pressable>
           </>
         );
@@ -574,11 +577,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   navBar_text: {
-    fontSize: 13,
+    fontSize: 11,
     color: "black",
   },
   navBar_text_pressed: {
-    fontSize: 14,
+    fontSize: 11.5,
     fontWeight: "700",
     color: "black",
   },
@@ -654,5 +657,32 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
+  },
+  logout_button: {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    width: 160,
+    height: 45,
+    borderRadius: 10,
+    marginTop: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+    marginLeft: 15
+  },
+  logout_button_pressed: {
+    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
+    width: 160,
+    height: 45,
+    borderRadius: 10,
+    marginTop: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+     marginLeft: 15
+  },
+  logout_button_text: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "900",
   },
 });
