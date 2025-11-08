@@ -11,7 +11,6 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import background from "./assets/background.png";
 import logo from "./assets/logo.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 

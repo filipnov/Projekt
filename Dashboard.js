@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import logo from "./assets/logo.png";
-import home from "./assets/home.png";
 import plus from "./assets/plus.png";
 import recipes from "./assets/recipe-book.png";
 import setting from "./assets/settings.png";

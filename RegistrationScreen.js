@@ -12,8 +12,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import background from "./assets/background.png";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
 
