@@ -13,21 +13,26 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-return ( <NavigationContainer>
-<Stack.Navigator screenOptions={{ headerShown: false }}>
-<Stack.Screen name="HomeScreen">
-{(props) => <HomeScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
-</Stack.Screen>
-<Stack.Screen name="RegistrationScreen" component={RegistrationScreen} />
-<Stack.Screen name="Dashboard">
-{(props) => <Dashboard {...props} setIsLoggedIn={setIsLoggedIn} />}
-</Stack.Screen>
-<Stack.Screen name="ForgetPass" component={ForgetPass}></Stack.Screen>
-<Stack.Screen name="ResetPass" component={ResetPass}></Stack.Screen>
-<Stack.Screen name="ProfileCompletition">
-{(props) => <ProfileCompletition {...props} setIsLoggedIn={setIsLoggedIn} />}
-</Stack.Screen>
-</Stack.Navigator> </NavigationContainer>
-)}
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="HomeScreen">
+          {(props) => <HomeScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
+        </Stack.Screen>
+        <Stack.Screen name="RegistrationScreen" component={RegistrationScreen} />
+        <Stack.Screen name="Dashboard">
+          {(props) => <Dashboard {...props} setIsLoggedIn={setIsLoggedIn} />}
+        </Stack.Screen>
+        <Stack.Screen name="ForgetPass" component={ForgetPass} />
+        <Stack.Screen name="ResetPass" component={ResetPass} />
+        <Stack.Screen name="ProfileCompletition">
+          {(props) => (
+            <ProfileCompletition {...props} setIsLoggedIn={setIsLoggedIn} />
+          )}
+        </Stack.Screen>
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
