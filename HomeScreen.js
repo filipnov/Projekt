@@ -14,12 +14,16 @@ import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+
 export default function HomeScreen({ setIsLoggedIn }) {
   const navigation = useNavigation();
 
   // State for user input
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+
+
 
   // Handle login process
   async function handleLogin() {
@@ -28,8 +32,10 @@ export default function HomeScreen({ setIsLoggedIn }) {
       return;
     }
 
+
+
     try {
-      const response = await fetch("http://10.0.2.2:3000/api/login", {
+      const response = await fetch(`http://10.0.2.2:3000/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

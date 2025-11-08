@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
 import path from "path";
+
 dotenv.config({ path: path.resolve("./server/.env") });
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
@@ -21,6 +22,9 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const client = new MongoClient(MONGO_URI);
+
+
+
 
 async function start() {
   await client.connect();
