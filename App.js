@@ -8,6 +8,7 @@ import ForgetPass from "./ForgetPass";
 import ResetPass from "./ResetPass";
 import ProfileCompletition from './ProfileCompletition';    
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CameraScreen from './CameraScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -25,6 +26,7 @@ export default function App() {
         <Stack.Screen name="Dashboard">
           {(props) => <Dashboard {...props} setIsLoggedIn={setIsLoggedIn} />}
         </Stack.Screen>
+        <Stack.Screen name="CameraScreen" component={CameraScreen}></Stack.Screen>
         <Stack.Screen name="ForgetPass" component={ForgetPass} />
         <Stack.Screen name="ResetPass" component={ResetPass} />
         <Stack.Screen name="ProfileCompletition">

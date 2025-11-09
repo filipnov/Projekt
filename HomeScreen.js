@@ -33,7 +33,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
     }
 
 
-
+    //192.168.1.107
     try {
       const response = await fetch(`http://10.0.2.2:3000/api/login`, {
         method: "POST",

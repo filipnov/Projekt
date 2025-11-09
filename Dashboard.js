@@ -18,6 +18,7 @@ import account from "./assets/avatar.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 
+
 export default function Dashboard({ setIsLoggedIn }) {
   const navigation = useNavigation();
   const route = useRoute();
@@ -437,7 +438,7 @@ export default function Dashboard({ setIsLoggedIn }) {
             </Text>
           </Pressable>
 
-          <Pressable style={styles.navBar_tab_Add}>
+          <Pressable style={styles.navBar_tab_Add} onPress={() => navigation.navigate("CameraScreen")}>
             <View style={styles.navBar_Add_container}>
               <Image source={plus} style={styles.navBar_Add}></Image>
             </View>
