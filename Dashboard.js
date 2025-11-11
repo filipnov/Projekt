@@ -18,7 +18,6 @@ import account from "./assets/avatar.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 
-
 export default function Dashboard({ setIsLoggedIn }) {
   const navigation = useNavigation();
   const route = useRoute();
@@ -112,14 +111,23 @@ export default function Dashboard({ setIsLoggedIn }) {
     fatGoal = ((caloriesGoal * 0.23) / 9).toFixed(0); //23% of calories from fat
     carbGoal = ((caloriesGoal * 0.65) / 4).toFixed(0); //65% of calories from carbs
     proteinGoal = ((caloriesGoal * 0.13) / 4).toFixed(0); //13% of calories from protein
+    fiberGoal = ((caloriesGoal / 1000) * 14).toFixed(0); //14g of fiber every 1000 kcal
+    sugarGoal = ((caloriesGoal * 0.075) / 4).toFixed(0); //7,5% of calories from sugar
+    saltGoal = 5; //Strictly set by WHO
 
-    fatConsumed = 20;
-    carbConsumed = 300;
     proteinConsumed = 80;
+    carbConsumed = 300;
+    fatConsumed = 20;
+    fiberConsumed = 20;
+    saltConsumed = 4;
+    sugarConsumed = 14;
 
-    fatBar = ((fatConsumed / fatGoal) * 100).toFixed(0);
-    carbBar = ((carbConsumed / carbGoal) * 100).toFixed(0);
     proteinBar = ((proteinConsumed / proteinGoal) * 100).toFixed(0);
+    carbBar = ((carbConsumed / carbGoal) * 100).toFixed(0);
+    fatBar = ((fatConsumed / fatGoal) * 100).toFixed(0);
+    fiberBar = ((fiberConsumed / fiberGoal) * 100).toFixed(0);
+    saltBar = ((saltConsumed / saltGoal) * 100).toFixed(0);
+    sugarBar = ((sugarConsumed / sugarGoal) * 100).toFixed(0);
 
     bmi = ((weight / (height * height)) * 10000).toFixed(1);
 
@@ -183,9 +191,23 @@ export default function Dashboard({ setIsLoggedIn }) {
     sugarBar,
     saltGoal,
     saltConsumed,
-    saltBar;
+    saltBar,
+    mealName;
 
   let currentDate = Date.now();
+
+  const [mealBox, setMealBox] = useState([]);
+
+  function createMealBox() {
+    setMealBox([
+      ...mealBox,
+      { id: Date.now(), width: "100%", name: `Jedlo ${mealBox.length + 1}` },
+    ]);
+  }
+
+  function removeMealBox(id) {
+    setMealBox(mealBox.filter((box) => box.id !== id));
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -357,7 +379,43 @@ export default function Dashboard({ setIsLoggedIn }) {
         return <Text>Tu budu receptyy</Text>;
 
       case 3:
-        return <Text>Tu bude špajza</Text>;
+        return (
+          <>
+            <View style={styles.mealBox}>
+              <Pressable onPress={createMealBox}>
+                <Text
+                  style={{
+                    color: "black",
+                    backgroundColor: "yellow",
+                    borderRadius: 20,
+                    width: "40%",
+                    textAlign: "center",
+                    alignSelf: "center",
+                    padding: 10,
+                    marginTop: 10,
+                  }}
+                >
+                  Pridať jedlo
+                </Text>
+              </Pressable>
+
+              <ScrollView style={styles.mealContainer}>
+                <View style={styles.row}>
+                  {mealBox.map((box) => (
+                    <View key={box.id} style={styles.box}>
+                      <Text style={styles.text}>{box.name}</Text>
+                      <View>
+                        <Pressable onPress={() => removeMealBox(box.id)}>
+                          <Text>Odstrániť</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          </>
+        );
 
       case 4:
         return (
@@ -370,11 +428,11 @@ export default function Dashboard({ setIsLoggedIn }) {
                   routes: [{ name: "HomeScreen" }],
                 });
               }}
-              style={({pressed}) => 
-                pressed ? styles.logout_button_pressed : styles.logout_button}
+              style={({ pressed }) =>
+                pressed ? styles.logout_button_pressed : styles.logout_button
+              }
             >
-              <Text
-              style={styles.logout_button_text}>Odhlásiť sa</Text>
+              <Text style={styles.logout_button_text}>Odhlásiť sa</Text>
             </Pressable>
           </>
         );
@@ -438,7 +496,10 @@ export default function Dashboard({ setIsLoggedIn }) {
             </Text>
           </Pressable>
 
-          <Pressable style={styles.navBar_tab_Add} onPress={() => navigation.navigate("CameraScreen")}>
+          <Pressable
+            style={styles.navBar_tab_Add}
+            onPress={() => navigation.navigate("CameraScreen")}
+          >
             <View style={styles.navBar_Add_container}>
               <Image source={plus} style={styles.navBar_Add}></Image>
             </View>
@@ -667,7 +728,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
-    marginLeft: 15
+    marginLeft: 15,
   },
   logout_button_pressed: {
     backgroundColor: "hsla(129, 56%, 43%, 0.8)",
@@ -678,11 +739,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
-     marginLeft: 15
+    marginLeft: 15,
   },
   logout_button_text: {
     color: "white",
     fontSize: 20,
     fontWeight: "900",
+  } /*
+  mealContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 20,
+    alignSelf: "center",
+  },
+  meal: {
+    alignSelf: "center",
+    backgroundColor: "black",
+    width: "40%",
+    height: 150,
+  },*/,
+  mealContainer: {
+    marginTop: 20,
+    width: "90%",
+    alignSelf: "center",
+  },
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  box: {
+    width: "48%",
+    height: 100,
+    backgroundColor: "green",
+    marginBottom: 10,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
