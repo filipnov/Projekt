@@ -443,7 +443,7 @@ export default function Dashboard({ setIsLoggedIn }) {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       {/* Top bar with logo, nickname, and avatar */}
       <View style={styles.topBar}>
         <Image source={logo} style={styles.topBar_img} />
@@ -456,7 +456,7 @@ export default function Dashboard({ setIsLoggedIn }) {
       {/*Content container*/}
       <View style={styles.contentContainer}>
         {/*Main content*/}
-        <View>{renderContent()}</View>
+        <ScrollView>{renderContent()}</ScrollView>
 
         {/*Nav bar*/}
         <View style={styles.navBar}>
@@ -543,7 +543,7 @@ export default function Dashboard({ setIsLoggedIn }) {
           </Pressable>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -745,19 +745,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 20,
     fontWeight: "900",
-  } /*
-  mealContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 20,
-    alignSelf: "center",
   },
-  meal: {
-    alignSelf: "center",
-    backgroundColor: "black",
-    width: "40%",
-    height: 150,
-  },*/,
   mealContainer: {
     marginTop: 20,
     width: "90%",
