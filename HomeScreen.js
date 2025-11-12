@@ -42,30 +42,32 @@ export default function HomeScreen({ setIsLoggedIn }) {
       });
 
       const data = await response.json();
-
+      
       if (!response.ok) {
         Alert.alert("Chyba", data.error || "Prihlásenie zlyhalo!");
         return;
       }
       setIsLoggedIn(true);
       // Navigate to Dashboard with email and nick
+        await AsyncStorage.setItem("userEmail", email);
+      await AsyncStorage.setItem("userNick", data.user.nick);
       navigation.reset({
         index: 0,
         routes: [
           {
             name: "Dashboard",
-            params: { email: data.user.email, nick: data.user.nick },
+            params: { email: data.user.email},
           },
         ],
       });
-      await AsyncStorage.setItem("userEmail", email);
+    
       Alert.alert("Úspech", "Prihlásenie bolo úspešné!");
     } catch (error) {
       console.error(error);
       Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
     }
   }
-
+  
   return (
     <View style={styles.layout}>
       <View style={styles.image}>
@@ -176,7 +178,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 5,
     textAlign: "center",
-    elevation: 6,
+    elevation: 6
   },
   input_password: {
     backgroundColor: "white",

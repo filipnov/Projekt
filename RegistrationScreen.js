@@ -14,6 +14,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function RegistrationScreen() {
   const navigation = useNavigation();
@@ -46,6 +47,7 @@ export default function RegistrationScreen() {
     }
 
     const body = { email: trimmedEmail, password, nick: trimmedNick };
+    await AsyncStorage.setItem("userNick", trimmedNick);
     setLoading(true);
 
     try {

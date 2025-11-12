@@ -21,9 +21,8 @@ import React, { useEffect, useState } from "react";
 export default function Dashboard({ setIsLoggedIn }) {
   const navigation = useNavigation();
   const route = useRoute();
+  
 
-  // Get the nickname passed via route params, fallback to "User"
-  const { nick } = route.params || { nick: "User" };
 
   // Keep track of which tab is active (1–4)
   const [activeTab, setActiveTab] = useState(1);
@@ -38,6 +37,22 @@ export default function Dashboard({ setIsLoggedIn }) {
   const [activityLevel, setActivityLevel] = useState(null);
   const [goal, setGoal] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [nick, setNick] = useState("User");
+
+  useEffect(() => {
+    async function loadNick(){
+      try{
+      const savedNick = await AsyncStorage.getItem("userNick");
+      if(savedNick){
+        setNick(savedNick);
+      }
+      }
+      catch (error){
+        console.error("Error loading nick: ", error);
+      }
+    }
+    loadNick();
+  }, []);
 
   useEffect(() => {
     async function loadProfile() {
