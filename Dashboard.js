@@ -26,6 +26,11 @@ export default function Dashboard({ setIsLoggedIn }) {
 
   // Keep track of which tab is active (1–4)
   const [activeTab, setActiveTab] = useState(1);
+  useEffect(() => {
+  if (route.params?.startTab) {
+    setActiveTab(route.params.startTab);
+  }
+}, [route.params?.startTab]);
 
   // Function to check if tab is active
   const isActive = (tabIndex) => activeTab === tabIndex;
@@ -225,7 +230,7 @@ export default function Dashboard({ setIsLoggedIn }) {
   }
 
   const renderContent = () => {
-    switch (activeTab) {
+    switch (activeTab) { 
       case 1:
         return (
           <>

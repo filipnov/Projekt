@@ -299,8 +299,8 @@ const styles = StyleSheet.create({
     width: 58,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 40,
-    opacity: 0.8
+    opacity: 0.8,
+    marginBottom: 15
   },
   genderContainer: {
     flexDirection: "row",

@@ -3,14 +3,29 @@ import React, { use, useEffect, useState } from 'react';
 import { View, Text, Button, ViewComponent, StyleSheet, Pressable, Image, TextInput, Alert } from 'react-native';
 import { useNavigation, useRoute } from "@react-navigation/native";
 import arrow from "./assets/left-arrow.png";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function CameraScreen({ navigation }) {
+export default function CameraScreen() {
+  const navigation = useNavigation();
   const [permission, requestPermission] = useCameraPermissions();
   const [showContent, setShowContent] = useState(false);
   const [scanned, setScanned] = useState(false);
   const [code, setCode] = useState("");
 
-  const API_URL = "https://world.openfoodfacts.org/api/v0/product"
+  const API_URL = "https://world.openfoodfacts.org/api/v0/product";
+
+   async function handleAddProduct(product){
+    const email = await AsyncStorage.getItem("userEmail");
+     console.log("📤 Sending product:", product, "for email:", email); // LOG FRONTEND
+    await fetch("http://10.0.2.2:3000/api/addProduct",{
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body :JSON.stringify({ email, product})
+    })
+    const data = await response.json();
+  console.log("📥 Server response:", data);
+  }
+  
 
   async function handleBarCodeScanned({ data, type}){
     if (scanned){
@@ -20,19 +35,22 @@ export default function CameraScreen({ navigation }) {
     console.log("Detected barcode: ", data, "Type: ", type);
 
     try{
-      const response = await fetch(`${API_URL}/${data}.json}`);
+      const response = await fetch(`${API_URL}/${data}.json`);
       const result = await response.json();
 
       if (result.status === 1){
         const product = result.product;
+        handleAddProduct(product.product_name);
         Alert.alert("✅ Produkt nájdený", product.product_name || "Neznámy názov"); 
+        navigation.navigate("Dashboard", {startTab: 3 });
+        
       }
       else{
          Alert.alert("❌ Produkt sa nenašiel", `Kód: ${data}`);
       }
     }
     catch (err){
-     console.error("Chyba pri načítaní produktu:", error);
+     console.error("Chyba pri načítaní produktu:", err);
     Alert.alert("Chyba", "Nepodarilo sa načítať dáta.");
     }
     setTimeout(() => setScanned(false), 3000);
@@ -44,8 +62,11 @@ export default function CameraScreen({ navigation }) {
 
     if(data.status === 1){
         console.log(data.product.product_name); 
+        handleAddProduct(data.product.product_name);
+        Alert.alert("✅ Produkt nájdený", product.product_name || "Neznámy názov"); 
+        navigation.navigate("Dashboard", { startTab: 3 });
       }else{
-        console.log("Product not found.")
+        console.log("Product not found.");
       }
       
     }
@@ -63,6 +84,8 @@ export default function CameraScreen({ navigation }) {
       </View>
     );
   }
+
+ 
 
   const handleShowContent = () => {
     setShowContent(!showContent);

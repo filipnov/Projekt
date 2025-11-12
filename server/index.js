@@ -266,6 +266,47 @@ console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
      });
 
 
+     //-----------------SEND PRODUCTS TO DATABASE ---------------
+     app.post("/api/addProduct", async (req, res) => {
+        console.log("📩 Incoming /api/addProduct request:", req.body); // LOG 1
+      const { email, product } = req.body;
+
+      try{
+        const user = await users.findOne({ email })
+         console.log("👤 Found user:", user ? user.email : "NOT FOUND"); // LOG 
+        if(!user){
+          return res.status(404).json({error: "User not found"});
+        }
+
+        if(!user.products || user.products.length === 0){
+              console.log("🆕 Creating first product array");
+         await users.updateOne(
+        { email },
+        { $set: { products: [product] } }
+      );
+        }else if(user.products.length >= 10){
+          console.log("⚠️ Too many products");
+        return res.status(400).json({ error: "Too many products" });
+        }
+        else{
+            console.log("➕ Pushing product to existing array");
+          await users.updateOne(
+        { email },
+        { $push: { products: product } }
+      );
+        }
+
+        const updatedUser = await users.findOne({email});
+          console.log("✅ Updated user products:", updatedUser.products); // LOG 3
+        res.json({success: true, products: updatedUser.products});
+      }
+      catch (err){
+        console.error("❌ Add product error:", err);
+        res.status(500).json({error: "Server error"});
+      }
+     });
+
+
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
     console.log(`🚀 Server running on http://localhost:${PORT}`)
