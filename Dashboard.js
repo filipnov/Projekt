@@ -21,16 +21,14 @@ import React, { useEffect, useState } from "react";
 export default function Dashboard({ setIsLoggedIn }) {
   const navigation = useNavigation();
   const route = useRoute();
-  
-
 
   // Keep track of which tab is active (1–4)
   const [activeTab, setActiveTab] = useState(1);
   useEffect(() => {
-  if (route.params?.startTab) {
-    setActiveTab(route.params.startTab);
-  }
-}, [route.params?.startTab]);
+    if (route.params?.startTab) {
+      setActiveTab(route.params.startTab);
+    }
+  }, [route.params?.startTab]);
 
   // Function to check if tab is active
   const isActive = (tabIndex) => activeTab === tabIndex;
@@ -44,15 +42,16 @@ export default function Dashboard({ setIsLoggedIn }) {
   const [loading, setLoading] = useState(true);
   const [nick, setNick] = useState("User");
 
+  const [userProducts, setUserProducts] = useState([]);
+
   useEffect(() => {
-    async function loadNick(){
-      try{
-      const savedNick = await AsyncStorage.getItem("userNick");
-      if(savedNick){
-        setNick(savedNick);
-      }
-      }
-      catch (error){
+    async function loadNick() {
+      try {
+        const savedNick = await AsyncStorage.getItem("userNick");
+        if (savedNick) {
+          setNick(savedNick);
+        }
+      } catch (error) {
         console.error("Error loading nick: ", error);
       }
     }
@@ -217,11 +216,96 @@ export default function Dashboard({ setIsLoggedIn }) {
   let currentDate = Date.now();
 
   const [mealBox, setMealBox] = useState([]);
+  const [meal, setMeal] = useState();
 
-  function createMealBox() {
-    setMealBox([
-      ...mealBox,
-      { id: Date.now(), width: "100%", name: `Jedlo ${mealBox.length + 1}` },
+  async function fetchUserProducts() {
+    try {
+      const email = await AsyncStorage.getItem("userEmail");
+      if (!email) {
+        console.log("❌ No email stored!");
+        return [];
+      }
+
+      console.log("📧 Using email:", email);
+
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/getProducts?email=${email}`
+      );
+      const data = await response.json();
+
+      console.log("📦 Raw response from server:", data);
+
+      if (!data.success) {
+        console.log("❌ Server error:", data.error);
+        return [];
+      }
+
+      // uložíme do stavu pre rýchly prístup
+      setUserProducts(data.products || []);
+      return data.products || [];
+    } catch (error) {
+      console.log("⚠️ Fetch error:", error);
+      return [];
+    }
+  }
+
+  // zavoláme fetch raz pri mountnutí, aby sme mali produkty v stave
+  useEffect(() => {
+    fetchUserProducts().catch((err) =>
+      console.log("fetchUserProducts error:", err)
+    );
+  }, []);
+
+  /*
+  async function createMealBox() {
+    const products = await fetchUserProducts();
+    if (!products || products.length === 0) {
+      alert("Zatiaľ si nič nenaskenoval!");
+      return;
+    }
+
+    const index = mealBox.length % products.length;
+    const productName = products[index]?.name ?? `Produkt ${index + 1}`;
+
+    if (mealBox.some((box) => box.name === productName)) {
+      alert("Tento produkt už je v špajzi!");
+      return;
+    }
+
+    setMealBox((prev) => [
+      ...prev,
+      {
+        id: Date.now(),
+        width: "100%",
+        name: productName,
+      },
+    ]);
+  }
+*/
+
+  async function refreshMealBoxes() {
+    const products = await fetchUserProducts();
+    if (!products || products.length === 0) {
+      alert("Ešte si nenaskenoval žiaden produkt");
+      return;
+    }
+
+    const newProducts = products.filter(
+      (p) => !mealBox.some((box) => box.name === p.name)
+    );
+
+    if (newProducts.length === 0) {
+      alert("Všetky produkty už sú v jedálničku!");
+      return;
+    }
+
+    setMealBox((prev) => [
+      ...prev,
+      ...newProducts.map((p) => ({
+        id: Date.now() + Math.random(), // unikátny id
+        width: "100%",
+        name: p.name,
+      })),
     ]);
   }
 
@@ -230,7 +314,7 @@ export default function Dashboard({ setIsLoggedIn }) {
   }
 
   const renderContent = () => {
-    switch (activeTab) { 
+    switch (activeTab) {
       case 1:
         return (
           <>
@@ -402,7 +486,7 @@ export default function Dashboard({ setIsLoggedIn }) {
         return (
           <>
             <View style={styles.mealBox}>
-              <Pressable onPress={createMealBox}>
+              <Pressable onPress={refreshMealBoxes}>
                 <Text
                   style={{
                     color: "black",
@@ -415,7 +499,7 @@ export default function Dashboard({ setIsLoggedIn }) {
                     marginTop: 10,
                   }}
                 >
-                  Pridať jedlo
+                  Obnoviť
                 </Text>
               </Pressable>
 

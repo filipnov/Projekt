@@ -309,6 +309,33 @@ async function start() {
     }
   });
 
+  //PULL from DB
+  app.get("/api/getProducts", async (req, res) => {
+    console.log("📥 Incoming /api/getProducts request:", req.query);
+
+    const { email } = req.query;
+
+    try {
+      const user = await users.findOne({ email });
+      console.log("👤 Found user:", user ? user.email : "NOT FOUND");
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Ak používateľ nemá produkty, vrátime prázdne pole
+      const products = user.products || [];
+
+      console.log("📤 Returning products:", products);
+      res.json({ success: true, products });
+    } catch (err) {
+      console.error("❌ Get products error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  //-----------------------------------------------------
+
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
     console.log(`🚀 Server running on http://localhost:${PORT}`)
