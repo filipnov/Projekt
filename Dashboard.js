@@ -47,12 +47,14 @@ export default function Dashboard({ setIsLoggedIn }) {
 
 
   useEffect(() => {
-    async function loadNick(){
+    async function loadEmailAndNick(){
       try{
       const savedNick = await AsyncStorage.getItem("userNick");
       if(savedNick){
         setNick(savedNick);
       }
+      const savedEmail = await AsyncStorage.getItem("userEmail");
+      if (savedEmail) setEmail(savedEmail);
       }
       catch (error){
         console.error("Error loading nick: ", error);
