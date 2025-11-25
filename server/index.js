@@ -292,7 +292,7 @@ async function start() {
       if (!user.products || user.products.length === 0) {
         console.log("🆕 Creating first product array");
         await users.updateOne({ email }, { $set: { products: [productObj] } });
-      } else if (user.products.length >= 10) {
+      } else if (user.products.length >= 100) {
         console.log("⚠️ Too many products");
         return res.status(400).json({ error: "Too many products" });
       } else {

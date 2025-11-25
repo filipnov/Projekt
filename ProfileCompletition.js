@@ -108,6 +108,22 @@ export default function ProfileCompletition() {
       const data = await resp.json().catch(() => ({}));
 
       if (resp.ok) {
+        try{
+          await AsyncStorage.setItem(
+            "userProfile",
+            JSON.stringify({
+              weight: Number(weight.trim()),
+              height: Number(height.trim()),
+              age: Number(age.trim()),
+              gender,
+              activityLevel: value,
+              goal
+            })
+          );
+        }
+        catch(err){
+          console.error("Error saving profile locally:", err);
+        }
         Alert.alert("Úspech", "Údaje boli uložené ✅");
         navigation.reset({
           index: 0,
@@ -120,6 +136,28 @@ export default function ProfileCompletition() {
       Alert.alert("Network error", err.message);
     }
   }
+
+  const saveProfileLocally = async (profile) =>{
+    try{
+      await AsyncStorage.setItem("userProfile", JSON.stringify(profile));
+    }
+    catch (err){
+      console.error("Error saving profile locally:", err);
+    }
+  }
+
+  useEffect(() => {
+    const profile = {
+      weight: weight ? Number(weight.trim()) : null,
+      height: height ? Number(height.trim()) : null,
+      age: age ? Number(age.trim()) : null,
+      gender,
+      activityLevel: value,
+      goal
+    };
+
+    saveProfileLocally(profile);
+  }, [weight, height, age, gender, value, goal])
 
   return (
     <>

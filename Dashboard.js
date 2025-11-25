@@ -43,54 +43,76 @@ export default function Dashboard({ setIsLoggedIn }) {
   const [goal, setGoal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [nick, setNick] = useState("User");
+  const [email, setEmail] = useState(null);
+
 
   useEffect(() => {
-    async function loadNick(){
+    async function loadEmailAndNick(){
       try{
       const savedNick = await AsyncStorage.getItem("userNick");
       if(savedNick){
         setNick(savedNick);
+      }
+
+       const savedEmail = await AsyncStorage.getItem("userEmail");
+      if (savedEmail) {
+        setEmail(savedEmail);
       }
       }
       catch (error){
         console.error("Error loading nick: ", error);
       }
     }
-    loadNick();
+    loadEmailAndNick();
   }, []);
 
   useEffect(() => {
     async function loadProfile() {
-      try {
-        const email = await AsyncStorage.getItem("userEmail");
-        if (!email) return;
+      try { 
+        const profileString = await AsyncStorage.getItem("userProfile");
 
-        const response = await fetch(
-          `http://10.0.2.2:3000/api/userProfile?email=${email}`
-        );
-        // "http://10.0.2.2:3000" // Android emulator
-        //"http://localhost:3000"; // iOS simulator
-        const data = await response.json();
-
-        if (response.ok) {
+        if (profileString) {
+          const data = JSON.parse(profileString);
           setAge(data.age);
           setWeight(data.weight);
           setHeight(data.height);
           setGender(data.gender);
           setGoal(data.goal);
           setActivityLevel(data.activityLevel);
-        } else {
-          console.log("Chyba pri načítaní profilu:", data.error);
-        }
+          return;
+        } 
       } catch (err) {
-        console.log("Network error:", err);
+        console.log("Chyba pri načítaní profilu z AsyncStorage:", err);
       }
 
-      setLoading(false);
+      try{
+        if (!email) return;
+        const response = await fetch(`http://10.0.2.2/api/userProfile?email=${email}`);
+        const data = await response.json();
+        
+        if (response.ok){
+          setAge(data.age);
+        setWeight(data.weight);
+        setHeight(data.height);
+        setGender(data.gender);
+        setGoal(data.goal);
+        setActivityLevel(data.activityLevel);
+
+        await AsyncStorage.setItem("userProfile", JSON.stringify(data));
+        }else{
+          console.warn("Nepodarilo sa načítať profil zo servera:", data.error);
+        }
+      }
+      catch (err){
+          console.error("Chyba pri načítaní profilu zo servera:", err);
+      }
+      finally{
+        setLoading(false);
+      }
     }
 
     loadProfile();
-  }, []);
+  }, [email]);
 
   let manFormula;
   let womanFormula;

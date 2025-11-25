@@ -55,7 +55,7 @@ export default function CameraScreen() {
         "Email:",
         email
       );
-
+      
       const response = await debugFetch("http://10.0.2.2:3000/api/addProduct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
