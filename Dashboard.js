@@ -274,6 +274,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     fetchUserProducts().catch((err) =>
       console.log("fetchUserProducts error:", err)
     );
+    refreshMealBoxes();
   }, []);
 
   /*
@@ -302,7 +303,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     ]);
   }
 */
-
+  
   async function refreshMealBoxes() {
     const products = await fetchUserProducts();
     if (!products || products.length === 0) {
@@ -329,9 +330,27 @@ export default function Dashboard({ setIsLoggedIn }) {
     ]);
   }
 
-  function removeMealBox(id) {
-    setMealBox(mealBox.filter((box) => box.id !== id));
+ async function removeProduct(productName) {
+try{
+  await fetch("http://10.0.2.2:3000/api/removeProduct", {
+    method: "POST",
+    headers: {"Content-Type" : "application/json"},
+    body: JSON.stringify({
+      email: email,
+      name: productName,
+    })
+  })
+}
+catch (err){
+  console.error("Error removing product:", err);
+}
   }
+function removeMealBox(id) {
+   setMealBox(mealBox.filter((box) => box.id !== id));
+   refreshMealBoxes();
+}
+
+  
 
   const renderContent = () => {
     switch (activeTab) {
@@ -529,7 +548,9 @@ export default function Dashboard({ setIsLoggedIn }) {
                     <View key={box.id} style={styles.box}>
                       <Text style={styles.text}>{box.name}</Text>
                       <View>
-                        <Pressable onPress={() => removeMealBox(box.id)}>
+                        <Pressable onPress={() => {
+                          removeMealBox(box.id)
+                          removeProduct(box.name)}}>
                           <Text>Odstrániť</Text>
                         </Pressable>
                       </View>

@@ -309,6 +309,37 @@ async function start() {
     }
   });
 
+  //REMOVE PRODUCTS FROM DB
+  app.post("/api/removeProduct", async (req, res) => {
+    try{
+      const {email, name} = req.body;
+
+      if (!email || !name){
+        return res.status(400).json({error: "Missing email or product name"});
+      }
+
+      const result = await users.updateOne(
+        { email },
+        { $pull: {products: { name: name}}}
+      );
+
+      if (result.modifiedCount === 0){
+        return res.status(404).json({error: "Product not found"});
+      }
+
+      const updatedUser = await users.findOne({email});
+
+      res.json({
+        succes: true,
+        products: updatedUser.products,
+      });
+    }
+    catch (err){
+       console.error("❌ Remove product error:", err);
+    res.status(500).json({ error: "Server error" });
+    }
+  })
+
   //PULL from DB
   app.get("/api/getProducts", async (req, res) => {
     console.log("📥 Incoming /api/getProducts request:", req.query);
