@@ -290,13 +290,13 @@ async function start() {
       };
 
       if (!user.products || user.products.length === 0) {
-        console.log("🆕 Creating first product array");
+        console.log(" Creating first product array");
         await users.updateOne({ email }, { $set: { products: [productObj] } });
       } else if (user.products.length >= 100) {
-        console.log("⚠️ Too many products");
+        console.log(" Too many products");
         return res.status(400).json({ error: "Too many products" });
       } else {
-        console.log("➕ Pushing product to existing array");
+        console.log(" Pushing product to existing array");
         await users.updateOne({ email }, { $push: { products: productObj } });
       }
 

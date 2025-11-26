@@ -136,7 +136,7 @@ export default function CameraScreen() {
             ? (productInfo.fiber / 100) * weight
             : 0;
 
-          // 🔄 Zaokrúhlenie na jedno desatinné miesto
+          //  Zaokrúhlenie na jedno desatinné miesto
           productInfo.totalCalories = Number(
             productInfo.totalCalories.toFixed(0)
           );
@@ -179,7 +179,6 @@ export default function CameraScreen() {
     }
   }
 
-  // -----------------------------
   // handleBarCodeScanned
   async function handleBarCodeScanned({ data }) {
     if (scanned) return;
@@ -325,7 +324,7 @@ export default function CameraScreen() {
                         : 0,
                     };
 
-                    // 🔄 Zaokrúhlenie pri manuálnom zadaní
+                    // Zaokrúhlenie pri manuálnom zadaní
                     updatedProduct.totalCalories = Number(
                       updatedProduct.totalCalories.toFixed(0)
                     );

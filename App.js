@@ -7,7 +7,6 @@ import Dashboard from './Dashboard';
 import ForgetPass from "./ForgetPass";
 import ResetPass from "./ResetPass";
 import ProfileCompletition from './ProfileCompletition';    
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import CameraScreen from './CameraScreen';
 
 
