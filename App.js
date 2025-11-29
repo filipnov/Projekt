@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './HomeScreen';
 import RegistrationScreen from './RegistrationScreen';
-import Dashboard from './Dashboard';
+import Dashboard from './Dashboard/Dashboard';
 import ForgetPass from "./ForgetPass";
 import ResetPass from "./ResetPass";
 import ProfileCompletition from './ProfileCompletition';    
