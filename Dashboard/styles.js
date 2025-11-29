@@ -211,10 +211,66 @@ export default StyleSheet.create({
   box: {
     width: "48%",
     height: 100,
-    backgroundColor: "green",
+    backgroundColor: "hsla(96, 56%, 35%, 1.00)",
     marginBottom: 10,
-    borderRadius: 10,
-    justifyContent: "center",
+    borderRadius: 5,
+    justifyContent: "space-around",
     alignItems: "center",
+    
   },
+  mealBoxText:{
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "white"
+  },
+  removeBtn:{
+    width: 25,
+    height: 25,
+    borderColor: "black",
+    borderStyle: "solid",
+    borderWidth: 2
+  },
+  mealBoxWindow: {
+    width: "90%",
+    height: 600,
+    backgroundColor: "hsla(96, 31%, 63%, 0.96)",
+    marginBottom: 10,
+    borderRadius: 5,
+    justifyContent: "space-around",
+    alignItems: "center",
+    alignSelf: "center",
+    position: "absolute",
+    marginTop: "50",
+    zIndex: 50
+  },
+  windowContainer: {
+  marginTop: "40%",
+  marginHorizontal: 20,
+  backgroundColor: "white",
+  borderRadius: 15,
+  padding: 20,
+  elevation: 10,
+},
+
+windowTitle: {
+  fontSize: 22,
+  fontWeight: "bold",
+  marginBottom: 15,
+  textAlign: "center",
+},
+
+nutritionRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  paddingVertical: 4,
+},
+
+closeButton: {
+  marginTop: 20,
+  backgroundColor: "#ff4444",
+  padding: 12,
+  borderRadius: 8,
+  alignItems: "center",
+}
+
 });

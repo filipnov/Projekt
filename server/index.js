@@ -365,7 +365,26 @@ async function start() {
     }
   });
 
-  //-----------------------------------------------------
+  //------------ FIND PRODUCT INFO BY NAME ------------------
+  // GET product by name for a user
+app.get("/api/getProductByName", async (req, res) => {
+  try {
+    const { email, name } = req.query;
+    if (!email || !name) return res.status(400).json({ error: "Missing email or product name" });
+
+    const user = await users.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const product = (user.products || []).find((p) => p.name === name);
+    if (!product) return res.status(404).json({ error: "Product not found" });
+
+    res.json({ success: true, product });
+  } catch (err) {
+    console.error("❌ Get product by name error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
