@@ -210,25 +210,21 @@ export default StyleSheet.create({
   },
   box: {
     width: "48%",
-    height: 100,
+    height: 120,
     backgroundColor: "hsla(96, 56%, 35%, 1.00)",
     marginBottom: 10,
     borderRadius: 5,
     justifyContent: "space-around",
-    alignItems: "center",
-    
+    alignItems: "center",    
   },
   mealBoxText:{
-    fontSize: 25,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "white"
+    color: "white",
   },
-  removeBtn:{
-    width: 25,
-    height: 25,
-    borderColor: "black",
-    borderStyle: "solid",
-    borderWidth: 2
+  removeButton:{
+    backgroundColor: "hsla(0, 73%, 60%, 0.96)",
+    padding: 8,
   },
   mealBoxWindow: {
     width: "90%",
