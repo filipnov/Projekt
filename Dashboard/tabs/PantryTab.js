@@ -8,9 +8,9 @@ import MealBoxWindow from "../MealBoxWindow";
 
 export default function PantryTab({ mealBox, removeMealBox, removeProduct, refreshMealBoxes }) {
   const [userEmail, setUserEmail] = useState(null);
-  const [activeBox, setActiveBox] = useState(null); // currently opened box (object)
+  const [activeBox, setActiveBox] = useState(null); 
 
-  // load email from AsyncStorage right away
+  // load email from AsyncStorage 
   useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem("userEmail")
