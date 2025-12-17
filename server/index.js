@@ -39,8 +39,6 @@ async function start() {
       if (!email || !password || !nick) {
         return res.status(400).json({ error: "Missing fields" });
       }
-
-      // Hash the password before saving
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const result = await users.insertOne({
@@ -80,7 +78,7 @@ async function start() {
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
-      // Return user data (without password)
+      // Return user data 
       return res.json({
         ok: true,
         message: "Login successful",
@@ -94,7 +92,7 @@ async function start() {
 
   // ------------------- UPDATE PROFILE -------------------
   app.post("/api/updateProfile", async (req, res) => {
-    console.log("REQ BODY:", req.body); // debug log
+    console.log("REQ BODY:", req.body); 
     try {
       const { email, weight, height, age, gender, activityLevel, goal } =
         req.body;
@@ -221,7 +219,7 @@ async function start() {
     try {
       const { token, newPassword } = req.body;
 
-      console.log("🔹 Reset Password Request Body:", req.body); // debug
+      console.log("🔹 Reset Password Request Body:", req.body);
 
       if (!token || !newPassword) {
         console.warn("⚠️ Missing token or password");
@@ -233,7 +231,7 @@ async function start() {
         resetTokenExpires: { $gt: Date.now() },
       });
 
-      console.log("🔹 User found with token:", user); // debug
+      console.log("🔹 User found with token:", user); 
       if (!user) {
         console.warn("⚠️ Invalid or expired token");
         return res.status(400).json({ error: "Invalid or expired token" });
@@ -248,7 +246,7 @@ async function start() {
           $unset: { resetToken: "", resetTokenExpires: "" },
         }
       );
-      console.log("✅ Password reset successful for user:", user.email); // debug
+      console.log("✅ Password reset successful for user:", user.email); 
       res.json({ ok: true, message: "Password reset succesful." });
     } catch (err) {
       console.error("Reset password error: ", err);
@@ -279,8 +277,8 @@ async function start() {
       }
 
       const productObj = {
-        name: product, // názov produktu
-        totalCalories: totalCalories ?? null, // pridáme kalórie
+        name: product, 
+        totalCalories: totalCalories ?? null, 
         totalProteins: totalProteins ?? null,
         totalCarbs: totalCarbs ?? null,
         totalFat: totalFat ?? null,
@@ -366,7 +364,7 @@ async function start() {
   });
 
   //------------ FIND PRODUCT INFO BY NAME ------------------
-  // GET product by name for a user
+  
 app.get("/api/getProductByName", async (req, res) => {
   try {
     const { email, name } = req.query;

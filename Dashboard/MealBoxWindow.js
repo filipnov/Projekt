@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
-const SERVER_URL = "http://10.0.2.2:3000"; // <<=== REPLACE with your PC LAN IP
+const SERVER_URL = "http://10.0.2.2:3000"; 
 
 export default function MealBoxWindow({ productName, email, close }) {
   const [loading, setLoading] = useState(true);

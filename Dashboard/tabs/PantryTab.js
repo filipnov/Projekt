@@ -46,9 +46,8 @@ export default function PantryTab({ mealBox, removeMealBox, removeProduct, refre
         </Text>
       </Pressable>
 
-      {/* Modal window rendered when activeBox is set */}
       <Modal visible={!!activeBox} animationType="slide" transparent={true} onRequestClose={closeWindow}>
-        {/* MealBoxWindow will fetch using userEmail + box.name */}
+      
         <MealBoxWindow productName={activeBox?.name} email={userEmail} close={closeWindow} />
       </Modal>
 

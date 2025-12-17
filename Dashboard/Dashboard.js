@@ -9,7 +9,6 @@ import PantryTab from "./tabs/PantryTab";
 import SettingsTab from "./tabs/SettingsTab";
 import styles from "./styles";
 
-// Icons
 import logo from "../assets/logo.png";
 import plus from "../assets/plus.png";
 import recipes from "../assets/recipe-book.png";
@@ -40,7 +39,6 @@ export default function Dashboard({ setIsLoggedIn }) {
   const [mealBox, setMealBox] = useState([]);
   const [currentDate] = useState(Date.now());
 
-  // Overview state
   const [overviewData, setOverviewData] = useState({
     caloriesGoal: 0,
     caloriesConsumed: 500,
@@ -71,7 +69,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     bmiBarColor: "#4CAF50",
   });
 
-  // Load tab if passed via route
+  // Load tab via route
   useEffect(() => {
     if (route.params?.startTab) setActiveTab(route.params.startTab);
   }, [route.params?.startTab]);
