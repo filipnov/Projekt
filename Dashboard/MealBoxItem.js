@@ -24,7 +24,7 @@ export default function MealBoxItem({
           <Text style={styles.mealBoxText}>{box.name}</Text>
 
           <View>
-            <Pressable onPress={() => removeMealBox(box.id, box.name, box)}>
+            <Pressable onPress={() => removeMealBox(box.id)}>
               <Text style={styles.eatenButton}>Zjedené ✅</Text>
             </Pressable>
           </View>

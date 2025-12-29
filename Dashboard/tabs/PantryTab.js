@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, Modal } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import styles from "../styles";
 import MealBoxItem from "../MealBoxItem";
 import MealBoxWindow from "../MealBoxWindow";
@@ -26,10 +27,10 @@ export default function PantryTab({
       const data = await res.json();
       if (data.success) {
         const boxes = data.products.map((p) => ({
-          id: p.name,
+          id: p.productId || p.name,
+          productId: p.productId,
           name: p.name,
           image: p.image,
-
           calories: p.totalCalories || 0,
           proteins: p.totalProteins || 0,
           carbs: p.totalCarbs || 0,
@@ -53,18 +54,35 @@ export default function PantryTab({
       .then((email) => {
         if (mounted && email) {
           setUserEmail(email);
-          fetchMealBoxes(email);
         }
       })
       .catch((err) => console.error("AsyncStorage error:", err));
     return () => (mounted = false);
   }, []);
 
+  // Automatické načítanie produktov pri každom zobrazení tabu
+  useFocusEffect(
+    React.useCallback(() => {
+      if (userEmail) {
+        fetchMealBoxes(userEmail);
+      }
+    }, [userEmail])
+  );
+
   const openWindow = (box) => {
     setActiveBox(box);
   };
 
   const closeWindow = () => setActiveBox(null);
+
+  const handleRemoveMealBox = async (id, productId, box) => {
+    removeMealBox(id, productId, box);
+    setTimeout(() => {
+      if (userEmail) {
+        fetchMealBoxes(userEmail);
+      }
+    }, 300);
+  };
 
   return (
     <View style={styles.mealBox}>
@@ -104,7 +122,9 @@ export default function PantryTab({
             <MealBoxItem
               key={box.id}
               box={box}
-              removeMealBox={(id, name) => removeMealBox(id, name, box)} // pridáme box
+              removeMealBox={(id) =>
+                handleRemoveMealBox(id, box.productId, box)
+              }
               removeProduct={removeProduct}
               openWindow={openWindow}
             />

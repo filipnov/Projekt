@@ -278,6 +278,7 @@ async function start() {
       }
 
       const productObj = {
+        productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: product,
         image: image ?? null,
         totalCalories: totalCalories ?? null,
@@ -312,15 +313,15 @@ async function start() {
   //REMOVE PRODUCTS FROM DB
   app.post("/api/removeProduct", async (req, res) => {
     try {
-      const { email, name } = req.body;
+      const { email, productId } = req.body;
 
-      if (!email || !name) {
-        return res.status(400).json({ error: "Missing email or product name" });
+      if (!email || !productId) {
+        return res.status(400).json({ error: "Missing email or product ID" });
       }
 
       const result = await users.updateOne(
         { email },
-        { $pull: { products: { name: name } } }
+        { $pull: { products: { productId: productId } } }
       );
 
       if (result.modifiedCount === 0) {

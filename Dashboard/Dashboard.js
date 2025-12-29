@@ -161,12 +161,12 @@ export default function Dashboard({ setIsLoggedIn }) {
   }, [eatenTotals]);
 
   // Remove product from server
-  const removeProduct = async (productName) => {
+  const removeProduct = async (productId) => {
     try {
       await fetch("http://10.0.2.2:3000/api/removeProduct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name: productName }),
+        body: JSON.stringify({ email, productId }),
       });
     } catch (err) {
       console.error("Error removing product:", err);
@@ -174,9 +174,9 @@ export default function Dashboard({ setIsLoggedIn }) {
   };
 
   // Remove from mealBox and update eatenTotals
-  const removeMealBox = (id, name, box) => {
+  const removeMealBox = (id, productId, box) => {
     setMealBox(prev => prev.filter(b => b.id !== id));
-    removeProduct(name);
+    removeProduct(productId);
     addEatenValues(box);
   };
 
