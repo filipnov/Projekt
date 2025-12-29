@@ -6,16 +6,55 @@ import styles from "../styles";
 import MealBoxItem from "../MealBoxItem";
 import MealBoxWindow from "../MealBoxWindow";
 
-export default function PantryTab({ mealBox, removeMealBox, removeProduct, refreshMealBoxes }) {
+export default function PantryTab({
+  removeMealBox,
+  removeProduct,
+  addEatenValues,
+}) {
   const [userEmail, setUserEmail] = useState(null);
-  const [activeBox, setActiveBox] = useState(null); 
+  const [mealBoxes, setMealBoxes] = useState([]); // opravené z mealBox
+  const [activeBox, setActiveBox] = useState(null);
 
-  // load email from AsyncStorage 
+  // Funkcia pre načítanie produktov z backendu
+  const fetchMealBoxes = async (email) => {
+    try {
+      const res = await fetch(
+        `http://10.0.2.2:3000/api/getProducts?email=${encodeURIComponent(
+          email
+        )}`
+      );
+      const data = await res.json();
+      if (data.success) {
+        const boxes = data.products.map((p) => ({
+          id: p.name,
+          name: p.name,
+          image: p.image,
+
+          calories: p.totalCalories || 0,
+          proteins: p.totalProteins || 0,
+          carbs: p.totalCarbs || 0,
+          fat: p.totalFat || 0,
+          fiber: p.totalFiber || 0,
+          sugar: p.totalSugar || 0,
+          salt: p.totalSalt || 0,
+        }));
+
+        setMealBoxes(boxes);
+      }
+    } catch (err) {
+      console.error("Error fetching meal boxes:", err);
+    }
+  };
+
+  // načítanie emailu z AsyncStorage a fetchovanie produktov
   useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem("userEmail")
-      .then((e) => {
-        if (mounted && e) setUserEmail(e);
+      .then((email) => {
+        if (mounted && email) {
+          setUserEmail(email);
+          fetchMealBoxes(email);
+        }
       })
       .catch((err) => console.error("AsyncStorage error:", err));
     return () => (mounted = false);
@@ -29,7 +68,7 @@ export default function PantryTab({ mealBox, removeMealBox, removeProduct, refre
 
   return (
     <View style={styles.mealBox}>
-      <Pressable onPress={refreshMealBoxes}>
+      <Pressable onPress={() => userEmail && fetchMealBoxes(userEmail)}>
         <Text
           style={{
             color: "black",
@@ -46,18 +85,26 @@ export default function PantryTab({ mealBox, removeMealBox, removeProduct, refre
         </Text>
       </Pressable>
 
-      <Modal visible={!!activeBox} animationType="slide" transparent={true} onRequestClose={closeWindow}>
-      
-        <MealBoxWindow productName={activeBox?.name} email={userEmail} close={closeWindow} />
+      <Modal
+        visible={!!activeBox}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={closeWindow}
+      >
+        <MealBoxWindow
+          productName={activeBox?.name}
+          email={userEmail}
+          close={closeWindow}
+        />
       </Modal>
 
       <ScrollView style={styles.mealContainer}>
         <View style={styles.row}>
-          {mealBox.map((box) => (
+          {mealBoxes.map((box) => (
             <MealBoxItem
               key={box.id}
               box={box}
-              removeMealBox={removeMealBox}
+              removeMealBox={(id, name) => removeMealBox(id, name, box)} // pridáme box
               removeProduct={removeProduct}
               openWindow={openWindow}
             />

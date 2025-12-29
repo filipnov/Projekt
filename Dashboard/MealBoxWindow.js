@@ -1,8 +1,15 @@
 // MealBoxWindow.js
 import React, { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, Pressable, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Image,
+} from "react-native";
 
-const SERVER_URL = "http://10.0.2.2:3000"; 
+const SERVER_URL = "http://10.0.2.2:3000";
 
 export default function MealBoxWindow({ productName, email, close }) {
   const [loading, setLoading] = useState(true);
@@ -26,7 +33,9 @@ export default function MealBoxWindow({ productName, email, close }) {
       setLoading(true);
       setError(null);
       try {
-        const url = `${SERVER_URL}/api/getProductByName?email=${encodeURIComponent(email)}&name=${encodeURIComponent(productName)}`;
+        const url = `${SERVER_URL}/api/getProductByName?email=${encodeURIComponent(
+          email
+        )}&name=${encodeURIComponent(productName)}`;
         const res = await fetch(url);
         if (!res.ok) {
           const errBody = await res.json().catch(() => ({}));
@@ -69,44 +78,65 @@ export default function MealBoxWindow({ productName, email, close }) {
         ) : (
           <>
             <Text style={localStyles.windowTitle}>{product.name}</Text>
-
+            <Image
+              source={{ uri: product.image }}
+              style={{
+                width: "100%",
+                height: 200,
+                borderRadius: 8,
+                marginBottom: 12,
+              }}
+              resizeMode="cover"
+            />
             <View style={localStyles.nutritionRow}>
-              <Text style={localStyles.label}>Calories</Text>
-              <Text style={localStyles.value}>{product.totalCalories ?? "—"}</Text>
+              <Text style={localStyles.label}>Kalórie</Text>
+              <Text style={localStyles.value}>
+                {product.totalCalories ?? "—"} kcal
+              </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
-              <Text style={localStyles.label}>Protein</Text>
-              <Text style={localStyles.value}>{product.totalProteins ?? "—"} g</Text>
+              <Text style={localStyles.label}>Bielkoviny</Text>
+              <Text style={localStyles.value}>
+                {product.totalProteins ?? "—"} g
+              </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
-              <Text style={localStyles.label}>Carbs</Text>
-              <Text style={localStyles.value}>{product.totalCarbs ?? "—"} g</Text>
+              <Text style={localStyles.label}>Sacharidy</Text>
+              <Text style={localStyles.value}>
+                {product.totalCarbs ?? "—"} g
+              </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
-              <Text style={localStyles.label}>Fat</Text>
+              <Text style={localStyles.label}>Tuky</Text>
               <Text style={localStyles.value}>{product.totalFat ?? "—"} g</Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
-              <Text style={localStyles.label}>Fiber</Text>
-              <Text style={localStyles.value}>{product.totalFiber ?? "—"} g</Text>
+              <Text style={localStyles.label}>Vlákniny</Text>
+              <Text style={localStyles.value}>
+                {product.totalFiber ?? "—"} g
+              </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
-              <Text style={localStyles.label}>Sugar</Text>
-              <Text style={localStyles.value}>{product.totalSugar ?? "—"} g</Text>
+              <Text style={localStyles.label}>Cukry</Text>
+              <Text style={localStyles.value}>
+                {product.totalSugar ?? "—"} g
+              </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
-              <Text style={localStyles.label}>Salt</Text>
-              <Text style={localStyles.value}>{product.totalSalt ?? "—"} g</Text>
+              <Text style={localStyles.label}>Soľ</Text>
+              <Text style={localStyles.value}>
+                {product.totalSalt ?? "—"} g
+              </Text>
             </View>
 
             <Pressable onPress={close} style={localStyles.closeButton}>
-              <Text style={localStyles.closeButtonText}>Close</Text>
+              <Text style={localStyles.closeButtonText}>Zatvoriť</Text>
             </Pressable>
           </>
         )}
@@ -153,7 +183,7 @@ const localStyles = StyleSheet.create({
   },
   closeButton: {
     marginTop: 18,
-    backgroundColor: "#2196F3",
+    backgroundColor: "#hsla(129, 56%, 43%, 1)",
     paddingVertical: 10,
     borderRadius: 8,
     alignItems: "center",
@@ -162,6 +192,7 @@ const localStyles = StyleSheet.create({
     color: "white",
     fontWeight: "700",
   },
+
   title: {
     fontSize: 18,
     textAlign: "center",
@@ -171,5 +202,5 @@ const localStyles = StyleSheet.create({
     color: "red",
     textAlign: "center",
     marginBottom: 10,
-  },
+  }
 });

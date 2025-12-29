@@ -1,6 +1,6 @@
 // MealBoxItem.js
 import React from "react";
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, Pressable, Image, ImageBackground } from "react-native";
 import styles from "./styles";
 import removeBtn from "../assets/remove.png";
 import infoBtn from "../assets/info-icon.jpg";
@@ -14,17 +14,21 @@ export default function MealBoxItem({
   return (
     <>
       <Pressable onPress={() => openWindow(box)} style={styles.box}>
-        <Text style={styles.mealBoxText}>{box.name}</Text>
-        <View>
-          <Pressable
-            onPress={() => {
-              removeMealBox(box.id);
-              removeProduct(box.name);
-            }}
-          >
-            <Text style={styles.removeButton}>Vymazať</Text>
-          </Pressable>
-        </View>
+        <ImageBackground
+          source={{ uri: box.image }}
+          style={{
+            flex: 1,
+            justifyContent: "space-between",
+          }}
+        >
+          <Text style={styles.mealBoxText}>{box.name}</Text>
+
+          <View>
+            <Pressable onPress={() => removeMealBox(box.id, box.name, box)}>
+              <Text style={styles.eatenButton}>Zjedené ✅</Text>
+            </Pressable>
+          </View>
+        </ImageBackground>
       </Pressable>
     </>
   );

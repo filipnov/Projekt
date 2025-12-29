@@ -210,21 +210,23 @@ export default StyleSheet.create({
   },
   box: {
     width: "48%",
-    height: 120,
+    height: 170,
     backgroundColor: "hsla(96, 56%, 35%, 1.00)",
-    marginBottom: 10,
-    borderRadius: 5,
-    justifyContent: "space-around",
-    alignItems: "center",    
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 12,
   },
-  mealBoxText:{
+  mealBoxText: {
+    backgroundColor: "black",
     fontSize: 20,
     fontWeight: "bold",
     color: "white",
+    textAlign: "center",
   },
-  removeButton:{
+  eatenButton: {
     backgroundColor: "hsla(0, 73%, 60%, 0.96)",
     padding: 8,
+    textAlign: "center",
   },
   mealBoxWindow: {
     width: "90%",
@@ -237,36 +239,110 @@ export default StyleSheet.create({
     alignSelf: "center",
     position: "absolute",
     marginTop: "50",
-    zIndex: 50
+    zIndex: 50,
   },
   windowContainer: {
-  marginTop: "40%",
-  marginHorizontal: 20,
-  backgroundColor: "white",
-  borderRadius: 15,
-  padding: 20,
-  elevation: 10,
-},
+    marginTop: "40%",
+    marginHorizontal: 20,
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 20,
+    elevation: 10,
+  },
 
-windowTitle: {
-  fontSize: 22,
-  fontWeight: "bold",
-  marginBottom: 15,
-  textAlign: "center",
-},
+  windowTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 15,
+    textAlign: "center",
+  },
 
-nutritionRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  paddingVertical: 4,
-},
+  nutritionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 4,
+  },
 
-closeButton: {
-  marginTop: 20,
-  backgroundColor: "#ff4444",
-  padding: 12,
-  borderRadius: 8,
-  alignItems: "center",
-}
+  closeButton: {
+    marginTop: 20,
+    backgroundColor: "#ff4444",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  //Recipe
+  recipesContainer: {
+    margin: "auto",
+    width: "95%",
+  },
+  AiInput: {
+    height: 50,
+    margin: 12,
+    borderWidth: 1,
+    padding: 15,
+    borderRadius: 10,
+  },
+  recipeButton: {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    width: 160,
+    height: 50,
+    borderRadius: 10,
+    margin: "auto",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
 
+  //Verified
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    width: "90%",
+    alignSelf: "center",
+    marginTop: 10,
+  },
+  card: {
+    backgroundColor: "green",
+    width: "48%",
+    height: 120,
+    marginBottom: 13,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  cardText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
+    padding: 5,
+    backgroundColor: "black",
+  },
+  imageBackground: {
+    flex: 1,
+  },
+  image: {
+    resizeMode: "cover",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "85%",
+    maxHeight: "95%",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  modalContent: {
+    marginBottom: 16,
+  },
 });

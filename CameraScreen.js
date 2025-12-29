@@ -43,7 +43,8 @@ export default function CameraScreen() {
     totalFat,
     totalFiber,
     totalSalt,
-    totalSugar
+    totalSugar,
+    image
   ) {
     try {
       const email = await AsyncStorage.getItem("userEmail");
@@ -55,7 +56,7 @@ export default function CameraScreen() {
         "Email:",
         email
       );
-      
+
       const response = await debugFetch("http://10.0.2.2:3000/api/addProduct", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,6 +70,7 @@ export default function CameraScreen() {
           totalFiber,
           totalSalt,
           totalSugar,
+          image,
         }),
       });
 
@@ -158,7 +160,8 @@ export default function CameraScreen() {
             productInfo.totalFat,
             productInfo.totalFiber,
             productInfo.totalSalt,
-            productInfo.totalSugar
+            productInfo.totalSugar,
+            productInfo.image
           );
 
           Alert.alert(
@@ -250,7 +253,7 @@ export default function CameraScreen() {
           style={({ pressed }) =>
             pressed ? styles.arrow_pressed : styles.arrow_container
           }
-          onPress={() => navigation.navigate("Dashboard")}
+          onPress={() => navigation.goBack()}
         >
           <Image source={arrow} style={styles.arrow} />
         </Pressable>

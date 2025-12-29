@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, Image, Pressable, ScrollView } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import OverviewTab from "./tabs/OverviewTab";
@@ -33,48 +33,28 @@ export default function Dashboard({ setIsLoggedIn }) {
   const [gender, setGender] = useState(null);
   const [goal, setGoal] = useState(null);
   const [activityLevel, setActivityLevel] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  const [userProducts, setUserProducts] = useState([]);
   const [mealBox, setMealBox] = useState([]);
-  const [currentDate] = useState(Date.now());
-
-  const [overviewData, setOverviewData] = useState({
-    caloriesGoal: 0,
-    caloriesConsumed: 500,
-    progressBar: 0,
-    barColor: "#4CAF50",
-    eatOutput: "",
-    eatenOutput: "",
-    proteinGoal: 0,
-    proteinConsumed: 80,
-    proteinBar: 0,
-    carbGoal: 0,
-    carbConsumed: 300,
-    carbBar: 0,
-    fatGoal: 0,
-    fatConsumed: 20,
-    fatBar: 0,
-    fiberGoal: 0,
-    fiberConsumed: 20,
-    fiberBar: 0,
-    sugarGoal: 0,
-    sugarConsumed: 14,
-    sugarBar: 0,
-    saltGoal: 5,
-    saltConsumed: 4,
-    saltBar: 0,
-    bmiOutput: "",
-    bmiBar: 0,
-    bmiBarColor: "#4CAF50",
+  const [eatenTotals, setEatenTotals] = useState({
+    calories: 0,
+    proteins: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+    sugar: 0,
+    salt: 0,
   });
 
-  // Load tab via route
+  const [overviewData, setOverviewData] = useState({});
+
+  const [currentDate] = useState(Date.now());
+
+  // Load initial tab from route
   useEffect(() => {
     if (route.params?.startTab) setActiveTab(route.params.startTab);
   }, [route.params?.startTab]);
 
-  // Load nick + email
+  // Load nick and email from AsyncStorage
   useEffect(() => {
     async function loadEmailAndNick() {
       try {
@@ -90,21 +70,15 @@ export default function Dashboard({ setIsLoggedIn }) {
     loadEmailAndNick();
   }, []);
 
-  // Load profile for current user
+  // Load user profile
   useEffect(() => {
     if (!email) return;
 
     const loadProfile = async () => {
-      setLoading(true);
       try {
-        // Vymažeme starý profil zo storage, aby sa nezobrazoval
-        await AsyncStorage.removeItem("userProfile");
-
         const response = await fetch(`http://10.0.2.2:3000/api/userProfile?email=${email}`);
         const data = await response.json();
-
         if (response.ok) {
-          await AsyncStorage.setItem("userProfile", JSON.stringify(data));
           setAge(data.age);
           setWeight(data.weight);
           setHeight(data.height);
@@ -112,72 +86,82 @@ export default function Dashboard({ setIsLoggedIn }) {
           setGoal(data.goal);
           setActivityLevel(data.activityLevel);
         } else {
-          console.warn("Nepodarilo sa načítať profil zo servera:", data.error);
-          setAge(null);
-          setWeight(null);
-          setHeight(null);
-          setGender(null);
-          setGoal(null);
-          setActivityLevel(null);
+          console.warn("Failed to load profile:", data.error);
         }
       } catch (err) {
-        console.error("Chyba pri načítaní profilu:", err);
-      } finally {
-        setLoading(false);
+        console.error("Error loading profile:", err);
       }
     };
 
     loadProfile();
   }, [email]);
 
-  // Fetch user products
-  async function fetchUserProducts() {
+  // Fetch user products from server
+  const fetchUserProducts = async () => {
     if (!email) return [];
     try {
       const response = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${email}`);
       const data = await response.json();
       if (!data.success) return [];
-      setUserProducts(data.products || []);
       return data.products || [];
     } catch (err) {
       console.error("Fetch products error:", err);
       return [];
     }
-  }
+  };
 
-  // Load meal boxes
+  // Load mealBox and eatenTotals from AsyncStorage and merge with server data
+  useFocusEffect(
+    useCallback(() => {
+      async function loadStoredData() {
+        try {
+          const storedMealBox = await AsyncStorage.getItem("mealBox");
+          const storedTotals = await AsyncStorage.getItem("eatenTotals");
+
+          if (storedMealBox) setMealBox(JSON.parse(storedMealBox));
+          if (storedTotals) setEatenTotals(JSON.parse(storedTotals));
+
+          // Fetch server products and merge without overwriting local
+          if (email) {
+            const products = await fetchUserProducts();
+            if (products && products.length > 0) {
+              setMealBox((prev) => {
+                const newProducts = products.filter(p => !prev.some(b => b.name === p.name));
+                return [...prev, ...newProducts.map(p => ({
+                  id: Date.now() + Math.random(),
+                  name: p.name,
+                  calories: p.calories || 0,
+                  proteins: p.proteins || 0,
+                  carbs: p.carbs || 0,
+                  fat: p.fat || 0,
+                  fiber: p.fiber || 0,
+                  sugar: p.sugar || 0,
+                  salt: p.salt || 0,
+                  image: p.image || null,
+                }))];
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error loading stored data:", err);
+        }
+      }
+
+      loadStoredData();
+    }, [email])
+  );
+
+  // Save mealBox and eatenTotals to AsyncStorage
   useEffect(() => {
-    fetchUserProducts().then(loadMealBoxes).catch(console.error);
-  }, [email]);
+    AsyncStorage.setItem("mealBox", JSON.stringify(mealBox));
+  }, [mealBox]);
 
-  async function loadMealBoxes(products) {
-    if (!products || products.length === 0) return;
+  useEffect(() => {
+    AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
+  }, [eatenTotals]);
 
-    const newProducts = products.filter((p) => !mealBox.some((box) => box.name === p.name));
-    setMealBox((prev) => [
-      ...prev,
-      ...newProducts.map((p) => ({ id: Date.now() + Math.random(), width: "100%", name: p.name })),
-    ]);
-  }
-
-  async function refreshMealBoxes() {
-    const products = await fetchUserProducts();
-    if (!products || products.length === 0) {
-      alert("Ešte si nenaskenoval žiaden produkt");
-      return;
-    }
-    const newProducts = products.filter((p) => !mealBox.some((box) => box.name === p.name));
-    if (newProducts.length === 0) {
-      alert("Všetky produkty už sú v jedálničku!");
-      return;
-    }
-    setMealBox((prev) => [
-      ...prev,
-      ...newProducts.map((p) => ({ id: Date.now() + Math.random(), width: "100%", name: p.name })),
-    ]);
-  }
-
-  async function removeProduct(productName) {
+  // Remove product from server
+  const removeProduct = async (productName) => {
     try {
       await fetch("http://10.0.2.2:3000/api/removeProduct", {
         method: "POST",
@@ -187,16 +171,35 @@ export default function Dashboard({ setIsLoggedIn }) {
     } catch (err) {
       console.error("Error removing product:", err);
     }
-  }
+  };
 
-  function removeMealBox(id, name) {
-    setMealBox(mealBox.filter((box) => box.id !== id));
+  // Remove from mealBox and update eatenTotals
+  const removeMealBox = (id, name, box) => {
+    setMealBox(prev => prev.filter(b => b.id !== id));
     removeProduct(name);
-  }
+    addEatenValues(box);
+  };
 
-  // Recalculate calories, macros, BMI when profile or consumed data changes
+  const addEatenValues = (box) => {
+    setEatenTotals(prev => {
+      const updated = {
+        calories: prev.calories + (box.calories || 0),
+        proteins: prev.proteins + (box.proteins || 0),
+        carbs: prev.carbs + (box.carbs || 0),
+        fat: prev.fat + (box.fat || 0),
+        fiber: prev.fiber + (box.fiber || 0),
+        sugar: prev.sugar + (box.sugar || 0),
+        salt: prev.salt + (box.salt || 0),
+      };
+      return updated;
+    });
+  };
+
+  // Calculate overview data
   useEffect(() => {
     if (!weight || !height || !age || !activityLevel || !gender) return;
+
+    const { calories, proteins, carbs, fat, fiber, sugar, salt } = eatenTotals;
 
     let cal;
     if (gender === "male") cal = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
@@ -205,17 +208,13 @@ export default function Dashboard({ setIsLoggedIn }) {
     if (goal === "lose") cal -= 500;
     else if (goal === "gain") cal += 500;
 
-    const caloriesConsumed = 500;
-
-    const progressBar = (caloriesConsumed / cal) * 100;
+    const progressBar = Math.min((calories / cal) * 100, 100);
     const barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
 
     let eatOutput = "";
-    if (caloriesConsumed < cal) eatOutput = `Ešte ti chýba ${Math.round(cal - caloriesConsumed)} kcal`;
-    else if (caloriesConsumed === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
-    else eatOutput = `Prekročil/a si svoj denný cieľ o ${Math.round(caloriesConsumed - cal)} kcal`;
-
-    const eatenOutput = `${caloriesConsumed} / ${Math.round(cal)} kcal`;
+    if (calories < cal) eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
+    else if (calories === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
+    else eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
 
     const proteinGoal = ((cal * 0.13) / 4).toFixed(0);
     const carbGoal = ((cal * 0.65) / 4).toFixed(0);
@@ -224,62 +223,52 @@ export default function Dashboard({ setIsLoggedIn }) {
     const sugarGoal = ((cal * 0.075) / 4).toFixed(0);
     const saltGoal = 5;
 
-    const proteinConsumed = 80;
-    const carbConsumed = 300;
-    const fatConsumed = 20;
-    const fiberConsumed = 20;
-    const sugarConsumed = 14;
-    const saltConsumed = 4;
-
-    const proteinBar = ((proteinConsumed / proteinGoal) * 100).toFixed(0);
-    const carbBar = ((carbConsumed / carbGoal) * 100).toFixed(0);
-    const fatBar = ((fatConsumed / fatGoal) * 100).toFixed(0);
-    const fiberBar = ((fiberConsumed / fiberGoal) * 100).toFixed(0);
-    const sugarBar = ((sugarConsumed / sugarGoal) * 100).toFixed(0);
-    const saltBar = ((saltConsumed / saltGoal) * 100).toFixed(0);
+    const proteinBar = (proteins / proteinGoal) * 100;
+    const carbBar = (carbs / carbGoal) * 100;
+    const fatBar = (fat / fatGoal) * 100;
+    const fiberBar = (fiber / fiberGoal) * 100;
+    const sugarBar = (sugar / sugarGoal) * 100;
+    const saltBar = (salt / saltGoal) * 100;
 
     const bmiValue = ((weight / (height * height)) * 10000).toFixed(1);
-    let bmiOutput = "";
-    let bmiBarColor = "#4CAF50";
-    if (bmiValue < 18.5) bmiOutput = `BMI: ${bmiValue} \nPodváha`, bmiBarColor = "#2196F3";
-    else if (bmiValue < 25) bmiOutput = `BMI: ${bmiValue} \nNormálna váha`, bmiBarColor = "#4CAF50";
-    else if (bmiValue < 30) bmiOutput = `BMI: ${bmiValue} \nNadváha`, bmiBarColor = "#FF9800";
-    else if (bmiValue < 35) bmiOutput = `BMI: ${bmiValue} \nObezita (I. stupeň)`, bmiBarColor = "#FF3B30";
-    else if (bmiValue < 40) bmiOutput = `BMI: ${bmiValue} \nObezita (II. stupeň)`, bmiBarColor = "#D32F2F";
-    else bmiOutput = `BMI: ${bmiValue} \nObezita (III. stupeň) — ťažká obezita`, bmiBarColor = "#B00020";
+    let bmiOutput = "", bmiBarColor = "#4CAF50";
+    if (bmiValue < 18.5) { bmiOutput = `BMI: ${bmiValue}\nPodváha`; bmiBarColor = "#2196F3"; }
+    else if (bmiValue < 25) bmiOutput = `BMI: ${bmiValue}\nNormálna váha`;
+    else if (bmiValue < 30) { bmiOutput = `BMI: ${bmiValue}\nNadváha`; bmiBarColor = "#FF9800"; }
+    else { bmiOutput = `BMI: ${bmiValue}\nObezita`; bmiBarColor = "#FF3B30"; }
 
-    const bmiBar = ((bmiValue / 40) * 100).toFixed(0);
+    const bmiBar = (bmiValue / 40) * 100;
 
     setOverviewData({
       caloriesGoal: cal,
-      caloriesConsumed,
+      caloriesConsumed: calories,
       progressBar,
       barColor,
       eatOutput,
-      eatenOutput,
+      eatenOutput: `${Math.round(calories)} / ${Math.round(cal)} kcal`,
       proteinGoal,
-      proteinConsumed,
+      proteinConsumed: proteins,
       proteinBar,
       carbGoal,
-      carbConsumed,
+      carbConsumed: carbs,
       carbBar,
       fatGoal,
-      fatConsumed,
+      fatConsumed: fat,
       fatBar,
       fiberGoal,
-      fiberConsumed,
+      fiberConsumed: fiber,
       fiberBar,
       sugarGoal,
-      sugarConsumed,
+      sugarConsumed: sugar,
       sugarBar,
       saltGoal,
-      saltConsumed,
+      saltConsumed: salt,
       saltBar,
       bmiOutput,
       bmiBar,
       bmiBarColor,
     });
-  }, [weight, height, age, activityLevel, gender, goal]);
+  }, [weight, height, age, activityLevel, gender, goal, eatenTotals]);
 
   const renderContent = () => {
     if (!weight || !height || !age) {
@@ -289,13 +278,7 @@ export default function Dashboard({ setIsLoggedIn }) {
             Vyplň si svoj profil, aby si videl/-a prehľad!
           </Text>
           <Pressable
-            style={{
-              marginTop: 15,
-              backgroundColor: "#4CAF50",
-              paddingHorizontal: 20,
-              paddingVertical: 10,
-              borderRadius: 10,
-            }}
+            style={{ marginTop: 15, backgroundColor: "#4CAF50", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 }}
             onPress={() => navigation.navigate("ProfileCompletition")}
           >
             <Text style={{ color: "#fff", fontWeight: "bold" }}>Vyplniť profil</Text>
@@ -305,21 +288,23 @@ export default function Dashboard({ setIsLoggedIn }) {
     }
 
     switch (activeTab) {
-      case 1:
-        return <OverviewTab {...overviewData} currentDate={currentDate} />;
-      case 2:
-        return <RecipesTab />;
+      case 1: return <OverviewTab {...overviewData} currentDate={currentDate} />;
+      case 2: return <RecipesTab />;
       case 3:
         return <PantryTab
           mealBox={mealBox}
           removeMealBox={removeMealBox}
-          removeProduct={removeProduct}
-          refreshMealBoxes={refreshMealBoxes}
+          refreshMealBoxes={async () => {
+            const products = await fetchUserProducts();
+            if (!products || products.length === 0) return alert("Ešte si nenaskenoval žiaden produkt");
+            const newProducts = products.filter(p => !mealBox.some(b => b.name === p.name));
+            if (newProducts.length === 0) return alert("Všetky produkty už sú v jedálničku!");
+            setMealBox(prev => [...prev, ...newProducts.map(p => ({ id: Date.now() + Math.random(), ...p }))]);
+          }}
+          addEatenValues={addEatenValues}
         />;
-      case 4:
-        return <SettingsTab setIsLoggedIn={setIsLoggedIn} navigation={navigation} />;
-      default:
-        return <Text>Oops, niečo sa pokazilo</Text>;
+      case 4: return <SettingsTab setIsLoggedIn={setIsLoggedIn} navigation={navigation} />;
+      default: return <Text>Oops, niečo sa pokazilo</Text>;
     }
   };
 
@@ -341,24 +326,18 @@ export default function Dashboard({ setIsLoggedIn }) {
             <Image source={speedometer} style={styles.navBar_img} />
             <Text style={[styles.navBar_text, isActive(1) && styles.navBar_text_pressed]}>Prehľad</Text>
           </Pressable>
-
           <Pressable onPress={() => setActiveTab(2)} style={[styles.navBar_tabs, isActive(2) && styles.navBar_tabs_pressed]}>
             <Image source={recipes} style={styles.navBar_img} />
             <Text style={[styles.navBar_text, isActive(2) && styles.navBar_text_pressed]}>Recepty</Text>
           </Pressable>
-
           <Pressable style={styles.navBar_tab_Add} onPress={() => navigation.navigate("CameraScreen")}>
-            <View style={styles.navBar_Add_container}>
-              <Image source={plus} style={styles.navBar_Add} />
-            </View>
+            <View style={styles.navBar_Add_container}><Image source={plus} style={styles.navBar_Add} /></View>
             <Text style={styles.navBar_text_Add}>Pridať</Text>
           </Pressable>
-
           <Pressable onPress={() => setActiveTab(3)} style={[styles.navBar_tabs, isActive(3) && styles.navBar_tabs_pressed]}>
             <Image source={storage} style={styles.navBar_img} />
             <Text style={[styles.navBar_text, isActive(3) && styles.navBar_text_pressed]}>Špajza</Text>
           </Pressable>
-
           <Pressable onPress={() => setActiveTab(4)} style={[styles.navBar_tabs, isActive(4) && styles.navBar_tabs_pressed]}>
             <Image source={setting} style={styles.navBar_img} />
             <Text style={[styles.navBar_text, isActive(4) && styles.navBar_text_pressed]}>Nastavenia</Text>

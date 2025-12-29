@@ -78,7 +78,7 @@ async function start() {
         return res.status(401).json({ error: "Invalid email or password" });
       }
 
-      // Return user data 
+      // Return user data
       return res.json({
         ok: true,
         message: "Login successful",
@@ -92,7 +92,7 @@ async function start() {
 
   // ------------------- UPDATE PROFILE -------------------
   app.post("/api/updateProfile", async (req, res) => {
-    console.log("REQ BODY:", req.body); 
+    console.log("REQ BODY:", req.body);
     try {
       const { email, weight, height, age, gender, activityLevel, goal } =
         req.body;
@@ -231,7 +231,7 @@ async function start() {
         resetTokenExpires: { $gt: Date.now() },
       });
 
-      console.log("🔹 User found with token:", user); 
+      console.log("🔹 User found with token:", user);
       if (!user) {
         console.warn("⚠️ Invalid or expired token");
         return res.status(400).json({ error: "Invalid or expired token" });
@@ -246,7 +246,7 @@ async function start() {
           $unset: { resetToken: "", resetTokenExpires: "" },
         }
       );
-      console.log("✅ Password reset successful for user:", user.email); 
+      console.log("✅ Password reset successful for user:", user.email);
       res.json({ ok: true, message: "Password reset succesful." });
     } catch (err) {
       console.error("Reset password error: ", err);
@@ -259,6 +259,7 @@ async function start() {
     console.log("📩 Incoming /api/addProduct request:", req.body);
     const {
       email,
+      image,
       product,
       totalCalories,
       totalProteins,
@@ -277,8 +278,9 @@ async function start() {
       }
 
       const productObj = {
-        name: product, 
-        totalCalories: totalCalories ?? null, 
+        name: product,
+        image: image ?? null,
+        totalCalories: totalCalories ?? null,
         totalProteins: totalProteins ?? null,
         totalCarbs: totalCarbs ?? null,
         totalFat: totalFat ?? null,
@@ -309,34 +311,33 @@ async function start() {
 
   //REMOVE PRODUCTS FROM DB
   app.post("/api/removeProduct", async (req, res) => {
-    try{
-      const {email, name} = req.body;
+    try {
+      const { email, name } = req.body;
 
-      if (!email || !name){
-        return res.status(400).json({error: "Missing email or product name"});
+      if (!email || !name) {
+        return res.status(400).json({ error: "Missing email or product name" });
       }
 
       const result = await users.updateOne(
         { email },
-        { $pull: {products: { name: name}}}
+        { $pull: { products: { name: name } } }
       );
 
-      if (result.modifiedCount === 0){
-        return res.status(404).json({error: "Product not found"});
+      if (result.modifiedCount === 0) {
+        return res.status(404).json({ error: "Product not found" });
       }
 
-      const updatedUser = await users.findOne({email});
+      const updatedUser = await users.findOne({ email });
 
       res.json({
         succes: true,
         products: updatedUser.products,
       });
+    } catch (err) {
+      console.error("❌ Remove product error:", err);
+      res.status(500).json({ error: "Server error" });
     }
-    catch (err){
-       console.error("❌ Remove product error:", err);
-    res.status(500).json({ error: "Server error" });
-    }
-  })
+  });
 
   //PULL from DB
   app.get("/api/getProducts", async (req, res) => {
@@ -364,25 +365,25 @@ async function start() {
   });
 
   //------------ FIND PRODUCT INFO BY NAME ------------------
-  
-app.get("/api/getProductByName", async (req, res) => {
-  try {
-    const { email, name } = req.query;
-    if (!email || !name) return res.status(400).json({ error: "Missing email or product name" });
 
-    const user = await users.findOne({ email });
-    if (!user) return res.status(404).json({ error: "User not found" });
+  app.get("/api/getProductByName", async (req, res) => {
+    try {
+      const { email, name } = req.query;
+      if (!email || !name)
+        return res.status(400).json({ error: "Missing email or product name" });
 
-    const product = (user.products || []).find((p) => p.name === name);
-    if (!product) return res.status(404).json({ error: "Product not found" });
+      const user = await users.findOne({ email });
+      if (!user) return res.status(404).json({ error: "User not found" });
 
-    res.json({ success: true, product });
-  } catch (err) {
-    console.error("❌ Get product by name error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+      const product = (user.products || []).find((p) => p.name === name);
+      if (!product) return res.status(404).json({ error: "Product not found" });
 
+      res.json({ success: true, product });
+    } catch (err) {
+      console.error("❌ Get product by name error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
 
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
