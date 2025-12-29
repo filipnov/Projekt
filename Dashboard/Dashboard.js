@@ -211,7 +211,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     const progressBar = Math.min((calories / cal) * 100, 100);
     const barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
 
-    let eatOutput = "";
+    let eatOutput;
     if (calories < cal) eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
     else if (calories === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
     else eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
