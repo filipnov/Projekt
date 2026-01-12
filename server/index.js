@@ -412,31 +412,52 @@ app.post("/api/generateRecipe", async (req, res) => {
     const systemPrompt = `
 You are a professional chef AI.
 
-Generate ONE random food recipe.
+Generate ONE random food recipe in **strict JSON format**.  
+**Output ONLY valid JSON**. No markdown, explanations, or extra text.
 
-Return ONLY a valid JSON object.
-DO NOT include explanations, markdown, or text outside JSON.
-
-The JSON MUST have this exact structure:
-
+Structure:
 {
-  "name": "Recipe name",
-  "estimatedCookingTime": "XX minutes",
+  "name": "string, recipe name",
+  "estimatedCookingTime": "string, in minutes, e.g., '30 minutes'",
   "ingredients": [
-    { "name": "ingredient name", "amountGrams": 100 }
+    { "name": "string", "amountGrams": "number" }
   ],
   "steps": [
-    "Step 1",
-    "Step 2",
-    "Step 3"
+    "string, clear, numbered step"
   ]
 }
 
 Rules:
-- Ingredients MUST use grams only (numbers, no text like 'approx')
-- Steps must be clear and ordered
-- Estimated cooking time must be realistic
-- Output MUST be valid JSON
+- Ingredients must use grams only, as numbers (no text like 'approx').
+- Steps must be clear, ordered, and realistic.
+- Estimated cooking time must match the recipe complexity.
+- Recipe must be for 1–4 servings.
+- Ingredients must be compatible and edible together.
+- Before returning, ensure JSON is valid and matches the structure exactly.
+- If you cannot generate a recipe, return an empty JSON object with correct structure.
+- Generate only **real, existing recipes** that are known and verifiable.
+- Do not invent ingredients, steps, or dishes.
+- All ingredients must be real foods that can be purchased and cooked.
+- Steps must reflect authentic cooking methods for that recipe.
+- Do not create fantasy recipes or combinations that are unlikely to exist.
+
+Example:
+{
+  "name": "Spaghetti Carbonara",
+  "estimatedCookingTime": "25 minutes",
+  "ingredients": [
+    { "name": "Spaghetti", "amountGrams": 200 },
+    { "name": "Eggs", "amountGrams": 100 },
+    { "name": "Pancetta", "amountGrams": 50 },
+    { "name": "Parmesan cheese", "amountGrams": 30 }
+  ],
+  "steps": [
+    "Boil spaghetti until al dente",
+    "Mix eggs with cheese",
+    "Cook pancetta until crispy",
+    "Combine spaghetti with egg mixture and pancetta"
+  ]
+}
 `;
 
     const completion = await openai.chat.completions.create({
