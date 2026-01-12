@@ -15,78 +15,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import arrow from "./assets/left-arrow.png";
 import { useNavigation } from "@react-navigation/native";
 
-function ActivityModal({ visible, onClose, selected, setSelected }) {
-  const options = [
-    {
-      label: "Sedavý",
-      description:
-        "Väčšinu času tráviš sedením, či už pri práci na počítači, čítaní kníh alebo sledovaní televízie. Pohybuješ sa akôr výnimočne.",
-      value: 1.2,
-    },
-    {
-      label: "Ľahko aktívny",
-      description:
-        "Občas sa postavíš a rozhýbeš, ale ináč veľkú časť dňa tráviš v sede. Bežne chodíš krátke vzdialenosti alebo vykonávaš ľahké domáce práce.",
-      value: 1.375,
-    },
-    {
-      label: "Stredne aktívny",
-      description:
-        "Bežne sa venuješ činnostiam, ktoré Ťa dostanú do pohybu, ako je chôdza, práca v záhradke, náročnejšie domáce práce alebo ľahký šport.",
-      value: 1.55,
-    },
-    {
-      label: "Veľmi aktívny",
-      description:
-        "Pravidelne a intenzívne športuješ, či už je to beh, cyklistika, fitness alebo iné náročnejšie aktivity.",
-      value: 1.725,
-    },
-    {
-      label: "Extrémne aktívny",
-      description:
-        "Tvoj denný režim zahŕňa extrémne a vytrvalostné fyzické výkony. Maratóny, náročný intervalový tréning alebo športy ako veslovanie a triatlon sú pre Teba normou.",
-      value: 1.9,
-    },
-  ];
-
-  return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={modalStyles.overlay}>
-        <View style={modalStyles.modal}>
-          <Text style={modalStyles.title}>Vyber úroveň aktivity</Text>
-          <ScrollView style={{ maxHeight: 300 }}>
-            {options.map((option) => (
-              <Pressable
-                key={option.label}
-                style={modalStyles.option}
-                onPress={() => {
-                  setSelected(option);
-                  onClose();
-                }}
-              >
-                <View style={modalStyles.radioOuter}>
-                  {selected?.label === option.label && (
-                    <View style={modalStyles.radioInner} />
-                  )}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={modalStyles.label}>{option.label}</Text>
-                  <Text style={modalStyles.description}>
-                    {option.description}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
-          <Pressable style={modalStyles.button} onPress={onClose}>
-            <Text style={modalStyles.buttonText}>Zavrieť</Text>
-          </Pressable>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 export default function ProfileCompletition() {
   const navigation = useNavigation();
 
@@ -192,6 +120,7 @@ export default function ProfileCompletition() {
     }
   }
 
+  // --- Jediný return ---
   return (
     <>
       <View style={styles.inputContainer}>
@@ -262,54 +191,112 @@ export default function ProfileCompletition() {
         >
           <Text style={{ color: "white" }}>{selectedActivity.label}</Text>
         </Pressable>
-      </View>
 
-      <View style={styles.genderContainer}>
         <Text style={styles.label}>Cieľ:</Text>
+        <View style={styles.genderContainer}>
+          <Pressable
+            onPress={() => setGoal("lose")}
+            style={[
+              styles.genderButton,
+              { backgroundColor: goal === "lose" ? "#2196F3" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.genderText}>Chudnúť</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setGoal("maintain")}
+            style={[
+              styles.genderButton,
+              { backgroundColor: goal === "maintain" ? "#4CAF50" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.genderText}>Udržať sa</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setGoal("gain")}
+            style={[
+              styles.genderButton,
+              { backgroundColor: goal === "gain" ? "#E91E63" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.genderText}>Pribrať</Text>
+          </Pressable>
+        </View>
+
+        <Pressable style={styles.button} onPress={handleCompletion}>
+          <Text style={styles.buttonText}>Uložiť údaje</Text>
+        </Pressable>
       </View>
 
-      <View style={styles.genderContainer}>
-        <Pressable
-          onPress={() => setGoal("lose")}
-          style={[
-            styles.genderButton,
-            { backgroundColor: goal === "lose" ? "#2196F3" : "#ccc" },
-          ]}
-        >
-          <Text style={styles.genderText}>Chudnúť</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setGoal("maintain")}
-          style={[
-            styles.genderButton,
-            { backgroundColor: goal === "maintain" ? "#4CAF50" : "#ccc" },
-          ]}
-        >
-          <Text style={styles.genderText}>Udržať sa</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setGoal("gain")}
-          style={[
-            styles.genderButton,
-            { backgroundColor: goal === "gain" ? "#E91E63" : "#ccc" },
-          ]}
-        >
-          <Text style={styles.genderText}>Pribrať</Text>
-        </Pressable>
-      </View>
-
-      <Pressable style={styles.button} onPress={handleCompletion}>
-        <Text style={styles.buttonText}>Uložiť údaje</Text>
-      </Pressable>
-
-      <ActivityModal
-        visible={activityModalVisible}
-        onClose={() => setActivityModalVisible(false)}
-        selected={selectedActivity}
-        setSelected={setSelectedActivity}
-      />
+      {/* --- Inline modal priamo v JSX --- */}
+      <Modal visible={activityModalVisible} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
+            <Text style={styles.title}>Vyber úroveň aktivity</Text>
+            <ScrollView style={{ maxHeight: 300 }}>
+              {[
+                {
+                  label: "Sedavý",
+                  description:
+                    "Väčšinu času tráviš sedením, či už pri práci na počítači, čítaní kníh alebo sledovaní televízie. Pohybuješ sa akôr výnimočne.",
+                  value: 1.2,
+                },
+                {
+                  label: "Ľahko aktívny",
+                  description:
+                    "Občas sa postavíš a rozhýbeš, ale ináč veľkú časť dňa tráviš v sede. Bežne chodíš krátke vzdialenosti alebo vykonávaš ľahké domáce práce.",
+                  value: 1.375,
+                },
+                {
+                  label: "Stredne aktívny",
+                  description:
+                    "Bežne sa venuješ činnostiam, ktoré Ťa dostanú do pohybu, ako je chôdza, práca v záhradke, náročnejšie domáce práce alebo ľahký šport.",
+                  value: 1.55,
+                },
+                {
+                  label: "Veľmi aktívny",
+                  description:
+                    "Pravidelne a intenzívne športuješ, či už je to beh, cyklistika, fitness alebo iné náročnejšie aktivity.",
+                  value: 1.725,
+                },
+                {
+                  label: "Extrémne aktívny",
+                  description:
+                    "Tvoj denný režim zahŕňa extrémne a vytrvalostné fyzické výkony. Maratóny, náročný intervalový tréning alebo športy ako veslovanie a triatlon sú pre Teba normou.",
+                  value: 1.9,
+                },
+              ].map((option) => (
+                <Pressable
+                  key={option.label}
+                  style={styles.option}
+                  onPress={() => {
+                    setSelectedActivity(option);
+                    setActivityModalVisible(false);
+                  }}
+                >
+                  <View style={styles.radioOuter}>
+                    {selectedActivity?.label === option.label && (
+                      <View style={styles.radioInner} />
+                    )}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.label}>{option.label}</Text>
+                    <Text style={styles.description}>{option.description}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Pressable
+              style={styles.button}
+              onPress={() => setActivityModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Zavrieť</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -405,10 +392,6 @@ const styles = StyleSheet.create({
     width: "60%",
     alignItems: "center",
   },
-});
-
-// Štýly pre modal
-const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
