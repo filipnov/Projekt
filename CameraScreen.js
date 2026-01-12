@@ -1,4 +1,4 @@
-//CameraScreen.js
+// CameraScreen.js
 import { CameraView, useCameraPermissions } from "expo-camera";
 import React, { useState } from "react";
 import {
@@ -82,7 +82,8 @@ export default function CameraScreen() {
     }
   }
 
-  // Funkcia pre správne fetchovanie a výpočet nutričných hodnôt
+  
+  // Funkcia pre fetchovanie a výpočet nutričných hodnôt
   async function fetchProductData(barcode) {
     setProductData(null);
     setAwaitingQuantity(false);
@@ -139,7 +140,7 @@ export default function CameraScreen() {
             ? (productInfo.fiber / 100) * weight
             : 0;
 
-          //  Zaokrúhlenie na jedno desatinné miesto
+          // Zaokrúhlenie
           productInfo.totalCalories = Number(
             productInfo.totalCalories.toFixed(0)
           );
@@ -151,24 +152,6 @@ export default function CameraScreen() {
           );
           productInfo.totalSalt = Number(productInfo.totalSalt.toFixed(0));
           productInfo.totalFiber = Number(productInfo.totalFiber.toFixed(0));
-
-          // push do DB
-          await handleAddProduct(
-            productInfo.name,
-            productInfo.totalCalories,
-            productInfo.totalProteins,
-            productInfo.totalCarbs,
-            productInfo.totalFat,
-            productInfo.totalFiber,
-            productInfo.totalSalt,
-            productInfo.totalSugar,
-            productInfo.image
-          );
-
-          Alert.alert(
-            "Produkt nájdený",
-            product.product_name || "Neznámy názov"
-          );
         } else {
           setAwaitingQuantity(true);
         }
@@ -188,7 +171,7 @@ export default function CameraScreen() {
     if (scanned) return;
     setScanned(true);
     await fetchProductData(data);
-    setTimeout(() => setScanned(false), 3000);
+    setTimeout(() => setScanned(false), 900000);
   }
 
   const handleShowContent = () => setShowContent(!showContent);
@@ -199,7 +182,7 @@ export default function CameraScreen() {
     return (
       <View style={styles.manual_add_container}>
         <Text style={styles.manual_add_text}>
-          Zadajte čísla pod čiarovým kódom pre pridanie produktu.
+          Zadajte EAN pre pridanie produktu.
         </Text>
 
         <TextInput
@@ -211,7 +194,6 @@ export default function CameraScreen() {
         <Pressable
           onPress={() => {
             fetchProductData(code);
-            setTimeout(() => setProductData(null), 9000);
           }}
           style={styles.manual_add_container_button}
         >
@@ -219,6 +201,32 @@ export default function CameraScreen() {
         </Pressable>
       </View>
     );
+  };
+
+  const saveToDatabase = async () => {
+    if (!productData) {
+      Alert.alert("Chyba", "Nie je načítaný žiaden produkt.");
+      return;
+    }
+
+    try {
+      await handleAddProduct(
+        productData.name,
+        productData.totalCalories,
+        productData.totalProteins,
+        productData.totalCarbs,
+        productData.totalFat,
+        productData.totalFiber,
+        productData.totalSalt,
+        productData.totalSugar,
+        productData.image
+      );
+      setCode();
+      setProductData(null);
+    } catch (err) {
+      console.error("❌ Chyba pri ukladaní:", err);
+      Alert.alert("Chyba", "Nepodarilo sa uložiť produkt.");
+    }
   };
 
   if (!permission) return <Text>Načítavam oprávnenia...</Text>;
@@ -262,15 +270,20 @@ export default function CameraScreen() {
         {productData && (
           <ScrollView
             style={{
-              maxHeight: 400,
-              marginTop: 10,
+              maxHeight: 450,
+              marginBottom: 130,
               backgroundColor: "#fff",
               borderRadius: 10,
               padding: 10,
               width: 300,
             }}
+            contentContainerStyle={{
+              alignItems: "center",
+            }}
           >
-            <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+            <Text
+              style={{ fontSize: 18, fontWeight: "bold", textAlign: "center" }}
+            >
               {productData.name}
             </Text>
             {productData.image && (
@@ -328,7 +341,7 @@ export default function CameraScreen() {
                         : 0,
                     };
 
-                    // Zaokrúhlenie pri manuálnom zadaní
+                    // Zaokrúhlenie
                     updatedProduct.totalCalories = Number(
                       updatedProduct.totalCalories.toFixed(0)
                     );
@@ -353,22 +366,6 @@ export default function CameraScreen() {
 
                     setProductData(updatedProduct);
                     setAwaitingQuantity(false);
-
-                    await handleAddProduct(
-                      updatedProduct.name,
-                      updatedProduct.totalCalories,
-                      updatedProduct.totalProteins,
-                      updatedProduct.totalCarbs,
-                      updatedProduct.totalFat,
-                      updatedProduct.totalFiber,
-                      updatedProduct.totalSalt,
-                      updatedProduct.totalSugar
-                    );
-
-                    Alert.alert(
-                      "Produkt uložený",
-                      `${updatedProduct.name} (${weight} g)`
-                    );
                   }}
                 >
                   <Text style={styles.manual_add_container_button_text}>
@@ -421,6 +418,20 @@ export default function CameraScreen() {
                 ? `Vláknina: ${productData.totalFiber ?? "N/A"} g`
                 : `Vláknina (100g): ${productData.fiber ?? "N/A"} g`}
             </Text>
+
+            <Pressable
+              style={styles.manual_add_container_button}
+              onPress={saveToDatabase}
+            >
+              <Text>Špajza</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.manual_add_container_button}
+              onPress={() => console.log("Test")}
+            >
+              <Text>Test</Text>
+            </Pressable>
           </ScrollView>
         )}
       </View>
@@ -470,8 +481,8 @@ const styles = StyleSheet.create({
   manual_add_container: {
     backgroundColor: "white",
     borderRadius: 15,
-    width: 300,
-    height: 250,
+    width: 250,
+    height: 270,
     alignSelf: "center",
     marginBottom: 20,
     alignItems: "center",
