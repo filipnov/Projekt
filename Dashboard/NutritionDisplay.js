@@ -34,7 +34,7 @@ export default function NutritionDisplay({
         />
       </View>
       <Text style={{ color: "white", marginBottom: 5 }}>
-        {valueConsumed} / {valueGoal} {label === "Bielkoviny" || label === "Sacharidy" || label === "Tuky" ? "g" : ""}
+        {valueConsumed} / {valueGoal} g
       </Text>
     </View>
   );
