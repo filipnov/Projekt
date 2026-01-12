@@ -1,4 +1,4 @@
-// RegistrationScreen.js
+// ResetPass.js
 import React, { useState, useEffect } from "react";
 import {
   StyleSheet,

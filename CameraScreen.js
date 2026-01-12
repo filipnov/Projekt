@@ -1,3 +1,4 @@
+//CameraScreen.js
 import { CameraView, useCameraPermissions } from "expo-camera";
 import React, { useState } from "react";
 import {

@@ -1,3 +1,4 @@
+//TopBar.js
 import React from "react";
 import { View, Text, Image, Pressable } from "react-native";
 import styles from "./styles";

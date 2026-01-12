@@ -1,3 +1,4 @@
+//NavBar.js
 import React from "react";
 import { View, Pressable, Text, Image } from "react-native";
 import styles from "./styles";

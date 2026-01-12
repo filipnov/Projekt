@@ -1,4 +1,4 @@
-// RegistrationScreen.js
+// ForgetPass.js
 import { useState } from "react";
 import {
   StyleSheet,
