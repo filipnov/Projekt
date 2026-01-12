@@ -438,24 +438,6 @@ app.post("/api/generateRecipe", async (req, res) => {
 - Ingrediencie len v gramoch (čísla, žiadne texty ako 'približne').  
 - Kroky jasné, realistické a očíslované.  
 - Recept pre 1–4 osoby.  
-
-**Príklad správneho výstupu (po slovensky):**
-
-{
-  "name": "Špagety Carbonara",
-  "estimatedCookingTime": "25 minút",
-  "ingredients": [
-    { "name": "Špagety", "amountGrams": 200 },
-    { "name": "Vajcia", "amountGrams": 100 },
-    { "name": "Pancetta", "amountGrams": 50 },
-    { "name": "Parmezán", "amountGrams": 30 }
-  ],
-  "steps": [
-    "Uvar špagety do al dente",
-    "Vajcia zmiešaj s parmezánom",
-    "Pancettu opeč do chrumkava",
-    "Spoj špagety s vajíčkovou zmesou a pancettou"
-  ]
 }
 `;
 
