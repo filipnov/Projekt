@@ -108,7 +108,7 @@ export default function ProfileCompletition() {
       const data = await resp.json().catch(() => ({}));
 
       if (resp.ok) {
-        try{
+        try {
           await AsyncStorage.setItem(
             "userProfile",
             JSON.stringify({
@@ -117,18 +117,14 @@ export default function ProfileCompletition() {
               age: Number(age.trim()),
               gender,
               activityLevel: value,
-              goal
+              goal,
             })
           );
-        }
-        catch(err){
+        } catch (err) {
           console.error("Error saving profile locally:", err);
         }
         Alert.alert("Úspech", "Údaje boli uložené ✅");
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Dashboard" }],
-        });
+        navigation.goBack();
       } else {
         Alert.alert("Chyba", data.error || "Server error");
       }
@@ -137,14 +133,13 @@ export default function ProfileCompletition() {
     }
   }
 
-  const saveProfileLocally = async (profile) =>{
-    try{
+  const saveProfileLocally = async (profile) => {
+    try {
       await AsyncStorage.setItem("userProfile", JSON.stringify(profile));
-    }
-    catch (err){
+    } catch (err) {
       console.error("Error saving profile locally:", err);
     }
-  }
+  };
 
   useEffect(() => {
     const profile = {
@@ -153,17 +148,21 @@ export default function ProfileCompletition() {
       age: age ? Number(age.trim()) : null,
       gender,
       activityLevel: value,
-      goal
+      goal,
     };
 
     saveProfileLocally(profile);
-  }, [weight, height, age, gender, value, goal])
+  }, [weight, height, age, gender, value, goal]);
 
   return (
     <>
       <View style={styles.inputContainer}>
-        <Pressable style={({pressed}) =>
-        pressed ? styles.arrow_pressed : styles.arrow_container} onPress={() => navigation.navigate("Dashboard")}>
+        <Pressable
+          style={({ pressed }) =>
+            pressed ? styles.arrow_pressed : styles.arrow_container
+          }
+          onPress={() => navigation.goBack()}
+        >
           <Image source={arrow} style={styles.arrow} />
         </Pressable>
         <Text style={styles.header}>Uprav svoj profil</Text>
@@ -235,7 +234,7 @@ export default function ProfileCompletition() {
       <View style={styles.genderContainer}>
         <Text style={styles.label}>Cieľ:</Text>
       </View>
-      
+
       <View style={styles.genderContainer}>
         <Pressable
           onPress={() => setGoal("lose")}
@@ -279,18 +278,18 @@ const styles = StyleSheet.create({
   inputContainer: {
     marginTop: 50,
     width: "85%",
-    alignSelf: "center"
+    alignSelf: "center",
   },
   header: {
-   fontSize: 25,
+    fontSize: 25,
     fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)"
+    color: "hsla(0, 0%, 15%, 1.00)",
   },
   label: {
     marginTop: 10,
     fontSize: 16,
     fontWeight: "700",
-    color: "hsla(0, 0%, 15%, 1.00)"
+    color: "hsla(0, 0%, 15%, 1.00)",
   },
   input: {
     backgroundColor: "white",
@@ -312,7 +311,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     width: "50%",
     alignItems: "center",
-    alignSelf: "center"
+    alignSelf: "center",
   },
   buttonText: {
     color: "#fff",
@@ -324,13 +323,13 @@ const styles = StyleSheet.create({
     width: 60,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 15
+    marginBottom: 15,
   },
   arrow: {
     height: "100%",
     width: "100%",
     backgroundColor: "white",
-    borderRadius: 50
+    borderRadius: 50,
   },
   arrow_pressed: {
     height: 58,
@@ -338,13 +337,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     opacity: 0.8,
-    marginBottom: 15
+    marginBottom: 15,
   },
   genderContainer: {
     flexDirection: "row",
     width: "90%",
     marginTop: 5,
-    alignSelf: "center"
+    alignSelf: "center",
   },
   genderButton: {
     flex: 1,
@@ -356,6 +355,6 @@ const styles = StyleSheet.create({
   genderText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 15
+    fontSize: 15,
   },
 });

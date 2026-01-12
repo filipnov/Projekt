@@ -229,6 +229,55 @@ export default function CameraScreen() {
     }
   };
 
+  const addDirectlyToEaten = async () => {
+    if (!productData) {
+      Alert.alert("Chyba", "Nie je načítaný žiaden produkt.");
+      return;
+    }
+
+    try {
+      const storedTotals = await AsyncStorage.getItem("eatenTotals");
+      let currentTotals = storedTotals ? JSON.parse(storedTotals) : {
+        calories: 0,
+        proteins: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        salt: 0,
+      };
+
+      // Pripočítanie nových hodnôt z produktu
+      const updatedTotals = {
+        calories: currentTotals.calories + (productData.totalCalories || 0),
+        proteins: currentTotals.proteins + (productData.totalProteins || 0),
+        carbs: currentTotals.carbs + (productData.totalCarbs || 0),
+        fat: currentTotals.fat + (productData.totalFat || 0),
+        fiber: currentTotals.fiber + (productData.totalFiber || 0),
+        sugar: currentTotals.sugar + (productData.totalSugar || 0),
+        salt: currentTotals.salt + (productData.totalSalt || 0),
+      };
+
+      // Uloženie aktualizovaných hodnôt späť do AsyncStorage
+      await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
+
+      Alert.alert(
+        "✅ Úspech",
+        `${productData.name}\n+${productData.totalCalories} kcal`
+      );
+
+      // Vyčistenie
+      setCode("");
+      setProductData(null);
+
+      // Navigácia späť na Dashboard
+      navigation.goBack();
+    } catch (err) {
+      console.error("❌ Chyba pri pridávaní:", err);
+      Alert.alert("Chyba", "Nepodarilo sa pridať produkt do zjedených hodnôt.");
+    }
+  };
+
   if (!permission) return <Text>Načítavam oprávnenia...</Text>;
   if (!permission.granted)
     return (
@@ -423,14 +472,14 @@ export default function CameraScreen() {
               style={styles.manual_add_container_button}
               onPress={saveToDatabase}
             >
-              <Text>Špajza</Text>
+              <Text style={styles.manual_add_container_button_text}>Špajza</Text>
             </Pressable>
 
             <Pressable
-              style={styles.manual_add_container_button}
-              onPress={() => console.log("Test")}
+              style={[styles.manual_add_container_button, { backgroundColor: "#2196F3" }]}
+              onPress={addDirectlyToEaten}
             >
-              <Text>Test</Text>
+              <Text style={styles.manual_add_container_button_text}>Zjedené</Text>
             </Pressable>
           </ScrollView>
         )}
