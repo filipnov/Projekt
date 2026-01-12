@@ -8,7 +8,6 @@ import {
   Pressable,
   Modal,
   ScrollView,
-  Button,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../styles";
@@ -41,21 +40,36 @@ export default function RecipesTab() {
       const data = await response.json();
       if (!data.success || !data.recipe) return;
 
-      // Uloženie receptu do DB
-      const saveResponse = await fetch("http://10.0.2.2:3000/api/addRecipe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail, recipe: data.recipe }),
-      });
-
-      const saveData = await saveResponse.json();
-      if (!saveData.success) return;
-
-      // Otvoriť Modal s generovaným receptom
+      // Otvoríme Modal s generovaným receptom, ale **neukladáme ho hneď**
       setGeneratedRecipeModal(data.recipe);
 
     } catch (error) {
       console.error("❌ ERROR:", error);
+    }
+  };
+
+  // Funkcia na uloženie receptu do DB
+  const saveGeneratedRecipe = async () => {
+    if (!userEmail || !generatedRecipeModal) return;
+
+    try {
+      const saveResponse = await fetch("http://10.0.2.2:3000/api/addRecipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, recipe: generatedRecipeModal }),
+      });
+
+      const saveData = await saveResponse.json();
+      if (!saveData.success) {
+        console.error("❌ Failed to save recipe:", saveData);
+      } else {
+        console.log("✅ Recipe saved:", saveData.recipes);
+      }
+    } catch (error) {
+      console.error("❌ ERROR saving recipe:", error);
+    } finally {
+      // Modal sa zavrie vždy po akcii
+      setGeneratedRecipeModal(null);
     }
   };
 
@@ -168,11 +182,19 @@ export default function RecipesTab() {
               )}
             </ScrollView>
 
-            <Button
-              title="Zatvoriť"
-              color="hsla(129, 56%, 43%, 1)"
+            <Pressable
               onPress={() => setSelectedRecept(null)}
-            />
+              style={{
+                marginTop: 15,
+                backgroundColor: "hsla(129, 56%, 43%, 1)",
+                paddingVertical: 10,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+                Zatvoriť
+              </Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -221,19 +243,38 @@ export default function RecipesTab() {
               ))}
             </ScrollView>
 
-            <Pressable
-              onPress={() => setGeneratedRecipeModal(null)}
-              style={{
-                marginTop: 15,
-                backgroundColor: "hsla(129, 56%, 43%, 1)",
-                paddingVertical: 10,
-                borderRadius: 10,
-              }}
-            >
-              <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
-                Zatvoriť
-              </Text>
-            </Pressable>
+            {/* Tlačidlá Zavrieť a Uložiť */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 15 }}>
+              <Pressable
+                onPress={() => setGeneratedRecipeModal(null)}
+                style={{
+                  flex: 1,
+                  marginRight: 5,
+                  backgroundColor: "grey",
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                }}
+              >
+                <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+                  Zavrieť
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={saveGeneratedRecipe}
+                style={{
+                  flex: 1,
+                  marginLeft: 5,
+                  backgroundColor: "hsla(129, 56%, 43%, 1)",
+                  paddingVertical: 10,
+                  borderRadius: 10,
+                }}
+              >
+                <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+                  Uložiť
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>
