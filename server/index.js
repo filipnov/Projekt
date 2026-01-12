@@ -410,52 +410,51 @@ app.post("/api/generateRecipe", async (req, res) => {
     gptRequestCount++;
 
     const systemPrompt = `
-You are a professional chef AI.
+⚠️ **Dôležité pravidlá**:
+1. Odpovedaj **VÝHRADNE po slovensky**. Nevysvetľuj nič, nevypisuj text v inom jazyku.  
+2. Vráť **len platný JSON** podľa presnej štruktúry. Žiadny text mimo JSON.  
+3. Recept MUSÍ byť **skutočný a overiteľný**. Nevymýšľaj ingrediencie ani jedlá.  
+4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť.  
+5. Kroky MUSIA byť jasné, presné a očíslované.  
+6. Čas prípravy MUSÍ byť realistický pre daný recept.  
+7. Ak nemôžeš vytvoriť skutočný recept, vráť **prázdny JSON objekt so správnou štruktúrou**.  
 
-Generate ONE random food recipe in **strict JSON format**.  
-**Output ONLY valid JSON**. No markdown, explanations, or extra text.
+**Štruktúra JSON, ktorú musíš vrátiť:**
 
-Structure:
 {
-  "name": "string, recipe name",
-  "estimatedCookingTime": "string, in minutes, e.g., '30 minutes'",
+  "name": "Názov receptu",
+  "estimatedCookingTime": "Čas prípravy v minútach, napr. '25 minút'",
   "ingredients": [
-    { "name": "string", "amountGrams": "number" }
+    { "name": "Názov ingrediencie", "amountGrams": 100 }
   ],
   "steps": [
-    "string, clear, numbered step"
+    "Krok 1",
+    "Krok 2",
+    "Krok 3"
   ]
 }
 
-Rules:
-- Ingredients must use grams only, as numbers (no text like 'approx').
-- Steps must be clear, ordered, and realistic.
-- Estimated cooking time must match the recipe complexity.
-- Recipe must be for 1–4 servings.
-- Ingredients must be compatible and edible together.
-- Before returning, ensure JSON is valid and matches the structure exactly.
-- If you cannot generate a recipe, return an empty JSON object with correct structure.
-- Generate only **real, existing recipes** that are known and verifiable.
-- Do not invent ingredients, steps, or dishes.
-- All ingredients must be real foods that can be purchased and cooked.
-- Steps must reflect authentic cooking methods for that recipe.
-- Do not create fantasy recipes or combinations that are unlikely to exist.
+**Pravidlá formátu JSON:**
+- Ingrediencie len v gramoch (čísla, žiadne texty ako 'približne').  
+- Kroky jasné, realistické a očíslované.  
+- Recept pre 1–4 osoby.  
 
-Example:
+**Príklad správneho výstupu (po slovensky):**
+
 {
-  "name": "Spaghetti Carbonara",
-  "estimatedCookingTime": "25 minutes",
+  "name": "Špagety Carbonara",
+  "estimatedCookingTime": "25 minút",
   "ingredients": [
-    { "name": "Spaghetti", "amountGrams": 200 },
-    { "name": "Eggs", "amountGrams": 100 },
+    { "name": "Špagety", "amountGrams": 200 },
+    { "name": "Vajcia", "amountGrams": 100 },
     { "name": "Pancetta", "amountGrams": 50 },
-    { "name": "Parmesan cheese", "amountGrams": 30 }
+    { "name": "Parmezán", "amountGrams": 30 }
   ],
   "steps": [
-    "Boil spaghetti until al dente",
-    "Mix eggs with cheese",
-    "Cook pancetta until crispy",
-    "Combine spaghetti with egg mixture and pancetta"
+    "Uvar špagety do al dente",
+    "Vajcia zmiešaj s parmezánom",
+    "Pancettu opeč do chrumkava",
+    "Spoj špagety s vajíčkovou zmesou a pancettou"
   ]
 }
 `;
