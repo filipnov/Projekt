@@ -449,17 +449,21 @@ Rules:
       temperature: 0.8,
     });
 
-    const rawResponse = completion.choices[0].message.content;
+    let rawResponse = completion.choices[0].message.content;
 
-    // FINAL SAFETY: ensure JSON validity
+    // ✅ Strip any text before/after JSON
+    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("❌ No JSON found in GPT response:", rawResponse);
+      return res.status(500).json({ error: "Invalid JSON received from AI" });
+    }
+
     let parsedJSON;
     try {
-      parsedJSON = JSON.parse(rawResponse);
-    } catch (jsonErr) {
-      console.error("❌ Invalid JSON from GPT:", rawResponse);
-      return res.status(500).json({
-        error: "Invalid JSON received from AI",
-      });
+      parsedJSON = JSON.parse(jsonMatch[0]);
+    } catch (err) {
+      console.error("❌ Failed to parse GPT JSON:", jsonMatch[0]);
+      return res.status(500).json({ error: "Invalid JSON received from AI" });
     }
 
     return res.json({

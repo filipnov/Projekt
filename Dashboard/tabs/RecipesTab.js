@@ -36,63 +36,71 @@ export default function RecipesTab() {
 
   // 🔹 Generate recipe + save to DB
   const generateRecipe = async () => {
-    if (!userEmail) {
-      Alert.alert("Chyba", "Používateľ nie je prihlásený");
+  if (!userEmail) {
+    Alert.alert("Chyba", "Používateľ nie je prihlásený");
+    return;
+  }
+
+  try {
+    // 1️⃣ Generate recipe from AI
+    const response = await fetch(
+      "http://10.0.2.2:3000/api/generateRecipe",
+      { method: "POST", headers: { "Content-Type": "application/json" } }
+    );
+
+    const text = await response.text(); // <-- get raw text first
+
+    let data;
+    try {
+      data = JSON.parse(text); // <-- parse safely
+    } catch (err) {
+      console.error("❌ JSON parse error from AI:", text);
+      Alert.alert("Chyba", "AI vrátila neplatný JSON. Skúste znova.");
       return;
     }
 
-    try {
-      // 1️⃣ Generate recipe from AI
-      const response = await fetch(
-        "http://10.0.2.2:3000/api/generateRecipe",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (!data.success || !data.recipe) {
-        Alert.alert("Chyba", "Nepodarilo sa vygenerovať recept");
-        return;
-      }
-
-      console.log("🍳 AI RECIPE:", data.recipe);
-      setGeneratedRecipe(data.recipe);
-
-      // 2️⃣ Save recipe to DB
-      const saveResponse = await fetch(
-        "http://10.0.2.2:3000/api/addRecipe",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: userEmail,
-            recipe: data.recipe,
-          }),
-        }
-      );
-
-      const saveData = await saveResponse.json();
-
-      if (!saveData.success) {
-        console.error("❌ Failed to save recipe:", saveData);
-        Alert.alert("Chyba", "Recept sa nepodarilo uložiť");
-        return;
-      }
-
-      console.log("✅ Recipe saved:", saveData.recipes);
-      Alert.alert("Hotovo", "Recept bol úspešne uložený 🎉");
-    } catch (error) {
-      console.error("❌ ERROR:", error);
-      Alert.alert("Chyba", "Nastala chyba pri generovaní receptu");
+    if (!data.success || !data.recipe) {
+      Alert.alert("Chyba", "Nepodarilo sa vygenerovať recept");
+      return;
     }
-  };
+
+    console.log("🍳 AI RECIPE:", data.recipe);
+    setGeneratedRecipe(data.recipe);
+
+    // 2️⃣ Save recipe to DB
+    const saveResponse = await fetch(
+      "http://10.0.2.2:3000/api/addRecipe",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, recipe: data.recipe }),
+      }
+    );
+
+    const saveText = await saveResponse.text(); // <-- also raw text
+    let saveData;
+    try {
+      saveData = JSON.parse(saveText); // <-- parse safely
+    } catch (err) {
+      console.error("❌ JSON parse error from saveRecipe:", saveText);
+      Alert.alert("Chyba", "Nepodarilo sa uložiť recept. Skúste znova.");
+      return;
+    }
+
+    if (!saveData.success) {
+      console.error("❌ Failed to save recipe:", saveData);
+      Alert.alert("Chyba", "Recept sa nepodarilo uložiť");
+      return;
+    }
+
+    console.log("✅ Recipe saved:", saveData.recipes);
+    Alert.alert("Hotovo", "Recept bol úspešne uložený 🎉");
+  } catch (error) {
+    console.error("❌ ERROR:", error);
+    Alert.alert("Chyba", "Nastala chyba pri generovaní receptu");
+  }
+};
+
 
   const recepty = [
     {
