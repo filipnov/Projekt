@@ -6,7 +6,6 @@ import {
   Image,
   TextInput,
   Pressable,
-  Alert,
   Modal,
   ScrollView,
   Button,
@@ -18,97 +17,55 @@ export default function RecipesTab() {
   const [recipe, setRecipe] = useState("");
   const [selectedRecept, setSelectedRecept] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
-  const [generatedRecipe, setGeneratedRecipe] = useState(null);
+  const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
 
-  // 🔹 Load logged-in user email from AsyncStorage
+  // Načítanie emailu prihláseného používateľa
   useEffect(() => {
     const loadEmail = async () => {
       const email = await AsyncStorage.getItem("userEmail");
-      if (!email) {
-        Alert.alert("Chyba", "Používateľ nie je prihlásený");
-        return;
-      }
-      setUserEmail(email);
+      if (email) setUserEmail(email);
     };
-
     loadEmail();
   }, []);
 
-  // 🔹 Generate recipe + save to DB
+  // Funkcia na generovanie receptu z AI
   const generateRecipe = async () => {
-  if (!userEmail) {
-    Alert.alert("Chyba", "Používateľ nie je prihlásený");
-    return;
-  }
+    if (!userEmail) return;
 
-  try {
-    // 1️⃣ Generate recipe from AI
-    const response = await fetch(
-      "http://10.0.2.2:3000/api/generateRecipe",
-      { method: "POST", headers: { "Content-Type": "application/json" } }
-    );
-
-    const text = await response.text(); // <-- get raw text first
-
-    let data;
     try {
-      data = JSON.parse(text); // <-- parse safely
-    } catch (err) {
-      console.error("❌ JSON parse error from AI:", text);
-      Alert.alert("Chyba", "AI vrátila neplatný JSON. Skúste znova.");
-      return;
-    }
+      const response = await fetch("http://10.0.2.2:3000/api/generateRecipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
-    if (!data.success || !data.recipe) {
-      Alert.alert("Chyba", "Nepodarilo sa vygenerovať recept");
-      return;
-    }
+      const data = await response.json();
+      if (!data.success || !data.recipe) return;
 
-    console.log("🍳 AI RECIPE:", data.recipe);
-    setGeneratedRecipe(data.recipe);
-
-    // 2️⃣ Save recipe to DB
-    const saveResponse = await fetch(
-      "http://10.0.2.2:3000/api/addRecipe",
-      {
+      // Uloženie receptu do DB
+      const saveResponse = await fetch("http://10.0.2.2:3000/api/addRecipe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: userEmail, recipe: data.recipe }),
-      }
-    );
+      });
 
-    const saveText = await saveResponse.text(); // <-- also raw text
-    let saveData;
-    try {
-      saveData = JSON.parse(saveText); // <-- parse safely
-    } catch (err) {
-      console.error("❌ JSON parse error from saveRecipe:", saveText);
-      Alert.alert("Chyba", "Nepodarilo sa uložiť recept. Skúste znova.");
-      return;
+      const saveData = await saveResponse.json();
+      if (!saveData.success) return;
+
+      // Otvoriť Modal s generovaným receptom
+      setGeneratedRecipeModal(data.recipe);
+
+    } catch (error) {
+      console.error("❌ ERROR:", error);
     }
+  };
 
-    if (!saveData.success) {
-      console.error("❌ Failed to save recipe:", saveData);
-      Alert.alert("Chyba", "Recept sa nepodarilo uložiť");
-      return;
-    }
-
-    console.log("✅ Recipe saved:", saveData.recipes);
-    Alert.alert("Hotovo", "Recept bol úspešne uložený 🎉");
-  } catch (error) {
-    console.error("❌ ERROR:", error);
-    Alert.alert("Chyba", "Nastala chyba pri generovaní receptu");
-  }
-};
-
-
+  // Hardcoded recepty
   const recepty = [
     {
       id: 1,
       nazov: "Bryndzové halušky",
       ingrediencie: "zemiaky, polohrubá múka, soľ, bryndza, slanina a pažitka",
-      postup:
-        "1. Pripravíme si suroviny...\n9. Podávame so slaninou a pažítkou.",
+      postup: "1. Pripravíme si suroviny...\n9. Podávame so slaninou a pažítkou.",
       obrazok: require("../../assets/bryndzove-halusky.jpg"),
     },
     {
@@ -120,10 +77,8 @@ export default function RecipesTab() {
     {
       id: 3,
       nazov: "Segedínsky guláš",
-      ingrediencie:
-        "bravčové mäso, kapusta, paprika, smotana",
-      postup:
-        "1. Orestujeme mäso...\n9. Podávame s knedľou.",
+      ingrediencie: "bravčové mäso, kapusta, paprika, smotana",
+      postup: "1. Orestujeme mäso...\n9. Podávame s knedľou.",
       obrazok: require("../../assets/segedin.jpg"),
     },
     {
@@ -156,82 +111,132 @@ export default function RecipesTab() {
         </Pressable>
       </View>
 
-      <View>
-        <View style={styles.grid}>
-          {recepty.map((item) => (
-            <Pressable
-              key={item.id}
-              style={({ pressed }) => [
-                styles.card,
-                { opacity: pressed ? 0.7 : 1 },
-              ]}
-              onPress={() => setSelectedRecept(item)}
+      <View style={styles.grid}>
+        {recepty.map((item) => (
+          <Pressable
+            key={item.id}
+            style={({ pressed }) => [styles.card, { opacity: pressed ? 0.7 : 1 }]}
+            onPress={() => setSelectedRecept(item)}
+          >
+            <ImageBackground
+              source={item.obrazok}
+              style={styles.imageBackground}
+              imageStyle={styles.image}
             >
-              <ImageBackground
-                source={item.obrazok}
-                style={styles.imageBackground}
-                imageStyle={styles.image}
-              >
-                <Text style={styles.cardText}>{item.nazov}</Text>
-              </ImageBackground>
-            </Pressable>
-          ))}
-        </View>
+              <Text style={styles.cardText}>{item.nazov}</Text>
+            </ImageBackground>
+          </Pressable>
+        ))}
+      </View>
 
-        <Modal
-          visible={selectedRecept !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setSelectedRecept(null)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              {selectedRecept?.obrazok && (
-                <Image
-                  source={selectedRecept.obrazok}
-                  style={{
-                    width: "100%",
-                    height: 200,
-                    borderRadius: 10,
-                    marginBottom: 10,
-                  }}
-                  resizeMode="cover"
-                />
+      {/* Modal pre statické recepty */}
+      <Modal
+        visible={selectedRecept !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedRecept(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            {selectedRecept?.obrazok && (
+              <Image
+                source={selectedRecept.obrazok}
+                style={{ width: "100%", height: 200, borderRadius: 10, marginBottom: 10 }}
+                resizeMode="cover"
+              />
+            )}
+
+            <Text style={styles.modalTitle}>{selectedRecept?.nazov}</Text>
+
+            <ScrollView style={styles.modalContent}>
+              {selectedRecept?.ingrediencie && (
+                <Text style={{ marginBottom: 10 }}>
+                  <Text style={{ fontWeight: "bold" }}>Ingrediencie:{"\n"}</Text>
+                  {selectedRecept.ingrediencie}
+                </Text>
               )}
 
-              <Text style={styles.modalTitle}>
-                {selectedRecept?.nazov}
+              {selectedRecept?.postup && (
+                <Text>
+                  <Text style={{ fontWeight: "bold" }}>Postup:{"\n"}</Text>
+                  {selectedRecept.postup}
+                </Text>
+              )}
+
+              {selectedRecept?.obsah && (
+                <Text>{selectedRecept.obsah}</Text>
+              )}
+            </ScrollView>
+
+            <Button
+              title="Zatvoriť"
+              color="hsla(129, 56%, 43%, 1)"
+              onPress={() => setSelectedRecept(null)}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal pre generovaný recept */}
+      <Modal
+        visible={generatedRecipeModal !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setGeneratedRecipeModal(null)}
+      >
+        <View style={{
+          flex: 1,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          justifyContent: "center",
+          alignItems: "center",
+        }}>
+          <View style={{
+            backgroundColor: "#fff",
+            borderRadius: 15,
+            padding: 20,
+            width: "90%",
+            maxHeight: "80%",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 4,
+            elevation: 5,
+          }}>
+            <ScrollView>
+              <Text style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 10 }}>
+                {generatedRecipeModal?.name}
               </Text>
 
-              <ScrollView style={styles.modalContent}>
-                {selectedRecept?.ingrediencie && (
-                  <Text style={{ marginBottom: 10 }}>
-                    <Text style={{ fontWeight: "bold" }}>
-                      Ingrediencie:{"\n"}
-                    </Text>
-                    {selectedRecept.ingrediencie}
-                  </Text>
-                )}
+              <Text style={{ fontWeight: "bold", marginTop: 10 }}>Čas prípravy:</Text>
+              <Text>{generatedRecipeModal?.estimatedCookingTime}</Text>
 
-                {selectedRecept?.postup && (
-                  <Text>
-                    <Text style={{ fontWeight: "bold" }}>
-                      Postup:{"\n"}
-                    </Text>
-                    {selectedRecept.postup}
-                  </Text>
-                )}
-              </ScrollView>
+              <Text style={{ fontWeight: "bold", marginTop: 10 }}>Ingrediencie:</Text>
+              {generatedRecipeModal?.ingredients?.map((ing, idx) => (
+                <Text key={idx}>• {ing.name}: {ing.amountGrams} g</Text>
+              ))}
 
-              <Button
-                title="Zatvoriť"
-                color="hsla(129, 56%, 43%, 1)"
-                onPress={() => setSelectedRecept(null)}
-              />
-            </View>
+              <Text style={{ fontWeight: "bold", marginTop: 10 }}>Postup:</Text>
+              {generatedRecipeModal?.steps?.map((step, idx) => (
+                <Text key={idx}>{step}</Text>
+              ))}
+            </ScrollView>
+
+            <Pressable
+              onPress={() => setGeneratedRecipeModal(null)}
+              style={{
+                marginTop: 15,
+                backgroundColor: "hsla(129, 56%, 43%, 1)",
+                paddingVertical: 10,
+                borderRadius: 10,
+              }}
+            >
+              <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+                Zatvoriť
+              </Text>
+            </Pressable>
           </View>
-        </Modal>
-      </View>
+        </View>
+      </Modal>
     </>
   );
 }
