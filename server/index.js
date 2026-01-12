@@ -502,6 +502,15 @@ app.post("/api/addRecipe", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+    // MAX RECIPES LIMIT
+    const MAX_RECIPES = 10;
+    const currentCount = (user.recipes || []).length;
+    if (currentCount >= MAX_RECIPES) {
+      console.log("⚠️ User has reached max recipes");
+      return res.status(400).json({
+        error: `You can only save up to ${MAX_RECIPES} recipes`,
+      });
+    }
 
     const recipeObj = {
       recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
