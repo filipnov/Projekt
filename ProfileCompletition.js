@@ -120,7 +120,6 @@ export default function ProfileCompletition() {
     }
   }
 
-  // --- Jediný return ---
   return (
     <>
       <View style={styles.inputContainer}>
@@ -189,7 +188,7 @@ export default function ProfileCompletition() {
           style={styles.activityButton}
           onPress={() => setActivityModalVisible(true)}
         >
-          <Text style={{ color: "white" }}>{selectedActivity.label}</Text>
+          <Text style={{ color: "black" }}>{selectedActivity.label}</Text>
         </Pressable>
 
         <Text style={styles.label}>Cieľ:</Text>
@@ -230,41 +229,40 @@ export default function ProfileCompletition() {
         </Pressable>
       </View>
 
-      {/* --- Inline modal priamo v JSX --- */}
       <Modal visible={activityModalVisible} transparent animationType="slide">
         <View style={styles.overlay}>
           <View style={styles.modal}>
             <Text style={styles.title}>Vyber úroveň aktivity</Text>
-            <ScrollView style={{ maxHeight: 300 }}>
+            <ScrollView>
               {[
                 {
                   label: "Sedavý",
                   description:
-                    "Väčšinu času tráviš sedením, či už pri práci na počítači, čítaní kníh alebo sledovaní televízie. Pohybuješ sa akôr výnimočne.",
+                    "Väčšinu času tráviš sedením. Pohybuješ sa akôr výnimočne.",
                   value: 1.2,
                 },
                 {
                   label: "Ľahko aktívny",
                   description:
-                    "Občas sa postavíš a rozhýbeš, ale ináč veľkú časť dňa tráviš v sede. Bežne chodíš krátke vzdialenosti alebo vykonávaš ľahké domáce práce.",
+                    "Občas sa postavíš a rozhýbeš, ale inak deň tráviš v sede. Chodíš krátke vzdialenosti alebo vykonávaš ľahké domáce práce.",
                   value: 1.375,
                 },
                 {
                   label: "Stredne aktívny",
                   description:
-                    "Bežne sa venuješ činnostiam, ktoré Ťa dostanú do pohybu, ako je chôdza, práca v záhradke, náročnejšie domáce práce alebo ľahký šport.",
+                    "Chodíš na prechádzky, prácuješ v záhrade, robíš náročnejšie domáce práce alebo aj ľahký šport.",
                   value: 1.55,
                 },
                 {
                   label: "Veľmi aktívny",
                   description:
-                    "Pravidelne a intenzívne športuješ, či už je to beh, cyklistika, fitness alebo iné náročnejšie aktivity.",
+                    "Pravidelne a intenzívne športuješ alebo robíš iné náročnejšie aktivity.",
                   value: 1.725,
                 },
                 {
                   label: "Extrémne aktívny",
                   description:
-                    "Tvoj denný režim zahŕňa extrémne a vytrvalostné fyzické výkony. Maratóny, náročný intervalový tréning alebo športy ako veslovanie a triatlon sú pre Teba normou.",
+                    "Denne robíš vytrvalostné fyzické výkony. Napríklad beháš maratóny, máš náročný intervalový tréning alebo robíš športy ako veslovanie a triatlon.",
                   value: 1.9,
                 },
               ].map((option) => (
@@ -282,7 +280,7 @@ export default function ProfileCompletition() {
                     )}
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.label}>{option.label}</Text>
+                    <Text style={styles.labelModal}>{option.label}</Text>
                     <Text style={styles.description}>{option.description}</Text>
                   </View>
                 </Pressable>
@@ -385,12 +383,18 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   activityButton: {
-    backgroundColor: "#4CAF50",
-    padding: 12,
-    marginTop: 10,
-    borderRadius: 8,
-    width: "60%",
     alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
+    fontSize: 14,
+    fontWeight: "400",
+    width: 160,
+    height: 40,
+    borderRadius: 5,
+    borderColor: "black",
+    borderWidth: 1,
+    marginTop: 5,
+    elevation: 6,
   },
   overlay: {
     flex: 1,
@@ -431,7 +435,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: "#333",
   },
-  label: {
+  labelModal: {
     fontWeight: "500",
     marginBottom: 2,
   },
