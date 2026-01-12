@@ -9,9 +9,7 @@ import crypto from "crypto";
 import path from "path";
 import OpenAI from "openai";
 
-
-
-dotenv.config({ path: path.resolve("./server/.env") });
+dotenv.config({ path: path.resolve("../server/.env") });
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
@@ -398,18 +396,18 @@ async function start() {
   });
 
   // ------------------- AI RECIPE GENERATOR -------------------
-app.post("/api/generateRecipe", async (req, res) => {
-  try {
-    // HARD FAILSAFE
-    if (gptRequestCount >= GPT_REQUEST_LIMIT) {
-      return res.status(429).json({
-        error: "GPT request limit reached on server",
-      });
-    }
+  app.post("/api/generateRecipe", async (req, res) => {
+    try {
+      // HARD FAILSAFE
+      if (gptRequestCount >= GPT_REQUEST_LIMIT) {
+        return res.status(429).json({
+          error: "GPT request limit reached on server",
+        });
+      }
 
-    gptRequestCount++;
+      gptRequestCount++;
 
-    const systemPrompt = `
+      const systemPrompt = `
 You are a professional chef AI.
 
 Generate ONE random food recipe.
@@ -439,105 +437,98 @@ Rules:
 - Output MUST be valid JSON
 `;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "Generate a random recipe." },
-      ],
-      max_tokens: 600,
-      temperature: 0.8,
-    });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: "Generate a random recipe." },
+        ],
+        max_tokens: 600,
+        temperature: 0.8,
+      });
 
-    const rawResponse = completion.choices[0].message.content;
+      const rawResponse = completion.choices[0].message.content;
 
-    // FINAL SAFETY: ensure JSON validity
-    let parsedJSON;
+      // FINAL SAFETY: ensure JSON validity
+      let parsedJSON;
+      try {
+        parsedJSON = JSON.parse(rawResponse);
+      } catch (jsonErr) {
+        console.error("❌ Invalid JSON from GPT:", rawResponse);
+        return res.status(500).json({
+          error: "Invalid JSON received from AI",
+        });
+      }
+
+      return res.json({
+        success: true,
+        recipe: parsedJSON,
+      });
+    } catch (err) {
+      console.error("❌ GPT error:", err);
+
+      if (err.code === "insufficient_quota") {
+        return res.status(429).json({
+          error: "Monthly AI quota reached",
+        });
+      }
+
+      res.status(500).json({
+        error: "Failed to generate recipe",
+      });
+    }
+  });
+
+  // ------------------ SAVE RECIPE TO DB ------------------
+  app.post("/api/addRecipe", async (req, res) => {
+    console.log("📩 Incoming /api/addRecipe request:", req.body);
+
+    const { email, recipe } = req.body;
+
+    if (!email || !recipe) {
+      return res.status(400).json({ error: "Missing email or recipe" });
+    }
+
     try {
-      parsedJSON = JSON.parse(rawResponse);
-    } catch (jsonErr) {
-      console.error("❌ Invalid JSON from GPT:", rawResponse);
-      return res.status(500).json({
-        error: "Invalid JSON received from AI",
+      const user = await users.findOne({ email });
+      console.log("👤 Found user:", user ? user.email : "NOT FOUND");
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const recipeObj = {
+        recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: recipe.name,
+        estimatedCookingTime: recipe.estimatedCookingTime,
+        ingredients: recipe.ingredients,
+        steps: recipe.steps,
+        createdAt: new Date(),
+      };
+
+      if (!user.recipes || user.recipes.length === 0) {
+        console.log("🍳 Creating first recipes array");
+        await users.updateOne({ email }, { $set: { recipes: [recipeObj] } });
+      } else if (user.recipes.length >= 100) {
+        console.log("⚠️ Too many recipes");
+        return res.status(400).json({ error: "Too many saved recipes" });
+      } else {
+        console.log("🍳 Pushing recipe to existing array");
+        await users.updateOne({ email }, { $push: { recipes: recipeObj } });
+      }
+
+      const updatedUser = await users.findOne({ email });
+      console.log("✅ Updated user recipes:", updatedUser.recipes);
+
+      res.json({
+        success: true,
+        recipes: updatedUser.recipes,
       });
+    } catch (err) {
+      console.error("❌ Add recipe error:", err);
+      res.status(500).json({ error: "Server error" });
     }
-
-    return res.json({
-      success: true,
-      recipe: parsedJSON,
-    });
-  } catch (err) {
-    console.error("❌ GPT error:", err);
-
-    if (err.code === "insufficient_quota") {
-      return res.status(429).json({
-        error: "Monthly AI quota reached",
-      });
-    }
-
-    res.status(500).json({
-      error: "Failed to generate recipe",
-    });
-  }
-});
-
-// ------------------ SAVE RECIPE TO DB ------------------
-app.post("/api/addRecipe", async (req, res) => {
-  console.log("📩 Incoming /api/addRecipe request:", req.body);
-
-  const { email, recipe } = req.body;
-
-  if (!email || !recipe) {
-    return res.status(400).json({ error: "Missing email or recipe" });
-  }
-
-  try {
-    const user = await users.findOne({ email });
-    console.log("👤 Found user:", user ? user.email : "NOT FOUND");
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    const recipeObj = {
-      recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: recipe.name,
-      estimatedCookingTime: recipe.estimatedCookingTime,
-      ingredients: recipe.ingredients,
-      steps: recipe.steps,
-      createdAt: new Date(),
-    };
-
-    if (!user.recipes || user.recipes.length === 0) {
-      console.log("🍳 Creating first recipes array");
-      await users.updateOne(
-        { email },
-        { $set: { recipes: [recipeObj] } }
-      );
-    } else if (user.recipes.length >= 100) {
-      console.log("⚠️ Too many recipes");
-      return res.status(400).json({ error: "Too many saved recipes" });
-    } else {
-      console.log("🍳 Pushing recipe to existing array");
-      await users.updateOne(
-        { email },
-        { $push: { recipes: recipeObj } }
-      );
-    }
-
-    const updatedUser = await users.findOne({ email });
-    console.log("✅ Updated user recipes:", updatedUser.recipes);
-
-    res.json({
-      success: true,
-      recipes: updatedUser.recipes,
-    });
-  } catch (err) {
-    console.error("❌ Add recipe error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
+  });
 
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
