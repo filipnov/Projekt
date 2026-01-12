@@ -1,5 +1,4 @@
-// RecipesTab.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Text,
   View,
@@ -12,20 +11,88 @@ import {
   ScrollView,
   Button,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../styles";
 
 export default function RecipesTab() {
   const [recipe, setRecipe] = useState("");
   const [selectedRecept, setSelectedRecept] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
+  const [generatedRecipe, setGeneratedRecipe] = useState(null);
 
-  function generateRecipe() {
-    if (!recipe.trim()) {
-      Alert.alert("Chyba", "Prosím, zadajte názov receptu!");
+  // 🔹 Load logged-in user email from AsyncStorage
+  useEffect(() => {
+    const loadEmail = async () => {
+      const email = await AsyncStorage.getItem("userEmail");
+      if (!email) {
+        Alert.alert("Chyba", "Používateľ nie je prihlásený");
+        return;
+      }
+      setUserEmail(email);
+    };
+
+    loadEmail();
+  }, []);
+
+  // 🔹 Generate recipe + save to DB
+  const generateRecipe = async () => {
+    if (!userEmail) {
+      Alert.alert("Chyba", "Používateľ nie je prihlásený");
       return;
     }
-    console.log("Generating recipe for:", recipe);
-    setRecipe("");
-  }
+
+    try {
+      // 1️⃣ Generate recipe from AI
+      const response = await fetch(
+        "http://10.0.2.2:3000/api/generateRecipe",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!data.success || !data.recipe) {
+        Alert.alert("Chyba", "Nepodarilo sa vygenerovať recept");
+        return;
+      }
+
+      console.log("🍳 AI RECIPE:", data.recipe);
+      setGeneratedRecipe(data.recipe);
+
+      // 2️⃣ Save recipe to DB
+      const saveResponse = await fetch(
+        "http://10.0.2.2:3000/api/addRecipe",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: userEmail,
+            recipe: data.recipe,
+          }),
+        }
+      );
+
+      const saveData = await saveResponse.json();
+
+      if (!saveData.success) {
+        console.error("❌ Failed to save recipe:", saveData);
+        Alert.alert("Chyba", "Recept sa nepodarilo uložiť");
+        return;
+      }
+
+      console.log("✅ Recipe saved:", saveData.recipes);
+      Alert.alert("Hotovo", "Recept bol úspešne uložený 🎉");
+    } catch (error) {
+      console.error("❌ ERROR:", error);
+      Alert.alert("Chyba", "Nastala chyba pri generovaní receptu");
+    }
+  };
 
   const recepty = [
     {
@@ -33,38 +100,35 @@ export default function RecipesTab() {
       nazov: "Bryndzové halušky",
       ingrediencie: "zemiaky, polohrubá múka, soľ, bryndza, slanina a pažitka",
       postup:
-        "1. Pripravíme si suroviny. \n2. Zemiaky očistíme a nastrúhame do misky. \n3. Zemiaky zasypeme 250g múky a pridáme lyžicu soli. Dobre premiešame. \n4. Postupne podľa potreby prisypeme aj zvyšnú časť múky - v závislosti od zemiakov. Cesto by malo byť vláčne, ale aj dostatočne pevné. Cesto má správnu hustotu vtedy, ak v ňom stojí varecha - nesmie sa váľať. \n5. Do veľkého hrnca dáme vodu, trochu soli a necháme zovrieť. \n 6. Keď voda zovrie, pomocou haluškára alebo cez lopárik hádžeme halušky do vriacej vody a necháme variť pár minút. Keď vyplávajú na povrch, sú hotové. \n 7. Hotové halušky dáme do misky a premiešame s bryndzou. (Ak halušky neplánujeme ihneď podávať, prepláchneme ich vodou a pokvapkáme troškou oleja, aby sa nezlepili). \n 8. Slaninu nakrájame na kocky a opečieme do chrumkava. \n 9. Hotové halušky podávame s opečenou slaninou a voňavou pažítkou. ",
+        "1. Pripravíme si suroviny...\n9. Podávame so slaninou a pažítkou.",
       obrazok: require("../../assets/bryndzove-halusky.jpg"),
     },
     {
       id: 2,
       nazov: "Kapustnica",
-      obsah:
-        "Ingrediencie: kyslá kapusta, klobása, cibuľa...\nPostup: 1. Orestuj cibuľu, 2. Pridaj kapustu, 3. ...",
+      obsah: "Ingrediencie: kapusta, klobása...\nPostup...",
       obrazok: require("../../assets/kapustnica.jpg"),
     },
     {
       id: 3,
       nazov: "Segedínsky guláš",
       ingrediencie:
-        "bravčové pliecko (800g - 1,5kg), 750 g kyslá kapusta, 2 PL bravčová masť, 1 ks cibuľa, 2 PL mletá červená paprika, 500 ml smotana na šľahanie, 1 ČL mletá rasca, 1/2 KL mleté čierne korenie",
+        "bravčové mäso, kapusta, paprika, smotana",
       postup:
-        "1. Bravčové mäso dobre umyjeme a nakrájame na kocky. Cibuľu očistíme a nakrájame na drobno.\n2. Do hlbokého hrnca dáme bravčovú masť a cibuľku orestujeme do sklovita. \n3. Pridáme mäso a restujeme, kým sa zatiahne. \n4. Pridáme mletú rascu, mleté čierne korenie a podľa chuti soľ. Podlejeme vodou a dusíme zhruba 45 minút. \n5. Medzitým si kapustu nakrájame. \n6. Pridáme ju k mäsu. \n7. Ďalej pridáme mletú červenú papriku, dobre premiešame a dusíme do mäkka. Podľa potreby podlejem vodou. \n8. Na záver pridáme smotanu. Ak chcete mať guláš hustejší, v smotane rozmiešame lyžicu hladkej múky. Necháme povariť na miernom ohni ešte 10 minút, podľa potreby dochutíme a môžeme podávať. \n9. Najlepšie chutí s domácou parenou knedľou.",
+        "1. Orestujeme mäso...\n9. Podávame s knedľou.",
       obrazok: require("../../assets/segedin.jpg"),
     },
     {
       id: 4,
       nazov: "Placky",
-      obsah:
-        "Ingrediencie: bravčové mäso, kapusta, cibuľa, paprika...\nPostup: 1. Orestuj cibuľu, 2. Pridaj mäso, 3. ...",
+      obsah: "Ingrediencie...\nPostup...",
       obrazok: require("../../assets/placky.jpg"),
     },
     {
       id: 5,
       nazov: "Palacinky",
-      ingrediencie: "1ks vajce, 400ml mlieko, 200g hladká múka, soľ",
-      postup:
-        "1. Z uvedených surovín vypracujeme hladké cesto. \n2. Cesto lejeme naberačkou na rozpálenú panvicu a kvapkou oleja alebo masla a pečieme z oboch strán. \n3. Hotové palacinky plníme džemom a posypeme cukrom.",
+      ingrediencie: "vajce, mlieko, múka",
+      postup: "1. Vymiešame cesto...\n3. Podávame.",
       obrazok: require("../../assets/palacinky.jpg"),
     },
   ];
@@ -78,6 +142,7 @@ export default function RecipesTab() {
           onChangeText={setRecipe}
           value={recipe}
         />
+
         <Pressable onPress={generateRecipe} style={styles.recipeButton}>
           <Text>Generovať recept</Text>
         </Pressable>
@@ -126,7 +191,9 @@ export default function RecipesTab() {
                 />
               )}
 
-              <Text style={styles.modalTitle}>{selectedRecept?.nazov}</Text>
+              <Text style={styles.modalTitle}>
+                {selectedRecept?.nazov}
+              </Text>
 
               <ScrollView style={styles.modalContent}>
                 {selectedRecept?.ingrediencie && (
@@ -134,17 +201,16 @@ export default function RecipesTab() {
                     <Text style={{ fontWeight: "bold" }}>
                       Ingrediencie:{"\n"}
                     </Text>
-                    {selectedRecept.ingrediencie.replace(
-                      /^Ingrediencie:\s*/,
-                      ""
-                    )}
+                    {selectedRecept.ingrediencie}
                   </Text>
                 )}
 
                 {selectedRecept?.postup && (
                   <Text>
-                    <Text style={{ fontWeight: "bold" }}>Postup:{"\n"}</Text>
-                    {selectedRecept.postup.replace(/^Postup:\s*/, "")}
+                    <Text style={{ fontWeight: "bold" }}>
+                      Postup:{"\n"}
+                    </Text>
+                    {selectedRecept.postup}
                   </Text>
                 )}
               </ScrollView>
