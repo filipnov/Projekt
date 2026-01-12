@@ -8,11 +8,84 @@ import {
   Pressable,
   Alert,
   Image,
+  Modal,
+  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import arrow from "./assets/left-arrow.png";
 import { useNavigation } from "@react-navigation/native";
-import DropDownPicker from "react-native-dropdown-picker";
+
+function ActivityModal({ visible, onClose, selected, setSelected }) {
+  const options = [
+    {
+      label: "Sedavý",
+      description:
+        "Väčšinu času tráviš sedením, či už pri práci na počítači, čítaní kníh alebo sledovaní televízie. Pohybuješ sa akôr výnimočne.",
+      value: 1.2,
+    },
+    {
+      label: "Ľahko aktívny",
+      description:
+        "Občas sa postavíš a rozhýbeš, ale ináč veľkú časť dňa tráviš v sede. Bežne chodíš krátke vzdialenosti alebo vykonávaš ľahké domáce práce.",
+      value: 1.375,
+    },
+    {
+      label: "Stredne aktívny",
+      description:
+        "Bežne sa venuješ činnostiam, ktoré Ťa dostanú do pohybu, ako je chôdza, práca v záhradke, náročnejšie domáce práce alebo ľahký šport.",
+      value: 1.55,
+    },
+    {
+      label: "Veľmi aktívny",
+      description:
+        "Pravidelne a intenzívne športuješ, či už je to beh, cyklistika, fitness alebo iné náročnejšie aktivity.",
+      value: 1.725,
+    },
+    {
+      label: "Extrémne aktívny",
+      description:
+        "Tvoj denný režim zahŕňa extrémne a vytrvalostné fyzické výkony. Maratóny, náročný intervalový tréning alebo športy ako veslovanie a triatlon sú pre Teba normou.",
+      value: 1.9,
+    },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="slide">
+      <View style={modalStyles.overlay}>
+        <View style={modalStyles.modal}>
+          <Text style={modalStyles.title}>Vyber úroveň aktivity</Text>
+          <ScrollView style={{ maxHeight: 300 }}>
+            {options.map((option) => (
+              <Pressable
+                key={option.label}
+                style={modalStyles.option}
+                onPress={() => {
+                  setSelected(option);
+                  onClose();
+                }}
+              >
+                <View style={modalStyles.radioOuter}>
+                  {selected?.label === option.label && (
+                    <View style={modalStyles.radioInner} />
+                  )}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={modalStyles.label}>{option.label}</Text>
+                  <Text style={modalStyles.description}>
+                    {option.description}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <Pressable style={modalStyles.button} onPress={onClose}>
+            <Text style={modalStyles.buttonText}>Zavrieť</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
 
 export default function ProfileCompletition() {
   const navigation = useNavigation();
@@ -23,16 +96,12 @@ export default function ProfileCompletition() {
   const [email, setEmail] = useState("");
   const [gender, setGender] = useState("male");
   const [goal, setGoal] = useState("maintain");
-  const [value, setValue] = useState(null);
 
-  const [open, setOpen] = useState(false);
-  const [items, setItems] = useState([
-    { label: "Žiadna - sedavá", value: 1.2 },
-    { label: "Ľahká - 1–3× týždenne", value: 1.375 },
-    { label: "Stredná - 3–5× týždenne", value: 1.55 },
-    { label: "Ťažká - 6–7× týždenne", value: 1.725 },
-    { label: "Veľmi ťažká - každý deň + fyzická práca", value: 1.9 },
-  ]);
+  const [activityModalVisible, setActivityModalVisible] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState({
+    label: "Ľahko aktívny",
+    value: 1.375,
+  });
 
   const SERVER = "http://10.0.2.2:3000";
   const UPDATE_URL = `${SERVER}/api/updateProfile`;
@@ -59,7 +128,13 @@ export default function ProfileCompletition() {
           setAge(String(data.age || ""));
           setGender(data.gender || "male");
           setGoal(data.goal || "maintain");
-          setValue(data.activityLevel || null);
+          if (data.activityLevel) {
+            const activityOption = {
+              label: data.activityLabel || "Ľahko aktívny",
+              value: data.activityLevel,
+            };
+            setSelectedActivity(activityOption);
+          }
         } else {
           console.warn("Nepodarilo sa načítať profil:", data.error);
         }
@@ -72,13 +147,7 @@ export default function ProfileCompletition() {
   }, [email]);
 
   async function handleCompletion() {
-    if (
-      !weight.trim() ||
-      !height.trim() ||
-      !age.trim() ||
-      !gender.trim() ||
-      !goal.trim()
-    ) {
+    if (!weight.trim() || !height.trim() || !age.trim()) {
       Alert.alert("Prosím vyplň všetky polia!");
       return;
     }
@@ -89,13 +158,13 @@ export default function ProfileCompletition() {
     }
 
     const body = {
-      email: email,
+      email,
       weight: Number(weight.trim()),
       height: Number(height.trim()),
       age: Number(age.trim()),
-      gender: gender,
-      activityLevel: value,
-      goal: goal,
+      gender,
+      activityLevel: selectedActivity.value,
+      goal,
     };
 
     try {
@@ -109,17 +178,7 @@ export default function ProfileCompletition() {
 
       if (resp.ok) {
         try {
-          await AsyncStorage.setItem(
-            "userProfile",
-            JSON.stringify({
-              weight: Number(weight.trim()),
-              height: Number(height.trim()),
-              age: Number(age.trim()),
-              gender,
-              activityLevel: value,
-              goal,
-            })
-          );
+          await AsyncStorage.setItem("userProfile", JSON.stringify(body));
         } catch (err) {
           console.error("Error saving profile locally:", err);
         }
@@ -132,27 +191,6 @@ export default function ProfileCompletition() {
       Alert.alert("Network error", err.message);
     }
   }
-
-  const saveProfileLocally = async (profile) => {
-    try {
-      await AsyncStorage.setItem("userProfile", JSON.stringify(profile));
-    } catch (err) {
-      console.error("Error saving profile locally:", err);
-    }
-  };
-
-  useEffect(() => {
-    const profile = {
-      weight: weight ? Number(weight.trim()) : null,
-      height: height ? Number(height.trim()) : null,
-      age: age ? Number(age.trim()) : null,
-      gender,
-      activityLevel: value,
-      goal,
-    };
-
-    saveProfileLocally(profile);
-  }, [weight, height, age, gender, value, goal]);
 
   return (
     <>
@@ -217,18 +255,13 @@ export default function ProfileCompletition() {
           </Pressable>
         </View>
 
-        <View>
-          <Text style={styles.label}>Úroveň aktivity:</Text>
-          <DropDownPicker
-            open={open}
-            value={value}
-            items={items}
-            setOpen={setOpen}
-            setValue={setValue}
-            setItems={setItems}
-            placeholder="Vyber aktivitu"
-          />
-        </View>
+        <Text style={styles.label}>Úroveň aktivity:</Text>
+        <Pressable
+          style={styles.activityButton}
+          onPress={() => setActivityModalVisible(true)}
+        >
+          <Text style={{ color: "white" }}>{selectedActivity.label}</Text>
+        </Pressable>
       </View>
 
       <View style={styles.genderContainer}>
@@ -270,6 +303,13 @@ export default function ProfileCompletition() {
       <Pressable style={styles.button} onPress={handleCompletion}>
         <Text style={styles.buttonText}>Uložiť údaje</Text>
       </Pressable>
+
+      <ActivityModal
+        visible={activityModalVisible}
+        onClose={() => setActivityModalVisible(false)}
+        selected={selectedActivity}
+        setSelected={setSelectedActivity}
+      />
     </>
   );
 }
@@ -356,5 +396,76 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     fontSize: 15,
+  },
+  activityButton: {
+    backgroundColor: "#4CAF50",
+    padding: 12,
+    marginTop: 10,
+    borderRadius: 8,
+    width: "60%",
+    alignItems: "center",
+  },
+});
+
+// Štýly pre modal
+const modalStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modal: {
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 15,
+  },
+  option: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 15,
+  },
+  radioOuter: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#333",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    marginTop: 3,
+  },
+  radioInner: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: "#333",
+  },
+  label: {
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  description: {
+    color: "#555",
+    fontSize: 13,
+  },
+  button: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "center",
+    fontSize: 16,
   },
 });
