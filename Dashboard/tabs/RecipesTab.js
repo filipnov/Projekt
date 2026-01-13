@@ -125,7 +125,7 @@ export default function RecipesTab() {
       id: 1,
       nazov: "Bryndzové halušky",
       ingrediencie: "zemiaky, polohrubá múka, soľ, bryndza, slanina a pažitka",
-      postup: "1. Pripravíme si suroviny...\n9. Podávame so slaninou a pažítkou.",
+      postup: "1. Pripravíme si suroviny...",
       obrazok: require("../../assets/bryndzove-halusky.jpg"),
     },
     {
@@ -151,7 +151,7 @@ export default function RecipesTab() {
       id: 5,
       nazov: "Palacinky",
       ingrediencie: "vajce, mlieko, múka",
-      postup: "1. Vymiešame cesto...\n3. Podávame.",
+      postup: "1. Vymiešame cesto...",
       obrazok: require("../../assets/palacinky.jpg"),
     },
   ];

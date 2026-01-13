@@ -416,9 +416,12 @@ async function start() {
 4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť
 5. Kroky MUSIA byť jasné, presné a očíslované
 6. Čas prípravy MUSÍ byť realistický pre daný recept
-7. Každému receptu priradíš jednu z týchto kategórií: mäsité, bezmäsité, vegánske, sladké, štipľavé
-8. Ak nemôžeš vytvoriť skutočný recept, vráť *prázdny JSON objekt so správnou štruktúrou*
-9. Čo najviac obmedz opakovanie receptov a surovín, chceme aby každy nový recept bol fresh a originálny.
+7. Buď kreatívny, vytváraj normálne, slané, štiplavé, exotické recepty a nezabudni aj na sladké dezerty
+8. Recepty nemusia byť slovenské, používaj recepty z celého sveta pokiaľ sú dodržané ostatné pravidlá.
+9. Každému receptu priradíš jednu z týchto kategórií: mäsité, bezmäsité, vegánske, sladké, štipľavé
+10. Názov kategórie musí byť so správnou diakritikou
+11. Ak nemôžeš vytvoriť skutočný recept, vráť *prázdny JSON objekt so správnou štruktúrou*
+12. Čo najviac obmedz opakovanie receptov a surovín, chceme aby každy nový recept bol fresh a originálny.
 
 *Štruktúra JSON, ktorú MUSÍŠ vrátiť*
 
@@ -438,7 +441,7 @@ async function start() {
 
 *Pravidlá formátu JSON*
 - Ingrediencie len v gramoch - čísla, žiadne texty ako 'približne'  
-- Kroky jasné, realistické a očíslované
+- Kroky jasné, realistické a VŽDY očíslované
 - Recept MUSÍ mať pridelenú kategóriu
 - Recept pre 1 osobu
 }
