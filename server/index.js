@@ -407,34 +407,36 @@ async function start() {
 
       gptRequestCount++;
 
-      const systemPrompt = `
-You are a professional chef AI.
+    const systemPrompt = `
+⚠️ **Dôležité pravidlá**:
+1. Odpovedaj **VÝHRADNE po slovensky**. Nevysvetľuj nič, nevypisuj text v inom jazyku.  
+2. Vráť **len platný JSON** podľa presnej štruktúry. Žiadny text mimo JSON.  
+3. Recept MUSÍ byť **skutočný a overiteľný**. Nevymýšľaj ingrediencie ani jedlá.  
+4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť.  
+5. Kroky MUSIA byť jasné, presné a očíslované.  
+6. Čas prípravy MUSÍ byť realistický pre daný recept.  
+7. Ak nemôžeš vytvoriť skutočný recept, vráť **prázdny JSON objekt so správnou štruktúrou**.  
 
-Generate ONE random food recipe.
-
-Return ONLY a valid JSON object.
-DO NOT include explanations, markdown, or text outside JSON.
-
-The JSON MUST have this exact structure:
+**Štruktúra JSON, ktorú musíš vrátiť:**
 
 {
-  "name": "Recipe name",
-  "estimatedCookingTime": "XX minutes",
+  "name": "Názov receptu",
+  "estimatedCookingTime": "Čas prípravy v minútach, napr. '25 minút'",
   "ingredients": [
-    { "name": "ingredient name", "amountGrams": 100 }
+    { "name": "Názov ingrediencie", "amountGrams": 100 }
   ],
   "steps": [
-    "Step 1",
-    "Step 2",
-    "Step 3"
+    "Krok 1",
+    "Krok 2",
+    "Krok 3"
   ]
 }
 
-Rules:
-- Ingredients MUST use grams only (numbers, no text like 'approx')
-- Steps must be clear and ordered
-- Estimated cooking time must be realistic
-- Output MUST be valid JSON
+**Pravidlá formátu JSON:**
+- Ingrediencie len v gramoch (čísla, žiadne texty ako 'približne').  
+- Kroky jasné, realistické a očíslované.  
+- Recept pre 1–4 osoby.  
+}
 `;
 
       const completion = await openai.chat.completions.create({
@@ -447,18 +449,18 @@ Rules:
         temperature: 0.8,
       });
 
-      const rawResponse = completion.choices[0].message.content;
+    const rawResponse = completion.choices[0].message.content;
 
-      // FINAL SAFETY: ensure JSON validity
-      let parsedJSON;
-      try {
-        parsedJSON = JSON.parse(rawResponse);
-      } catch (jsonErr) {
-        console.error("❌ Invalid JSON from GPT:", rawResponse);
-        return res.status(500).json({
-          error: "Invalid JSON received from AI",
-        });
-      }
+    // FINAL SAFETY: ensure JSON validity
+    let parsedJSON;
+    try {
+      parsedJSON = JSON.parse(rawResponse);
+    } catch (jsonErr) {
+      console.error("❌ Invalid JSON from GPT:", rawResponse);
+      return res.status(500).json({
+        error: "Invalid JSON received from AI",
+      });
+    }
 
       return res.json({
         success: true,
@@ -493,9 +495,9 @@ Rules:
       const user = await users.findOne({ email });
       console.log("👤 Found user:", user ? user.email : "NOT FOUND");
 
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
-      }
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
       const recipeObj = {
         recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
