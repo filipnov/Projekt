@@ -416,7 +416,7 @@ async function start() {
 4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť
 5. Kroky MUSIA byť jasné, presné a očíslované
 6. Čas prípravy MUSÍ byť realistický pre daný recept
-7. Každému receptu priradíš jednu z týchto kategórií: mäsité, bezmäsité, vegánske, sladké
+7. Každému receptu priradíš jednu z týchto kategórií: mäsité, bezmäsité, vegánske, sladké, štipľavé
 8. Ak nemôžeš vytvoriť skutočný recept, vráť *prázdny JSON objekt so správnou štruktúrou*
 9. Čo najviac obmedz opakovanie receptov a surovín, chceme aby každy nový recept bol fresh a originálny.
 
@@ -560,6 +560,31 @@ app.get("/api/getRecipes", async (req, res) => {
   } catch (err) {
     console.error("❌ Get recipes error:", err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+//DELETE RECIPE FROM SERVER//
+app.delete("/api/deleteRecipe", async (req, res) => {
+  const { email, recipeId } = req.body;
+
+  if (!email || !recipeId) {
+    return res.status(400).json({ success: false });
+  }
+
+  try {
+    const result = await users.updateOne(
+      { email },
+      { $pull: { recipes: { recipeId } } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.json({ success: false });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Delete recipe error:", err);
+    res.status(500).json({ success: false });
   }
 });
 
