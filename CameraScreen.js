@@ -1,4 +1,4 @@
-// CameraScreen.js
+// CameraScreen.js 577
 import { CameraView, useCameraPermissions } from "expo-camera";
 import React, { useState } from "react";
 import {
@@ -82,8 +82,6 @@ export default function CameraScreen() {
     }
   }
 
-  
-  // Funkcia pre fetchovanie a výpočet nutričných hodnôt
   async function fetchProductData(barcode) {
     setProductData(null);
     setAwaitingQuantity(false);
@@ -97,61 +95,44 @@ export default function CameraScreen() {
         const product = data.product;
         const n = product.nutriments;
 
-        // Extrahovanie hmotnosti z API
-        const qty = product.quantity;
-        const nums = qty != null ? String(qty).match(/\d+(\.\d+)?/g) : null;
-        const weight = nums ? Math.max(...nums.map(Number)) : null;
+        const weight = Number(product.product_quantity);
 
         const productInfo = {
           name: product.product_name,
           image: product.image_url,
-          calories: n?.["energy-kcal_100g"],
-          fat: n?.fat_100g,
-          saturatedFat: n?.["saturated-fat_100g"],
-          carbs: n?.carbohydrates_100g,
-          sugar: n?.sugars_100g,
-          proteins: n?.proteins_100g,
-          salt: n?.salt_100g,
-          fiber: n?.fiber_100g,
-          ingredients: product.ingredients_text,
-          quantity: qty,
+          calories: n?.["energy-kcal_100g"] || 0,
+          fat: n?.fat_100g || 0,
+          saturatedFat: n?.["saturated-fat_100g"] || 0,
+          carbs: n?.carbohydrates_100g || 0,
+          sugar: n?.sugars_100g || 0,
+          proteins: n?.proteins_100g || 0,
+          salt: n?.salt_100g || 0,
+          fiber: n?.fiber_100g || 0,
+          quantity: weight,
         };
 
         if (weight) {
-          productInfo.totalCalories = productInfo.calories
-            ? (productInfo.calories / 100) * weight
-            : 0;
-          productInfo.totalFat = productInfo.fat
-            ? (productInfo.fat / 100) * weight
-            : 0;
-          productInfo.totalCarbs = productInfo.carbs
-            ? (productInfo.carbs / 100) * weight
-            : 0;
-          productInfo.totalSugar = productInfo.sugar
-            ? (productInfo.sugar / 100) * weight
-            : 0;
-          productInfo.totalProteins = productInfo.proteins
-            ? (productInfo.proteins / 100) * weight
-            : 0;
-          productInfo.totalSalt = productInfo.salt
-            ? (productInfo.salt / 100) * weight
-            : 0;
-          productInfo.totalFiber = productInfo.fiber
-            ? (productInfo.fiber / 100) * weight
-            : 0;
-
-          // Zaokrúhlenie
           productInfo.totalCalories = Number(
-            productInfo.totalCalories.toFixed(0)
+            ((productInfo.calories / 100) * weight).toFixed(0)
           );
-          productInfo.totalFat = Number(productInfo.totalFat.toFixed(0));
-          productInfo.totalCarbs = Number(productInfo.totalCarbs.toFixed(0));
-          productInfo.totalSugar = Number(productInfo.totalSugar.toFixed(0));
+          productInfo.totalFat = Number(
+            ((productInfo.fat / 100) * weight).toFixed(0)
+          );
+          productInfo.totalCarbs = Number(
+            ((productInfo.carbs / 100) * weight).toFixed(0)
+          );
+          productInfo.totalSugar = Number(
+            ((productInfo.sugar / 100) * weight).toFixed(0)
+          );
           productInfo.totalProteins = Number(
-            productInfo.totalProteins.toFixed(0)
+            ((productInfo.proteins / 100) * weight).toFixed(0)
           );
-          productInfo.totalSalt = Number(productInfo.totalSalt.toFixed(0));
-          productInfo.totalFiber = Number(productInfo.totalFiber.toFixed(0));
+          productInfo.totalSalt = Number(
+            ((productInfo.salt / 100) * weight).toFixed(0)
+          );
+          productInfo.totalFiber = Number(
+            ((productInfo.fiber / 100) * weight).toFixed(0)
+          );
         } else {
           setAwaitingQuantity(true);
         }
@@ -166,7 +147,6 @@ export default function CameraScreen() {
     }
   }
 
-  // handleBarCodeScanned
   async function handleBarCodeScanned({ data }) {
     if (scanned) return;
     setScanned(true);
@@ -237,17 +217,18 @@ export default function CameraScreen() {
 
     try {
       const storedTotals = await AsyncStorage.getItem("eatenTotals");
-      let currentTotals = storedTotals ? JSON.parse(storedTotals) : {
-        calories: 0,
-        proteins: 0,
-        carbs: 0,
-        fat: 0,
-        fiber: 0,
-        sugar: 0,
-        salt: 0,
-      };
+      let currentTotals = storedTotals
+        ? JSON.parse(storedTotals)
+        : {
+            calories: 0,
+            proteins: 0,
+            carbs: 0,
+            fat: 0,
+            fiber: 0,
+            sugar: 0,
+            salt: 0,
+          };
 
-      // Pripočítanie nových hodnôt z produktu
       const updatedTotals = {
         calories: currentTotals.calories + (productData.totalCalories || 0),
         proteins: currentTotals.proteins + (productData.totalProteins || 0),
@@ -258,20 +239,10 @@ export default function CameraScreen() {
         salt: currentTotals.salt + (productData.totalSalt || 0),
       };
 
-      // Uloženie aktualizovaných hodnôt späť do AsyncStorage
       await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
 
-      Alert.alert(
-        "✅ Úspech",
-        `${productData.name}\n+${productData.totalCalories} kcal`
-      );
-
-      // Vyčistenie
       setCode("");
       setProductData(null);
-
-      // Navigácia späť na Dashboard
-      navigation.goBack();
     } catch (err) {
       console.error("❌ Chyba pri pridávaní:", err);
       Alert.alert("Chyba", "Nepodarilo sa pridať produkt do zjedených hodnôt.");
@@ -390,7 +361,6 @@ export default function CameraScreen() {
                         : 0,
                     };
 
-                    // Zaokrúhlenie
                     updatedProduct.totalCalories = Number(
                       updatedProduct.totalCalories.toFixed(0)
                     );
@@ -472,14 +442,21 @@ export default function CameraScreen() {
               style={styles.manual_add_container_button}
               onPress={saveToDatabase}
             >
-              <Text style={styles.manual_add_container_button_text}>Špajza</Text>
+              <Text style={styles.manual_add_container_button_text}>
+                Špajza
+              </Text>
             </Pressable>
 
             <Pressable
-              style={[styles.manual_add_container_button, { backgroundColor: "#2196F3" }]}
+              style={[
+                styles.manual_add_container_button,
+                { backgroundColor: "#2196F3" },
+              ]}
               onPress={addDirectlyToEaten}
             >
-              <Text style={styles.manual_add_container_button_text}>Zjedené</Text>
+              <Text style={styles.manual_add_container_button_text}>
+                Zjedené
+              </Text>
             </Pressable>
           </ScrollView>
         )}

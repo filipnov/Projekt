@@ -398,7 +398,6 @@ async function start() {
   // ------------------- AI RECIPE GENERATOR -------------------
   app.post("/api/generateRecipe", async (req, res) => {
     try {
-      // HARD FAILSAFE
       if (gptRequestCount >= GPT_REQUEST_LIMIT) {
         return res.status(429).json({
           error: "GPT request limit reached on server",
@@ -435,7 +434,7 @@ async function start() {
 **Pravidlá formátu JSON:**
 - Ingrediencie len v gramoch (čísla, žiadne texty ako 'približne').  
 - Kroky jasné, realistické a očíslované.  
-- Recept pre 1–4 osoby.  
+- Recept pre 1 osobu.  
 }
 `;
 
@@ -451,7 +450,6 @@ async function start() {
 
     const rawResponse = completion.choices[0].message.content;
 
-    // FINAL SAFETY: ensure JSON validity
     let parsedJSON;
     try {
       parsedJSON = JSON.parse(rawResponse);
