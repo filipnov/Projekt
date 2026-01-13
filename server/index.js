@@ -9,7 +9,7 @@ import crypto from "crypto";
 import path from "path";
 import OpenAI from "openai";
 
-dotenv.config({ path: path.resolve("../server/.env") });
+dotenv.config({ path: path.resolve("./server/.env") });
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
@@ -408,20 +408,24 @@ async function start() {
       gptRequestCount++;
 
     const systemPrompt = `
-⚠️ **Dôležité pravidlá**:
-1. Odpovedaj **VÝHRADNE po slovensky**. Nevysvetľuj nič, nevypisuj text v inom jazyku.  
-2. Vráť **len platný JSON** podľa presnej štruktúry. Žiadny text mimo JSON.  
-3. Recept MUSÍ byť **skutočný a overiteľný**. Nevymýšľaj ingrediencie ani jedlá.  
-4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť.  
-5. Kroky MUSIA byť jasné, presné a očíslované.  
-6. Čas prípravy MUSÍ byť realistický pre daný recept.  
-7. Ak nemôžeš vytvoriť skutočný recept, vráť **prázdny JSON objekt so správnou štruktúrou**.  
+    Si ten najdokonalejší AI šéfkuchár na planéte.
+ *Dôležité pravidlá*
+1. Odpovedaj **VÝHRADNE po slovensky**. Nevysvetľuj nič, nevypisuj text v inom jazyku
+2. Vráť *len platný JSON* podľa presnej štruktúry. Žiadny text mimo JSON 
+3. Recept MUSÍ byť *skutočný a overiteľný*. Nevymýšľaj ingrediencie ani jedlá
+4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť
+5. Kroky MUSIA byť jasné, presné a očíslované
+6. Čas prípravy MUSÍ byť realistický pre daný recept
+7. Každému receptu priradíš jednu z týchto kategórií: mäsité, bezmäsité, vegánske, sladké
+8. Ak nemôžeš vytvoriť skutočný recept, vráť *prázdny JSON objekt so správnou štruktúrou*
+9. Čo najviac obmedz opakovanie receptov a surovín, chceme aby každy nový recept bol fresh a originálny.
 
-**Štruktúra JSON, ktorú musíš vrátiť:**
+*Štruktúra JSON, ktorú MUSÍŠ vrátiť*
 
 {
   "name": "Názov receptu",
   "estimatedCookingTime": "Čas prípravy v minútach, napr. '25 minút'",
+  "category": Názov kategórie,
   "ingredients": [
     { "name": "Názov ingrediencie", "amountGrams": 100 }
   ],
@@ -432,10 +436,11 @@ async function start() {
   ]
 }
 
-**Pravidlá formátu JSON:**
-- Ingrediencie len v gramoch (čísla, žiadne texty ako 'približne').  
-- Kroky jasné, realistické a očíslované.  
-- Recept pre 1–4 osoby.  
+*Pravidlá formátu JSON*
+- Ingrediencie len v gramoch - čísla, žiadne texty ako 'približne'  
+- Kroky jasné, realistické a očíslované
+- Recept MUSÍ mať pridelenú kategóriu
+- Recept pre 1 osobu
 }
 `;
 
@@ -445,7 +450,7 @@ async function start() {
           { role: "system", content: systemPrompt },
           { role: "user", content: "Generate a random recipe." },
         ],
-        max_tokens: 600,
+        max_tokens: 610,
         temperature: 0.8,
       });
 
@@ -503,6 +508,7 @@ async function start() {
         recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: recipe.name,
         estimatedCookingTime: recipe.estimatedCookingTime,
+        category: recipe.category,
         ingredients: recipe.ingredients,
         steps: recipe.steps,
         createdAt: new Date(),
@@ -531,6 +537,31 @@ async function start() {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+  // ------------------ GET USER RECIPES ------------------
+app.get("/api/getRecipes", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "Missing email" });
+  }
+
+  try {
+    const user = await users.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      recipes: user.recipes || [],
+    });
+  } catch (err) {
+    console.error("❌ Get recipes error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
