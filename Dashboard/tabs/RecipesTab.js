@@ -156,7 +156,6 @@ export default function RecipesTab() {
     },
   ];
 
-  // --- RENDER ---
   return (
     <>
       <View style={styles.recipesContainer}>

@@ -27,8 +27,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// HARD BACKEND FAILSAFE
-const GPT_REQUEST_LIMIT = 50; // max requests per server runtime
+
+const GPT_REQUEST_LIMIT = 50;
 let gptRequestCount = 0;
 async function start() {
   await client.connect();
@@ -37,7 +37,6 @@ async function start() {
   const db = client.db("userdb");
   const users = db.collection("users");
 
-  // Ensure email uniqueness
   await users.createIndex({ email: 1 }, { unique: true });
 
   // ------------------- REGISTER -------------------
@@ -139,7 +138,7 @@ async function start() {
     }
   });
 
-  //--------------------------------------------------------------
+  
   app.get("/api/userProfile", async (req, res) => {
     try {
       const { email } = req.query;
@@ -277,7 +276,7 @@ async function start() {
       totalFiber,
       totalSalt,
       totalSugar,
-    } = req.body; // pridáme totalCalories
+    } = req.body; 
 
     try {
       const user = await users.findOne({ email });
@@ -363,7 +362,6 @@ async function start() {
         return res.status(404).json({ error: "User not found" });
       }
 
-      // Ak používateľ nemá produkty, vrátime prázdne pole
       const products = user.products || [];
 
       console.log("📤 Returning products:", products);
@@ -398,7 +396,6 @@ async function start() {
   // ------------------- AI RECIPE GENERATOR -------------------
   app.post("/api/generateRecipe", async (req, res) => {
     try {
-      // HARD FAILSAFE
       if (gptRequestCount >= GPT_REQUEST_LIMIT) {
         return res.status(429).json({
           error: "GPT request limit reached on server",
@@ -459,7 +456,6 @@ async function start() {
 
     const rawResponse = completion.choices[0].message.content;
 
-    // FINAL SAFETY: ensure JSON validity
     let parsedJSON;
     try {
       parsedJSON = JSON.parse(rawResponse);
