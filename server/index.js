@@ -374,26 +374,6 @@ async function start() {
 
   //------------ FIND PRODUCT INFO BY NAME ------------------
 
-  app.get("/api/getProductByName", async (req, res) => {
-    try {
-      const { email, name } = req.query;
-      if (!email || !name)
-        return res.status(400).json({ error: "Missing email or product name" });
-
-      const user = await users.findOne({ email });
-      if (!user) return res.status(404).json({ error: "User not found" });
-
-      const product = (user.products || []).find((p) => p.name === name);
-      if (!product) return res.status(404).json({ error: "Product not found" });
-
-      res.json({ success: true, product });
-    } catch (err) {
-      console.error("❌ Get product by name error:", err);
-      res.status(500).json({ error: "Server error" });
-    }
-  });
-
-  // ------------------- AI RECIPE GENERATOR -------------------
   app.post("/api/generateRecipe", async (req, res) => {
   try {
     if (gptRequestCount >= GPT_REQUEST_LIMIT) {
@@ -404,8 +384,25 @@ async function start() {
 
     gptRequestCount++;
 
-    const { userPrompt } = req.body;
+    const { userPrompt, email, usePantryItems, useFitnessGoal } = req.body;
     if (!userPrompt) return res.status(400).json({ error: "Missing prompt" });
+    if (!email) return res.status(400).json({ error: "Missing user email" });
+
+    const user = await users.findOne({ email });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // --- Získaj produkty zo špajze, ak je povolené ---
+    let pantryText = "";
+    if (usePantryItems && user.products && user.products.length > 0) {
+      const productNames = user.products.map(p => p.name).join(", ");
+      pantryText = `Použi tieto produkty zo špajze: ${productNames}.`;
+    }
+
+    // --- Získaj fitness cieľ používateľa, ak je povolené ---
+    let goalText = "";
+    if (useFitnessGoal && user.goal) {
+      goalText = `Zohľadni fitness cieľ používateľa: ${user.goal}.`;
+    }
 
     const systemPrompt = `
 Si ten najdokonalejší AI šéfkuchár na planéte.
@@ -418,8 +415,10 @@ Si ten najdokonalejší AI šéfkuchár na planéte.
 6. Čas prípravy MUSÍ byť realistický pre daný recept
 7. Recepty musia byť originálne a rôznorodé, neopakuj suroviny
 8. Dodrž všetky užívateľom nastavené preferencie a parametre.
-9. Každému receptu priradíš kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé
-10. JSON štruktúra MUSÍ byť:
+9. Ak existujú produkty zo špajze, použij ich podľa možnosti v receptoch.
+10. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
+11. Každému receptu priradíš kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé
+12. JSON štruktúra MUSÍ byť:
 {
   "name": "Názov receptu",
   "estimatedCookingTime": "Čas prípravy v minútach, napr. '25 minút'",
@@ -435,11 +434,16 @@ Si ten najdokonalejší AI šéfkuchár na planéte.
 }
 `;
 
+    // skombinuj userPrompt s pantryText a goalText
+    const finalPrompt = `${userPrompt}
+${pantryText ? pantryText : ""}
+${goalText ? goalText : ""}`;
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
+        { role: "user", content: finalPrompt },
       ],
       max_tokens: 610,
       temperature: 0.8,

@@ -42,7 +42,6 @@ export default function RecipesTab() {
   const generateRecipe = async () => {
   if (!userEmail) return;
 
-  // --- EXPORT selectedPreferences do textovej podoby ---
   const preferencesText =
     selectedPreferences.length > 0
       ? selectedPreferences.map(p => p.label).join(", ")
@@ -50,10 +49,6 @@ export default function RecipesTab() {
 
   const fitnessText = useFitnessGoal
     ? "Použiť fitness cieľ používateľa pri generovaní receptu."
-    : "";
-
-  const pantryText = usePantryItems
-    ? "Použiť dostupné položky zo špajze používateľa."
     : "";
 
   const timeText = cookingTime
@@ -64,16 +59,20 @@ export default function RecipesTab() {
 Vygeneruj recept podľa týchto kritérií:
 - Preferencie: ${preferencesText}
 ${fitnessText ? `- ${fitnessText}` : ""}
-${pantryText ? `- ${pantryText}` : ""}
 ${timeText ? `- ${timeText}` : ""}
-Dodržuj všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kroky, realistický čas, originálny recept).
+Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kroky, realistický čas, originálny recept).
   `;
 
   try {
     const response = await fetch("http://10.0.2.2:3000/api/generateRecipe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userPrompt }),
+      body: JSON.stringify({
+        userPrompt,
+        email: userEmail,
+        usePantryItems,
+        useFitnessGoal,
+      }),
     });
     const data = await response.json();
     if (!data.success || !data.recipe) return;
