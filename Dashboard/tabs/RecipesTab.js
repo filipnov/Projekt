@@ -125,7 +125,7 @@ export default function RecipesTab() {
       id: 1,
       nazov: "Bryndzové halušky",
       ingrediencie: "zemiaky, polohrubá múka, soľ, bryndza, slanina a pažitka",
-      postup: "1. Pripravíme si suroviny...",
+      postup: "",
       obrazok: require("../../assets/bryndzove-halusky.jpg"),
     },
     {
@@ -138,7 +138,7 @@ export default function RecipesTab() {
       id: 3,
       nazov: "Segedínsky guláš",
       ingrediencie: "bravčové mäso, kapusta, paprika, smotana",
-      postup: "1. Orestujeme mäso...\n9. Podávame s knedľou.",
+      postup: "",
       obrazok: require("../../assets/segedin.jpg"),
     },
     {

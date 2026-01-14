@@ -413,7 +413,7 @@ async function start() {
 4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť
 5. Kroky MUSIA byť jasné, presné a očíslované
 6. Čas prípravy MUSÍ byť realistický pre daný recept
-7. Buď kreatívny, vytváraj normálne, slané, štiplavé, exotické recepty a nezabudni aj na sladké dezerty
+7. Vždy pred generovním receptu vylosuješ z čísel 1,2,3,4,5. Na každé čislo je šanca 20%. Podľa výsledného čisla vytvor recept ktorý spadá pod danú kategóriu čísla (1-mäsité, 2-bezmäsité, 3-vegánske, 4-sladké, 5-štipľavé)
 8. Recepty nemusia byť slovenské, používaj recepty z celého sveta pokiaľ sú dodržané ostatné pravidlá.
 9. Každému receptu priradíš jednu z týchto kategórií: mäsité, bezmäsité, vegánske, sladké, štipľavé
 10. Názov kategórie musí byť so správnou diakritikou

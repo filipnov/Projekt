@@ -238,7 +238,7 @@ export default function ProfileCompletition() {
                 {
                   label: "Sedavý",
                   description:
-                    "Väčšinu času tráviš sedením. Pohybuješ sa akôr výnimočne.",
+                    "Väčšinu času tráviš sedením. Pohybuješ sa skôr výnimočne.",
                   value: 1.2,
                 },
                 {
