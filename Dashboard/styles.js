@@ -303,12 +303,13 @@ export default StyleSheet.create({
     marginTop: 10,
   },
   card: {
-    backgroundColor: "green",
+    backgroundColor: "hsl(35, 54%, 35%)",
     width: "48%",
     height: 120,
     marginBottom: 13,
     borderRadius: 10,
     overflow: "hidden",
+    elevation: 3
   },
   cardText: {
     color: "white",

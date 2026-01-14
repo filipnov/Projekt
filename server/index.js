@@ -9,7 +9,7 @@ import crypto from "crypto";
 import path from "path";
 import OpenAI from "openai";
 
-dotenv.config({ path: path.resolve("../server/.env") });
+dotenv.config({ path: path.resolve("./server/.env") });
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
@@ -27,8 +27,8 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// HARD BACKEND FAILSAFE
-const GPT_REQUEST_LIMIT = 50; // max requests per server runtime
+
+const GPT_REQUEST_LIMIT = 50;
 let gptRequestCount = 0;
 async function start() {
   await client.connect();
@@ -37,7 +37,6 @@ async function start() {
   const db = client.db("userdb");
   const users = db.collection("users");
 
-  // Ensure email uniqueness
   await users.createIndex({ email: 1 }, { unique: true });
 
   // ------------------- REGISTER -------------------
@@ -139,7 +138,7 @@ async function start() {
     }
   });
 
-  //--------------------------------------------------------------
+  
   app.get("/api/userProfile", async (req, res) => {
     try {
       const { email } = req.query;
@@ -277,7 +276,7 @@ async function start() {
       totalFiber,
       totalSalt,
       totalSugar,
-    } = req.body; // pridáme totalCalories
+    } = req.body; 
 
     try {
       const user = await users.findOne({ email });
@@ -363,7 +362,6 @@ async function start() {
         return res.status(404).json({ error: "User not found" });
       }
 
-      // Ak používateľ nemá produkty, vrátime prázdne pole
       const products = user.products || [];
 
       console.log("📤 Returning products:", products);
@@ -397,30 +395,35 @@ async function start() {
 
   // ------------------- AI RECIPE GENERATOR -------------------
   app.post("/api/generateRecipe", async (req, res) => {
-    try {
-      if (gptRequestCount >= GPT_REQUEST_LIMIT) {
-        return res.status(429).json({
-          error: "GPT request limit reached on server",
-        });
-      }
+  try {
+    if (gptRequestCount >= GPT_REQUEST_LIMIT) {
+      return res.status(429).json({
+        error: "GPT request limit reached on server",
+      });
+    }
 
-      gptRequestCount++;
+    gptRequestCount++;
+
+    const { userPrompt } = req.body;
+    if (!userPrompt) return res.status(400).json({ error: "Missing prompt" });
 
     const systemPrompt = `
-⚠️ **Dôležité pravidlá**:
-1. Odpovedaj **VÝHRADNE po slovensky**. Nevysvetľuj nič, nevypisuj text v inom jazyku.  
-2. Vráť **len platný JSON** podľa presnej štruktúry. Žiadny text mimo JSON.  
-3. Recept MUSÍ byť **skutočný a overiteľný**. Nevymýšľaj ingrediencie ani jedlá.  
-4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť.  
-5. Kroky MUSIA byť jasné, presné a očíslované.  
-6. Čas prípravy MUSÍ byť realistický pre daný recept.  
-7. Ak nemôžeš vytvoriť skutočný recept, vráť **prázdny JSON objekt so správnou štruktúrou**.  
-
-**Štruktúra JSON, ktorú musíš vrátiť:**
-
+Si ten najdokonalejší AI šéfkuchár na planéte.
+*Dôležité pravidlá*
+1. Odpovedaj **VÝHRADNE po slovensky**. Nevysvetľuj nič, nevypisuj text v inom jazyku
+2. Vráť *len platný JSON* podľa presnej štruktúry. Žiadny text mimo JSON 
+3. Recept MUSÍ byť *skutočný a overiteľný*. Nevymýšľaj ingrediencie ani jedlá
+4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť
+5. Kroky MUSIA byť jasné, presné a očíslované
+6. Čas prípravy MUSÍ byť realistický pre daný recept
+7. Recepty musia byť originálne a rôznorodé, neopakuj suroviny
+8. Dodrž všetky užívateľom nastavené preferencie a parametre.
+9. Každému receptu priradíš kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé
+10. JSON štruktúra MUSÍ byť:
 {
   "name": "Názov receptu",
   "estimatedCookingTime": "Čas prípravy v minútach, napr. '25 minút'",
+  "category": Názov kategórie,
   "ingredients": [
     { "name": "Názov ingrediencie", "amountGrams": 100 }
   ],
@@ -438,15 +441,15 @@ async function start() {
 }
 `;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: "Generate a random recipe." },
-        ],
-        max_tokens: 600,
-        temperature: 0.8,
-      });
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 610,
+      temperature: 0.8,
+    });
 
     const rawResponse = completion.choices[0].message.content;
 
@@ -460,24 +463,17 @@ async function start() {
       });
     }
 
-      return res.json({
-        success: true,
-        recipe: parsedJSON,
-      });
-    } catch (err) {
-      console.error("❌ GPT error:", err);
-
-      if (err.code === "insufficient_quota") {
-        return res.status(429).json({
-          error: "Monthly AI quota reached",
-        });
-      }
-
-      res.status(500).json({
-        error: "Failed to generate recipe",
-      });
-    }
-  });
+    return res.json({
+      success: true,
+      recipe: parsedJSON,
+    });
+  } catch (err) {
+    console.error("❌ GPT error:", err);
+    res.status(500).json({
+      error: "Failed to generate recipe",
+    });
+  }
+});
 
   // ------------------ SAVE RECIPE TO DB ------------------
   app.post("/api/addRecipe", async (req, res) => {
@@ -501,6 +497,7 @@ async function start() {
         recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: recipe.name,
         estimatedCookingTime: recipe.estimatedCookingTime,
+        category: recipe.category,
         ingredients: recipe.ingredients,
         steps: recipe.steps,
         createdAt: new Date(),
@@ -529,6 +526,56 @@ async function start() {
       res.status(500).json({ error: "Server error" });
     }
   });
+
+  // ------------------ GET USER RECIPES ------------------
+app.get("/api/getRecipes", async (req, res) => {
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ error: "Missing email" });
+  }
+
+  try {
+    const user = await users.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    res.json({
+      success: true,
+      recipes: user.recipes || [],
+    });
+  } catch (err) {
+    console.error("❌ Get recipes error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+//DELETE RECIPE FROM SERVER//
+app.delete("/api/deleteRecipe", async (req, res) => {
+  const { email, recipeId } = req.body;
+
+  if (!email || !recipeId) {
+    return res.status(400).json({ success: false });
+  }
+
+  try {
+    const result = await users.updateOne(
+      { email },
+      { $pull: { recipes: { recipeId } } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.json({ success: false });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Delete recipe error:", err);
+    res.status(500).json({ success: false });
+  }
+});
 
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
