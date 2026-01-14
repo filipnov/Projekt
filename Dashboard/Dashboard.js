@@ -1,7 +1,11 @@
 //Dashboard.js
 import React, { useEffect, useState, useCallback } from "react";
 import { View, Text, Image, Pressable, ScrollView } from "react-native";
-import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  useFocusEffect,
+} from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import OverviewTab from "./tabs/OverviewTab";
@@ -72,36 +76,35 @@ export default function Dashboard({ setIsLoggedIn }) {
   }, []);
 
   // Load user profile
-  useEffect(() => {
-    if (!email) return;
-
-    const loadProfile = async () => {
-      try {
-        const response = await fetch(`http://10.0.2.2:3000/api/userProfile?email=${email}`);
-        const data = await response.json();
-        if (response.ok) {
-          setAge(data.age);
-          setWeight(data.weight);
-          setHeight(data.height);
-          setGender(data.gender);
-          setGoal(data.goal);
-          setActivityLevel(data.activityLevel);
-        } else {
-          console.warn("Failed to load profile:", data.error);
+  useFocusEffect(
+    useCallback(() => {
+      async function reloadProfileFromStorage() {
+        try {
+          const storedProfile = await AsyncStorage.getItem("userProfile");
+          if (storedProfile) {
+            const profile = JSON.parse(storedProfile);
+            setWeight(profile.weight);
+            setHeight(profile.height);
+            setAge(profile.age);
+            setGender(profile.gender);
+            setGoal(profile.goal);
+            setActivityLevel(profile.activityLevel);
+          }
+        } catch (err) {
+          console.error("Error loading profile from storage:", err);
         }
-      } catch (err) {
-        console.error("Error loading profile:", err);
       }
-    };
 
-    loadProfile();
-  }, [email]);
+      reloadProfileFromStorage();
+    }, [])
+  );
 
-  // Fetch user products from server
   const fetchUserProducts = async () => {
     if (!email) return [];
     try {
-      const response = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${email}`);
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/getProducts?email=${email}`
+      );
       const data = await response.json();
       if (!data.success) return [];
       return data.products || [];
@@ -127,19 +130,24 @@ export default function Dashboard({ setIsLoggedIn }) {
             const products = await fetchUserProducts();
             if (products && products.length > 0) {
               setMealBox((prev) => {
-                const newProducts = products.filter(p => !prev.some(b => b.name === p.name));
-                return [...prev, ...newProducts.map(p => ({
-                  id: Date.now() + Math.random(),
-                  name: p.name,
-                  calories: p.calories || 0,
-                  proteins: p.proteins || 0,
-                  carbs: p.carbs || 0,
-                  fat: p.fat || 0,
-                  fiber: p.fiber || 0,
-                  sugar: p.sugar || 0,
-                  salt: p.salt || 0,
-                  image: p.image || null,
-                }))];
+                const newProducts = products.filter(
+                  (p) => !prev.some((b) => b.name === p.name)
+                );
+                return [
+                  ...prev,
+                  ...newProducts.map((p) => ({
+                    id: Date.now() + Math.random(),
+                    name: p.name,
+                    calories: p.calories || 0,
+                    proteins: p.proteins || 0,
+                    carbs: p.carbs || 0,
+                    fat: p.fat || 0,
+                    fiber: p.fiber || 0,
+                    sugar: p.sugar || 0,
+                    salt: p.salt || 0,
+                    image: p.image || null,
+                  })),
+                ];
               });
             }
           }
@@ -176,13 +184,13 @@ export default function Dashboard({ setIsLoggedIn }) {
 
   // Remove from mealBox and update eatenTotals
   const removeMealBox = (id, productId, box) => {
-    setMealBox(prev => prev.filter(b => b.id !== id));
+    setMealBox((prev) => prev.filter((b) => b.id !== id));
     removeProduct(productId);
     addEatenValues(box);
   };
 
   const addEatenValues = (box) => {
-    setEatenTotals(prev => {
+    setEatenTotals((prev) => {
       const updated = {
         calories: prev.calories + (box.calories || 0),
         proteins: prev.proteins + (box.proteins || 0),
@@ -203,7 +211,8 @@ export default function Dashboard({ setIsLoggedIn }) {
     const { calories, proteins, carbs, fat, fiber, sugar, salt } = eatenTotals;
 
     let cal;
-    if (gender === "male") cal = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
+    if (gender === "male")
+      cal = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
     else cal = (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
 
     if (goal === "lose") cal -= 500;
@@ -213,8 +222,10 @@ export default function Dashboard({ setIsLoggedIn }) {
     const barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
 
     let eatOutput;
-    if (calories < cal) eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
-    else if (calories === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
+    if (calories < cal)
+      eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
+    else if (calories === cal)
+      eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
     else eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
 
     const proteinGoal = ((cal * 0.13) / 4).toFixed(0);
@@ -232,11 +243,19 @@ export default function Dashboard({ setIsLoggedIn }) {
     const saltBar = (salt / saltGoal) * 100;
 
     const bmiValue = ((weight / (height * height)) * 10000).toFixed(1);
-    let bmiOutput = "", bmiBarColor = "#4CAF50";
-    if (bmiValue < 18.5) { bmiOutput = `BMI: ${bmiValue}\nPodváha`; bmiBarColor = "#2196F3"; }
-    else if (bmiValue < 25) bmiOutput = `BMI: ${bmiValue}\nNormálna váha`;
-    else if (bmiValue < 30) { bmiOutput = `BMI: ${bmiValue}\nNadváha`; bmiBarColor = "#FF9800"; }
-    else { bmiOutput = `BMI: ${bmiValue}\nObezita`; bmiBarColor = "#FF3B30"; }
+    let bmiOutput = "",
+      bmiBarColor = "#4CAF50";
+    if (bmiValue < 18.5) {
+      bmiOutput = `BMI: ${bmiValue}\nPodváha`;
+      bmiBarColor = "#2196F3";
+    } else if (bmiValue < 25) bmiOutput = `BMI: ${bmiValue}\nNormálna váha`;
+    else if (bmiValue < 30) {
+      bmiOutput = `BMI: ${bmiValue}\nNadváha`;
+      bmiBarColor = "#FF9800";
+    } else {
+      bmiOutput = `BMI: ${bmiValue}\nObezita`;
+      bmiBarColor = "#FF3B30";
+    }
 
     const bmiBar = (bmiValue / 40) * 100;
 
@@ -279,33 +298,59 @@ export default function Dashboard({ setIsLoggedIn }) {
             Vyplň si svoj profil, aby si videl/-a prehľad!
           </Text>
           <Pressable
-            style={{ marginTop: 15, backgroundColor: "#4CAF50", paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 }}
+            style={{
+              marginTop: 15,
+              backgroundColor: "#4CAF50",
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderRadius: 10,
+            }}
             onPress={() => navigation.navigate("ProfileCompletition")}
           >
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>Vyplniť profil</Text>
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>
+              Vyplniť profil
+            </Text>
           </Pressable>
         </View>
       );
     }
 
     switch (activeTab) {
-      case 1: return <OverviewTab {...overviewData} currentDate={currentDate} />;
-      case 2: return <RecipesTab />;
+      case 1:
+        return <OverviewTab {...overviewData} currentDate={currentDate} />;
+      case 2:
+        return <RecipesTab />;
       case 3:
-        return <PantryTab
-          mealBox={mealBox}
-          removeMealBox={removeMealBox}
-          refreshMealBoxes={async () => {
-            const products = await fetchUserProducts();
-            if (!products || products.length === 0) return alert("Ešte si nenaskenoval žiaden produkt");
-            const newProducts = products.filter(p => !mealBox.some(b => b.name === p.name));
-            if (newProducts.length === 0) return alert("Všetky produkty už sú v jedálničku!");
-            setMealBox(prev => [...prev, ...newProducts.map(p => ({ id: Date.now() + Math.random(), ...p }))]);
-          }}
-          addEatenValues={addEatenValues}
-        />;
-      case 4: return <SettingsTab setIsLoggedIn={setIsLoggedIn} navigation={navigation} />;
-      default: return <Text>Oops, niečo sa pokazilo</Text>;
+        return (
+          <PantryTab
+            mealBox={mealBox}
+            removeMealBox={removeMealBox}
+            refreshMealBoxes={async () => {
+              const products = await fetchUserProducts();
+              if (!products || products.length === 0)
+                return alert("Ešte si nenaskenoval žiaden produkt");
+              const newProducts = products.filter(
+                (p) => !mealBox.some((b) => b.name === p.name)
+              );
+              if (newProducts.length === 0)
+                return alert("Všetky produkty už sú v jedálničku!");
+              setMealBox((prev) => [
+                ...prev,
+                ...newProducts.map((p) => ({
+                  id: Date.now() + Math.random(),
+                  ...p,
+                })),
+              ]);
+            }}
+            addEatenValues={addEatenValues}
+          />
+        );
+      case 4:
+        return (
+          <SettingsTab setIsLoggedIn={setIsLoggedIn} navigation={navigation} />
+        );
+      default:
+        return <Text>Oops, niečo sa pokazilo</Text>;
     }
   };
 
@@ -314,34 +359,89 @@ export default function Dashboard({ setIsLoggedIn }) {
       <View style={styles.topBar}>
         <Image source={logo} style={styles.topBar_img} />
         <Text style={styles.topBar_text}>Ahoj {nick}</Text>
-        <Pressable onPress={() => navigation.navigate("ProfileCompletition")}>
-          <Image source={account} style={styles.topBar_img} />
-        </Pressable>
+        <Image source={account} style={styles.topBar_img} />
       </View>
 
       <View style={styles.contentContainer}>
         <ScrollView>{renderContent()}</ScrollView>
 
         <View style={styles.navBar}>
-          <Pressable onPress={() => setActiveTab(1)} style={[styles.navBar_tabs, isActive(1) && styles.navBar_tabs_pressed]}>
+          <Pressable
+            onPress={() => setActiveTab(1)}
+            style={[
+              styles.navBar_tabs,
+              isActive(1) && styles.navBar_tabs_pressed,
+            ]}
+          >
             <Image source={speedometer} style={styles.navBar_img} />
-            <Text style={[styles.navBar_text, isActive(1) && styles.navBar_text_pressed]}>Prehľad</Text>
+            <Text
+              style={[
+                styles.navBar_text,
+                isActive(1) && styles.navBar_text_pressed,
+              ]}
+            >
+              Prehľad
+            </Text>
           </Pressable>
-          <Pressable onPress={() => setActiveTab(2)} style={[styles.navBar_tabs, isActive(2) && styles.navBar_tabs_pressed]}>
+          <Pressable
+            onPress={() => setActiveTab(2)}
+            style={[
+              styles.navBar_tabs,
+              isActive(2) && styles.navBar_tabs_pressed,
+            ]}
+          >
             <Image source={recipes} style={styles.navBar_img} />
-            <Text style={[styles.navBar_text, isActive(2) && styles.navBar_text_pressed]}>Recepty</Text>
+            <Text
+              style={[
+                styles.navBar_text,
+                isActive(2) && styles.navBar_text_pressed,
+              ]}
+            >
+              Recepty
+            </Text>
           </Pressable>
-          <Pressable style={styles.navBar_tab_Add} onPress={() => navigation.navigate("CameraScreen")}>
-            <View style={styles.navBar_Add_container}><Image source={plus} style={styles.navBar_Add} /></View>
+          <Pressable
+            style={styles.navBar_tab_Add}
+            onPress={() => navigation.navigate("CameraScreen")}
+          >
+            <View style={styles.navBar_Add_container}>
+              <Image source={plus} style={styles.navBar_Add} />
+            </View>
             <Text style={styles.navBar_text_Add}>Pridať</Text>
           </Pressable>
-          <Pressable onPress={() => setActiveTab(3)} style={[styles.navBar_tabs, isActive(3) && styles.navBar_tabs_pressed]}>
+          <Pressable
+            onPress={() => setActiveTab(3)}
+            style={[
+              styles.navBar_tabs,
+              isActive(3) && styles.navBar_tabs_pressed,
+            ]}
+          >
             <Image source={storage} style={styles.navBar_img} />
-            <Text style={[styles.navBar_text, isActive(3) && styles.navBar_text_pressed]}>Špajza</Text>
+            <Text
+              style={[
+                styles.navBar_text,
+                isActive(3) && styles.navBar_text_pressed,
+              ]}
+            >
+              Špajza
+            </Text>
           </Pressable>
-          <Pressable onPress={() => setActiveTab(4)} style={[styles.navBar_tabs, isActive(4) && styles.navBar_tabs_pressed]}>
+          <Pressable
+            onPress={() => setActiveTab(4)}
+            style={[
+              styles.navBar_tabs,
+              isActive(4) && styles.navBar_tabs_pressed,
+            ]}
+          >
             <Image source={setting} style={styles.navBar_img} />
-            <Text style={[styles.navBar_text, isActive(4) && styles.navBar_text_pressed]}>Nastavenia</Text>
+            <Text
+              style={[
+                styles.navBar_text,
+                isActive(4) && styles.navBar_text_pressed,
+              ]}
+            >
+              Nastavenia
+            </Text>
           </Pressable>
         </View>
       </View>

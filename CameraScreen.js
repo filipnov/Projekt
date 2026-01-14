@@ -1,6 +1,6 @@
 // CameraScreen.js 577
 import { CameraView, useCameraPermissions } from "expo-camera";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -26,6 +26,20 @@ export default function CameraScreen() {
   const [quantityInput, setQuantityInput] = useState("");
   const [awaitingQuantity, setAwaitingQuantity] = useState(false);
   const [showNutriValues] = useState(true);
+
+  const [isPer100g, setIsPer100g] = useState();
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem("isPer100g");
+        if (storedValue !== null) {
+          setIsPer100g(JSON.parse(storedValue));
+        }
+      } catch (err) {
+        console.error("Chyba pri načítaní nastavení:", err);
+      }
+    })();
+  }, []);
 
   const API_URL = "https://world.openfoodfacts.org/api/v0/product";
 
@@ -82,6 +96,20 @@ export default function CameraScreen() {
     }
   }
 
+  function calculateTotals(product, weight) {
+    return {
+      ...product,
+      quantity: weight,
+      totalCalories: Number(((product.calories / 100) * weight).toFixed(0)),
+      totalFat: Number(((product.fat / 100) * weight).toFixed(0)),
+      totalCarbs: Number(((product.carbs / 100) * weight).toFixed(0)),
+      totalSugar: Number(((product.sugar / 100) * weight).toFixed(0)),
+      totalProteins: Number(((product.proteins / 100) * weight).toFixed(0)),
+      totalSalt: Number(((product.salt / 100) * weight).toFixed(0)),
+      totalFiber: Number(((product.fiber / 100) * weight).toFixed(0)),
+    };
+  }
+
   async function fetchProductData(barcode) {
     setProductData(null);
     setAwaitingQuantity(false);
@@ -111,33 +139,15 @@ export default function CameraScreen() {
           quantity: weight,
         };
 
-        if (weight) {
-          productInfo.totalCalories = Number(
-            ((productInfo.calories / 100) * weight).toFixed(0)
-          );
-          productInfo.totalFat = Number(
-            ((productInfo.fat / 100) * weight).toFixed(0)
-          );
-          productInfo.totalCarbs = Number(
-            ((productInfo.carbs / 100) * weight).toFixed(0)
-          );
-          productInfo.totalSugar = Number(
-            ((productInfo.sugar / 100) * weight).toFixed(0)
-          );
-          productInfo.totalProteins = Number(
-            ((productInfo.proteins / 100) * weight).toFixed(0)
-          );
-          productInfo.totalSalt = Number(
-            ((productInfo.salt / 100) * weight).toFixed(0)
-          );
-          productInfo.totalFiber = Number(
-            ((productInfo.fiber / 100) * weight).toFixed(0)
-          );
+        let finalProduct = productInfo;
+
+        if (weight && !isNaN(weight) && weight > 0) {
+          finalProduct = calculateTotals(productInfo, weight);
         } else {
           setAwaitingQuantity(true);
         }
 
-        setProductData(productInfo);
+        setProductData(finalProduct);
       } else {
         Alert.alert("❌ Produkt sa nenašiel", `Kód: ${barcode}`);
       }
@@ -326,7 +336,8 @@ export default function CameraScreen() {
                 <Pressable
                   style={styles.manual_add_container_button}
                   onPress={async () => {
-                    const weight = parseFloat(quantityInput);
+                    const weight = Number(quantityInput);
+
                     if (isNaN(weight) || weight <= 0) {
                       Alert.alert(
                         "Chyba",
@@ -335,55 +346,7 @@ export default function CameraScreen() {
                       return;
                     }
 
-                    const updatedProduct = {
-                      ...productData,
-                      quantity: quantityInput,
-                      totalCalories: productData.calories
-                        ? (productData.calories / 100) * weight
-                        : 0,
-                      totalFat: productData.fat
-                        ? (productData.fat / 100) * weight
-                        : 0,
-                      totalCarbs: productData.carbs
-                        ? (productData.carbs / 100) * weight
-                        : 0,
-                      totalSugar: productData.sugar
-                        ? (productData.sugar / 100) * weight
-                        : 0,
-                      totalProteins: productData.proteins
-                        ? (productData.proteins / 100) * weight
-                        : 0,
-                      totalSalt: productData.salt
-                        ? (productData.salt / 100) * weight
-                        : 0,
-                      totalFiber: productData.fiber
-                        ? (productData.fiber / 100) * weight
-                        : 0,
-                    };
-
-                    updatedProduct.totalCalories = Number(
-                      updatedProduct.totalCalories.toFixed(0)
-                    );
-                    updatedProduct.totalFat = Number(
-                      updatedProduct.totalFat.toFixed(0)
-                    );
-                    updatedProduct.totalCarbs = Number(
-                      updatedProduct.totalCarbs.toFixed(0)
-                    );
-                    updatedProduct.totalSugar = Number(
-                      updatedProduct.totalSugar.toFixed(0)
-                    );
-                    updatedProduct.totalProteins = Number(
-                      updatedProduct.totalProteins.toFixed(0)
-                    );
-                    updatedProduct.totalSalt = Number(
-                      updatedProduct.totalSalt.toFixed(0)
-                    );
-                    updatedProduct.totalFiber = Number(
-                      updatedProduct.totalFiber.toFixed(0)
-                    );
-
-                    setProductData(updatedProduct);
+                    setProductData(calculateTotals(productData, weight));
                     setAwaitingQuantity(false);
                   }}
                 >
@@ -393,49 +356,49 @@ export default function CameraScreen() {
                 </Pressable>
               </View>
             ) : (
-              <Text>Hmotnosť: {productData.quantity}</Text>
+              <Text>Hmotnosť: {productData.quantity} g</Text>
             )}
 
             <Text>
-              {showNutriValues
-                ? `Kalórie: ${productData.totalCalories ?? "N/A"} kcal`
-                : `Kalórie (100g): ${productData.calories ?? "N/A"} kcal`}
+              {showNutriValues && isPer100g
+                ? `Kalórie (100g): ${productData.calories ?? "N/A"} kcal`
+                : `Kalórie: ${productData.totalCalories ?? "N/A"} kcal`}
             </Text>
 
             <Text>
-              {showNutriValues
-                ? `Tuky: ${productData.totalFat ?? "N/A"} g`
-                : `Tuky (100g): ${productData.fat ?? "N/A"} g`}
+              {showNutriValues && isPer100g
+                ? `Tuky (100g): ${productData.fat ?? "N/A"} g`
+                : `Tuky: ${productData.totalFat ?? "N/A"} g`}
             </Text>
 
             <Text>
-              {showNutriValues
-                ? `Bielkoviny: ${productData.totalProteins ?? "N/A"} g`
-                : `Bielkoviny (100g): ${productData.proteins ?? "N/A"} g`}
+              {showNutriValues && isPer100g
+                ? `Bielkoviny (100g): ${productData.proteins ?? "N/A"} g`
+                : `Bielkoviny: ${productData.totalProteins ?? "N/A"} g`}
             </Text>
 
             <Text>
-              {showNutriValues
-                ? `Sacharidy: ${productData.totalCarbs ?? "N/A"} g`
-                : `Sacharidy (100g): ${productData.carbs ?? "N/A"} g`}
+              {showNutriValues && isPer100g
+                ? `Sacharidy (100g): ${productData.carbs ?? "N/A"} g`
+                : `Sacharidy: ${productData.totalCarbs ?? "N/A"} g`}
             </Text>
 
             <Text>
-              {showNutriValues
-                ? `Cukry: ${productData.totalSugar ?? "N/A"} g`
-                : `Cukry (100g): ${productData.sugar ?? "N/A"} g`}
+              {showNutriValues && isPer100g
+                ? `Cukry (100g): ${productData.sugar ?? "N/A"} g`
+                : `Cukry: ${productData.totalSugar ?? "N/A"} g`}
             </Text>
 
             <Text>
-              {showNutriValues
-                ? `Soľ: ${productData.totalSalt ?? "N/A"} g`
-                : `Soľ (100g): ${productData.salt ?? "N/A"} g`}
+              {showNutriValues && isPer100g
+                ? `Soľ (100g): ${productData.salt ?? "N/A"} g`
+                : `Soľ: ${productData.totalSalt ?? "N/A"} g`}
             </Text>
 
             <Text>
-              {showNutriValues
-                ? `Vláknina: ${productData.totalFiber ?? "N/A"} g`
-                : `Vláknina (100g): ${productData.fiber ?? "N/A"} g`}
+              {showNutriValues && isPer100g
+                ? `Vláknina (100g): ${productData.fiber ?? "N/A"} g`
+                : `Vláknina: ${productData.totalFiber ?? "N/A"} g`}
             </Text>
 
             <Pressable
