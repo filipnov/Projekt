@@ -424,21 +424,22 @@ PRAVIDLÁ:
 6. Čas prípravy musí byť realistický pre daný recept.
 7. Recept musí byť originálny, neopakuj predchádzajúce recepty.
 8. Dodrž všetky používateľské preferencie (sladké, štipľavé, mäsité, vegánske, bezmäsité, atď.).
-9. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
-10. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
-11. Priraď každému receptu jednu kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé.
-12. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií – kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
-13. Nepoužívaj odhady typu "cca" alebo "približne".
-14. Ak nevieš presnú hodnotu, použi databázový priemer.
-15. Celkové kalórie musia korešpondovať so súčtom makroživín.
-16. Hodnoty sú pre celú porciu (celý recept), čísla nie stringy.
-17. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
-18. "estimatedCookingTime" MUSÍ byť realistický a vychádzať z reálneho postupu receptu.
-19. Čas musí zahŕňať prípravu surovín aj samotné varenie/pečenie.
-20. Odhadni čas každého kroku a výsledok urči ako ich súčet, zaokrúhlený na 5 minút.
-21. Skontroluj, že JSON je validný.
-22. Odpoveď MUSÍ začínať { a končiť }.
-23. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
+9. Ak je zvolená preferencia "Morské plody", použite rôzne druhy morských plodov a neobmedzujte sa len na jeden.
+10. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
+11. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
+12. Priraď každému receptu jednu kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé.
+13. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií – kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
+14. Nepoužívaj odhady typu "cca" alebo "približne".
+15. Ak nevieš presnú hodnotu, použi databázový priemer.
+16. Celkové kalórie musia korešpondovať so súčtom makroživín.
+17. Hodnoty sú pre celú porciu (celý recept), čísla nie stringy.
+18. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
+19. "estimatedCookingTime" MUSÍ byť realistický a vychádzať z reálneho postupu receptu.
+20. Čas musí zahŕňať prípravu surovín aj samotné varenie/pečenie.
+21. Odhadni čas každého kroku a výsledok urči ako ich súčet, zaokrúhlený na 5 minút.
+22. Skontroluj, že JSON je validný.
+23. Odpoveď MUSÍ začínať { a končiť }.
+24. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
 
 JSON ŠTRUKTÚRA:
 {

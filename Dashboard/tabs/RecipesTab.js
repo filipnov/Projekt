@@ -25,8 +25,8 @@ export default function RecipesTab() {
   const [usePantryItems, setUsePantryItems] = useState(false);
   const [cookingTime, setCookingTime] = useState(null); 
   const [isGenerating, setIsGenerating] = useState(false);
-
-  
+const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false);
+  const [showUnitInfo, setShowUnitInfo] = useState(false);
 
   // Načítanie emailu prihláseného používateľa
   useEffect(() => {
@@ -47,9 +47,11 @@ export default function RecipesTab() {
 
   setIsGenerating(true);
   const preferencesText =
-    selectedPreferences.length > 0
-      ? selectedPreferences.map(p => p.label).join(", ")
-      : "žiadne špecifické preferencie";
+  selectedPreferences.length > 0
+    ? selectedPreferences
+        .map(p => p.label.replace(/^[^\w\s]+ /, "")) // odstráni emoji na začiatku
+        .join(", ")
+    : "žiadne špecifické preferencie";
 
   const fitnessText = useFitnessGoal
     ? "Použiť fitness cieľ používateľa pri generovaní receptu."
@@ -209,6 +211,19 @@ const ALL_PREFERENCES = [
   { id: "no_meat", label: "🥕 Bezmäsité" },
   { id: "seafood", label: "🦐 Morské plody" },
   { id: "dessert", label: "🍮 Dezert" },
+  { id: "healthy", label: "🥗 Zdravé" },
+];
+const ADDITIONAL_PREFERENCES = [
+  { id: "low_carb", label: "🥖 Nízkosacharidové" },
+  { id: "high_protein", label: "💪 Vysokoproteínové" },
+  { id: "kid_friendly", label: "👶 Pre deti" },
+  { id: "gluten_free", label: "🌾 Bezlepkové" },
+  { id: "dairy_free", label: "🥛 Bez laktózy" },
+  { id: "breakfast", label: "🍳 Raňajky" },
+  { id: "lunch", label: "🥪 Obed" },
+  { id: "dinner", label: "🍽️ Večera" },
+  { id: "snack", label: "🍿 Snack" },
+
 ];
 const availablePreferences = ALL_PREFERENCES.filter(
     pref => !selectedPreferences.some(sel => sel.id === pref.id)
@@ -240,200 +255,224 @@ const availablePreferences = ALL_PREFERENCES.filter(
   onRequestClose={() => setGenerateModalVisible(false)}
 >
   <View style={styles.modalOverlay}>
-    <View style={styles.modalContainer}>
-      
-      <Text style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 10 }}>
-        Generovanie receptu
-      </Text>
-      <View
-  style={{
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 12,
-    backgroundColor: "#f5f5f5",
-    marginBottom: 20,
-  }}
->
-  <View
-  style={{
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    padding: 10,
-    backgroundColor: "#f5f5f5",
-    marginBottom: 15,
-    minHeight: 50,
-  }}
->
-  {selectedPreferences.length === 0 ? (
-    <Text style={{ color: "#999" }}>
-      Vybrané preferencie sa zobrazia tu…
-    </Text>
-  ) : (
-    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-      {selectedPreferences.map(pref => (
+    {/* Hlavný container dostane flex:1 a maxHeight pre správne scrollovanie */}
+    <View style={[styles.modalContainer, { flex: 1, maxHeight: "90%", padding: 16 }]}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={true}>
+        <Text style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 10 }}>
+          Generovanie receptu
+        </Text>
+
+        {/* Vybrané preferencie */}
         <View
-          key={pref.id}
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "#e0e0e0",
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 20,
-            margin: 4,
+            borderWidth: 1,
+            borderColor: "#ccc",
+            borderRadius: 10,
+            padding: 10,
+            backgroundColor: "#f5f5f5",
+            marginBottom: 15,
+            minHeight: 50,
           }}
         >
-          <Text style={{ marginRight: 6 }}>{pref.label}</Text>
+          {selectedPreferences.length === 0 ? (
+            <Text style={{ color: "#999" }}>Vybrané preferencie sa zobrazia tu…</Text>
+          ) : (
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              {selectedPreferences.map(pref => (
+                <View
+                  key={pref.id}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "#e0e0e0",
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 20,
+                    margin: 4,
+                  }}
+                >
+                  <Text style={{ marginRight: 6 }}>{pref.label}</Text>
+                  <Pressable
+                    onPress={() =>
+                      setSelectedPreferences(prev =>
+                        prev.filter(p => p.id !== pref.id)
+                      )
+                    }
+                  >
+                    <Text style={{ fontWeight: "bold" }}>✕</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
 
-          {/* ❌ REMOVE */}
+        {/* Dostupné preferencie */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
+          {availablePreferences.map(pref => (
+            <Pressable
+              key={pref.id}
+              onPress={() => setSelectedPreferences(prev => [...prev, pref])}
+              style={{
+                backgroundColor: "#d1fae5",
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 20,
+                margin: 4,
+              }}
+            >
+              <Text>{pref.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Ďalšie preferencie */}
+        <Pressable
+          onPress={() => setShowAdditionalPreferences(prev => !prev)}
+          style={{
+            backgroundColor: "#a5f3fc",
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            borderRadius: 20,
+            marginBottom: 10,
+            alignSelf: "flex-start",
+          }}
+        >
+          <Text style={{ fontWeight: "bold" }}>
+            {showAdditionalPreferences ? "Skryť ďalšie preferencie" : "Ďalšie preferencie"}
+          </Text>
+        </Pressable>
+
+        {showAdditionalPreferences && (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
+            {ADDITIONAL_PREFERENCES.filter(
+              pref => !selectedPreferences.some(sel => sel.id === pref.id)
+            ).map(pref => (
+              <Pressable
+                key={pref.id}
+                onPress={() => setSelectedPreferences(prev => [...prev, pref])}
+                style={{
+                  backgroundColor: "#d1fae5",
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  margin: 4,
+                }}
+              >
+                <Text>{pref.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* FITNESS GOAL a PANTRY ITEMS */}
+        <View style={{ marginBottom: 20 }}>
           <Pressable
-            onPress={() =>
-              setSelectedPreferences(prev =>
-                prev.filter(p => p.id !== pref.id)
-              )
-            }
+            onPress={() => setUseFitnessGoal(prev => !prev)}
+            style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
           >
-            <Text style={{ fontWeight: "bold" }}>✕</Text>
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderWidth: 1,
+                borderColor: "#777",
+                marginRight: 10,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: useFitnessGoal ? "#4ade80" : "#fff",
+              }}
+            >
+              {useFitnessGoal && <Text style={{ color: "#fff" }}>✔</Text>}
+            </View>
+            <Text>Generovať recepty podľa fitness cieľa</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setUsePantryItems(prev => !prev)}
+            style={{ flexDirection: "row", alignItems: "center" }}
+          >
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderWidth: 1,
+                borderColor: "#777",
+                marginRight: 10,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: usePantryItems ? "#4ade80" : "#fff",
+              }}
+            >
+              {usePantryItems && <Text style={{ color: "#fff" }}>✔</Text>}
+            </View>
+            <Text>Použiť položky zo špajze</Text>
           </Pressable>
         </View>
-      ))}
-    </View>
-  )}
-</View>
-<View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
-  {availablePreferences.map(pref => (
-    <Pressable
-      key={pref.id}
-      onPress={() =>
-        setSelectedPreferences(prev => [...prev, pref])
-      }
-      style={{
-        backgroundColor: "#d1fae5",
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        margin: 4,
-      }}
-    >
-      <Text>{pref.label}</Text>
-    </Pressable>
-  ))}
-</View>
-</View>
-<View style={{ marginBottom: 20 }}>
-  {/* FITNESS GOAL */}
-  <Pressable
-    onPress={() => setUseFitnessGoal(prev => !prev)}
-    style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
-  >
-    <View
-      style={{
-        width: 20,
-        height: 20,
-        borderWidth: 1,
-        borderColor: "#777",
-        marginRight: 10,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: useFitnessGoal ? "#4ade80" : "#fff",
-      }}
-    >
-      {useFitnessGoal && <Text style={{ color: "#fff" }}>✔</Text>}
-    </View>
-    <Text>Generovať recepty podľa fitness cieľa</Text>
-  </Pressable>
 
-  {/* PANTRY ITEMS */}
-  <Pressable
-    onPress={() => setUsePantryItems(prev => !prev)}
-    style={{ flexDirection: "row", alignItems: "center" }}
-  >
-    <View
-      style={{
-        width: 20,
-        height: 20,
-        borderWidth: 1,
-        borderColor: "#777",
-        marginRight: 10,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: usePantryItems ? "#4ade80" : "#fff",
-      }}
-    >
-      {usePantryItems && <Text style={{ color: "#fff" }}>✔</Text>}
-    </View>
-    <Text>Použiť položky zo špajze</Text>
-  </Pressable>
-</View>
-<View style={{ marginBottom: 20 }}>
-  <Text style={{ marginBottom: 10, fontWeight: "bold" }}>Čas na recept:</Text>
-  <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-    {TIME_OPTIONS.map(option => (
-      <Pressable
-        key={option.id}
-        onPress={() => setCookingTime(option.id)}
-        style={{
-          paddingHorizontal: 12,
-          paddingVertical: 8,
-          borderRadius: 20,
-          margin: 4,
-          backgroundColor: cookingTime === option.id ? "#4ade80" : "#e0e0e0",
-        }}
-      >
-        <Text style={{ color: cookingTime === option.id ? "#fff" : "#000" }}>
-          {option.label}
+        {/* Čas receptu */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={{ marginBottom: 10, fontWeight: "bold" }}>Čas na recept:</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {TIME_OPTIONS.map(option => (
+              <Pressable
+                key={option.id}
+                onPress={() => setCookingTime(option.id)}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  margin: 4,
+                  backgroundColor: cookingTime === option.id ? "#4ade80" : "#e0e0e0",
+                }}
+              >
+                <Text style={{ color: cookingTime === option.id ? "#fff" : "#000" }}>
+                  {option.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        {/* Text a tlačidlá na generovanie */}
+        <Text style={{ textAlign: "center", marginBottom: 20 }}>
+          Chceš vygenerovať nový recept pomocou AI?
         </Text>
-      </Pressable>
-    ))}
-  </View>
-</View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+          <Pressable
+            onPress={() => setGenerateModalVisible(false)}
+            style={{
+              flex: 1,
+              marginRight: 5,
+              backgroundColor: "grey",
+              paddingVertical: 10,
+              borderRadius: 10,
+            }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>Zrušiť</Text>
+          </Pressable>
 
-      <Text style={{ textAlign: "center", marginBottom: 20 }}>
-        Chceš vygenerovať nový recept pomocou AI?
-      </Text>
-
-      {/* BUTTONS */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        
-        <Pressable
-          onPress={() => setGenerateModalVisible(false)}
-          style={{
-            flex: 1,
-            marginRight: 5,
-            backgroundColor: "grey",
-            paddingVertical: 10,
-            borderRadius: 10,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
-            Zrušiť
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={async () => {
-            setGenerateModalVisible(false);
-            await generateRecipe();
-          }}
-          style={{
-            flex: 1,
-            marginLeft: 5,
-            backgroundColor: "hsla(129, 56%, 43%, 1)",
-            paddingVertical: 10,
-            borderRadius: 10,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
-            Generovať recept
-          </Text>
-        </Pressable>
-
-      </View>
+          <Pressable
+            onPress={async () => {
+              setGenerateModalVisible(false);
+              await generateRecipe();
+            }}
+            style={{
+              flex: 1,
+              marginLeft: 5,
+              backgroundColor: "hsla(129, 56%, 43%, 1)",
+              paddingVertical: 10,
+              borderRadius: 10,
+            }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>Generovať recept</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </View>
   </View>
 </Modal>
+
 
      <Text style={{ fontSize: 22, fontWeight: "bold", marginVertical: 10, marginLeft: 15 }}>
   Overené klasické recepty
@@ -585,13 +624,57 @@ const availablePreferences = ALL_PREFERENCES.filter(
             </View>
 
             {/* INGREDIENTS */}
-            <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 6 }}>Ingrediencie:</Text>
-            {(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
-              <Text key={idx} style={{ fontSize: 18, marginBottom: 2 }}>
-                • {ing.name}: {ing.amountGrams} g
-              </Text>
-            ))}
+<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+  <Text style={{ fontSize: 20, fontWeight: "bold" }}>Ingrediencie</Text>
+  {/* Info button */}
+  <Pressable
+    onPress={() => setShowUnitInfo(true)}
+    style={{
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: "#4ade80",
+      alignItems: "center",
+      justifyContent: "center",
+      marginLeft: 8,
+    }}
+  >
+    <Text style={{ color: "#fff", fontWeight: "bold" }}>i</Text>
+  </Pressable>
+</View>
 
+{/* Zoznam ingrediencií */}
+{(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
+  <Text key={idx} style={styles.ingredientText}>
+    • {ing.name}: {ing.amountGrams} g
+  </Text>
+))}
+
+{/* INFO MODAL PRE JEDNOTKY */}
+<Modal
+  visible={showUnitInfo}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setShowUnitInfo(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={[styles.modalContainer, { maxHeight: 300 }]}>
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>
+        Jednotky surovín
+      </Text>
+      <Text>• 1 polievková lyžica = cca 15 g</Text>
+      <Text>• 1 malá čajová lyžica = cca 5 g</Text>
+      <Text>• 1 pohár = cca 250 ml / 240 g tekutiny</Text>
+
+     <Pressable
+  onPress={() => setShowUnitInfo(false)}
+  style={styles.unitInfoCloseButton}
+>
+  <Text style={styles.unitInfoCloseButtonText}>Zavrieť</Text>
+</Pressable>
+    </View>
+  </View>
+</Modal>
             {/* STEPS */}
             <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10, marginBottom: 6 }}>Postup:</Text>
             {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
