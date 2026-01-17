@@ -382,7 +382,7 @@ async function start() {
 
     gptRequestCount++;
 
-    const { userPrompt, email, usePantryItems, useFitnessGoal } = req.body;
+    const { userPrompt, email, usePantryItems, useFitnessGoal, maxCookingTime  } = req.body;
     if (!userPrompt) return res.status(400).json({ error: "Missing prompt" });
     if (!email) return res.status(400).json({ error: "Missing user email" });
 
@@ -434,7 +434,7 @@ PRAVIDLÁ:
 16. Celkové kalórie musia korešpondovať so súčtom makroživín.
 17. Hodnoty sú pre celú porciu (celý recept), čísla nie stringy.
 18. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
-19. "estimatedCookingTime" MUSÍ byť realistický a vychádzať z reálneho postupu receptu.
+19. Celkový čas varenia nesmie byť viac ako {maxCookingTime} minút.
 20. Čas musí zahŕňať prípravu surovín aj samotné varenie/pečenie.
 21. Odhadni čas každého kroku a výsledok urči ako ich súčet, zaokrúhlený na 5 minút.
 22. Skontroluj, že JSON je validný.
@@ -469,7 +469,8 @@ JSON ŠTRUKTÚRA:
     const finalPrompt = `${userPrompt}
 ${pantryText ? pantryText : ""}
 ${goalText ? goalText : ""}
-${calorieGuideline ? calorieGuideline : ""}`;
+${calorieGuideline ? calorieGuideline : ""}
+${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.` : ""}`;
 
     // --- RETRY pri nevalidnom JSON ---
     let parsedJSON = null;

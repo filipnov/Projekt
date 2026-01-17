@@ -13,6 +13,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../styles";
 import { ActivityIndicator } from "react-native";
+import Slider from '@react-native-community/slider';
+
 
 export default function RecipesTab() {
   const [recipe, setRecipe] = useState("");
@@ -31,6 +33,8 @@ const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false
 const [pantryItems, setPantryItems] = useState([]); // všetky produkty zo špajze
 const [selectedPantryItems, setSelectedPantryItems] = useState([]); // vybrané produkty
 const [requireAllSelected, setRequireAllSelected] = useState(true); // toggle "všetky vs niektoré"
+const [maxCookingTime, setMaxCookingTime] = useState(60); // predvolená hodnota 60 min
+const [showPreferenceInfo, setShowPreferenceInfo] = useState(false);
 
   // Načítanie emailu prihláseného používateľa
   useEffect(() => {
@@ -80,9 +84,9 @@ const [requireAllSelected, setRequireAllSelected] = useState(true); // toggle "v
     ? "Použiť fitness cieľ používateľa pri generovaní receptu."
     : "";
 
-  const timeText = cookingTime
-    ? `Recept by mal byť pripravený v časovom intervale: ${cookingTime}.`
-    : "";
+  const timeText = maxCookingTime
+  ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.`
+  : "";
 
   const userPrompt = `
 Vygeneruj recept podľa týchto kritérií:
@@ -90,7 +94,7 @@ Vygeneruj recept podľa týchto kritérií:
 ${fitnessText ? `- ${fitnessText}` : ""}
 ${timeText ? `- ${timeText}` : ""}
 Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kroky, realistický čas, originálny recept).
-  `;
+`;
 
   try {
     const response = await fetch("http://10.0.2.2:3000/api/generateRecipe", {
@@ -101,6 +105,7 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
         email: userEmail,
         usePantryItems,
         useFitnessGoal,
+        maxCookingTime
       }),
     });
     const data = await response.json();
@@ -226,44 +231,324 @@ const fetchSavedRecipes = async () => {
     },
   ];
 const ALL_PREFERENCES = [
-  { id: "sweet", label: "🍰 Sladké" },
-  { id: "salty", label: "🧂 Slané" },
-  { id: "spicy", label: "🌶️ Štipľavé" },
-  { id: "vegan", label: "🥬 Vegánske" },
-  { id: "meat", label: "🥩 Mäsité" },
-  { id: "no_meat", label: "🥕 Bezmäsité" },
-  { id: "seafood", label: "🦐 Morské plody" },
-  { id: "dessert", label: "🍮 Dezert" },
-  { id: "healthy", label: "🥗 Zdravé" },
-  { id: "soup", label: "🍲 Polievka" },
+  {
+    id: "sweet",
+    label: "🍰 Sladké",
+    description: "Recepty s dôrazom na sladkú chuť, vhodné ako dezerty alebo sladké jedlá."
+  },
+  {
+    id: "salty",
+    label: "🧂 Slané",
+    description: "Slané jedlá bez sladkého profilu, typicky hlavné jedlá alebo snacky."
+  },
+  {
+    id: "spicy",
+    label: "🌶️ Štipľavé",
+    description: "Jedlá so štipľavými ingredienciami ako chilli, paprika alebo korenie."
+  },
+  {
+    id: "vegan",
+    label: "🥬 Vegánske",
+    description: "Recepty bez živočíšnych produktov – žiadne mäso, mlieko, vajcia ani med."
+  },
+  {
+    id: "meat",
+    label: "🥩 Mäsité",
+    description: "Jedlá obsahujúce mäso ako hlavný zdroj bielkovín."
+  },
+  {
+    id: "fish",
+    label: "🐟 Rybie",
+    description: "Jedlá obsahujúce rybu ako hlavný zdroj bielkovín."
+  },
+  {
+    id: "no_meat",
+    label: "🥕 Bezmäsité",
+    description: "Recepty bez mäsa, môžu však obsahovať mliečne výrobky alebo vajcia."
+  },
+  {
+    id: "seafood",
+    label: "🦐 Morské plody",
+    description: "Jedlá z rýb alebo morských plodov ako krevety, losos či tuniak."
+  },
+  {
+    id: "dessert",
+    label: "🍮 Dezert",
+    description: "Sladké jedlá určené ako dezert po hlavnom jedle."
+  },
+  {
+    id: "healthy",
+    label: "🥗 Zdravé",
+    description: "Nutrične vyvážené jedlá s dôrazom na kvalitné suroviny."
+  },
+  {
+    id: "soup",
+    label: "🍲 Polievka",
+    description: "Tekuté alebo krémové jedlá vhodné ako predjedlo alebo ľahké hlavné jedlo."
+  },
 ];
-const ADDITIONAL_PREFERENCES = [
-  { id: "low_carb", label: "🥖 Nízkosacharidové" },
-  { id: "high_protein", label: "💪 Vysokoproteínové" },
-  { id: "kid_friendly", label: "👶 Pre deti" },
-  { id: "gluten_free", label: "🌾 Bezlepkové" },
-  { id: "dairy_free", label: "🥛 Bez laktózy" },
-  { id: "breakfast", label: "🍳 Raňajky" },
-  { id: "lunch", label: "🥪 Obed" },
-  { id: "dinner", label: "🍽️ Večera" },
-  { id: "snack", label: "🍿 Snack" },
 
+const ADDITIONAL_PREFERENCES = [
+ {
+  category: "Druh jedla",
+  items: [
+    {
+      id: "breakfast",
+      label: "🍳 Raňajky",
+      description: "Jedlá vhodné na ráno – rýchle, výživné a ľahké na trávenie."
+    },
+    {
+      id: "lunch",
+      label: "🥪 Obed",
+      description: "Plnohodnotné jedlá vhodné na obed."
+    },
+    {
+      id: "dinner",
+      label: "🍽️ Večera",
+      description: "Jedlá vhodné na večer, často ľahšie alebo sýte podľa preferencie."
+    },
+    {
+      id: "snack",
+      label: "🍿 Snack",
+      description: "Malé jedlá medzi hlavnými chodmi."
+    },
+  ],
+},
+  {
+  category: "Nutričné / diétne",
+  items: [
+    {
+      id: "low_carb",
+      label: "🥖 Nízkosacharidové",
+      description: "Jedlá s obmedzeným množstvom sacharidov."
+    },
+    {
+      id: "high_protein",
+      label: "💪 Vysokoproteínové",
+      description: "Recepty s vysokým obsahom bielkovín."
+    },
+    {
+      id: "gluten_free",
+      label: "🌾 Bezlepkové",
+      description: "Jedlá bez lepku, vhodné pre celiatikov."
+    },
+    {
+      id: "dairy_free",
+      label: "🥛 Bez laktózy",
+      description: "Recepty bez mliečnych výrobkov."
+    },
+  ],
+},
+ {
+  category: "Pre koho",
+  items: [
+    {
+      id: "kids",
+      label: "👶 Pre deti",
+      description: "Jedlá prispôsobené chutiam a potrebám detí."
+    },
+    {
+      id: "seniors",
+      label: "👵 Pre seniorov",
+      description: "Ľahko stráviteľné a výživné jedlá."
+    },
+    {
+      id: "pregnancy",
+      label: "🤰 Pre tehotné",
+      description: "Jedlá s dôrazom na bezpečné a výživné suroviny."
+    },
+    {
+      id: "beginner",
+      label: "🧑‍🍳 Pre začiatočníkov",
+      description: "Jednoduché recepty bez zložitých postupov."
+    },
+    {
+      id: "meal_prep",
+      label: "🏋️ Meal prep (na viac dní)",
+      description: "Jedlá vhodné na prípravu dopredu."
+    },
+  ],
+},
+
+  {
+  category: "Zdravotné & citlivé",
+  items: [
+    {
+      id: "low_salt",
+      label: "🧂 Nízky obsah soli",
+      description: "Jedlá s obmedzeným množstvom soli."
+    },
+    {
+      id: "no_added_sugar",
+      label: "🍬 Bez pridaného cukru",
+      description: "Recepty bez pridaného cukru."
+    },
+    {
+      id: "nut_free",
+      label: "🥜 Bez orechov",
+      description: "Jedlá bez orechov, vhodné pre alergikov."
+    },
+    {
+      id: "no_alcohol",
+      label: "🍷 Bez alkoholu",
+      description: "Recepty neobsahujúce alkohol."
+    },
+    {
+      id: "not_spicy",
+      label: "🌶️ Bez štipľavosti",
+      description: "Jemné jedlá bez pálivých ingrediencií."
+    },
+  ],
+},
+
+  {
+  category: "Štýl",
+  items: [
+    {
+      id: "plant_based",
+      label: "🌱 Plant-based",
+      description: "Jedlá založené prevažne na rastlinných surovinách."
+    },
+    {
+      id: "traditional",
+      label: "🍽️ Tradičný recept",
+      description: "Klasické recepty podľa tradičných postupov."
+    },
+    {
+      id: "modern_fitness",
+      label: "🧠 Moderná / fitness kuchyňa",
+      description: "Moderné recepty zamerané na zdravý životný štýl."
+    },
+    {
+      id: "street_food",
+      label: "🌍 Street food štýl",
+      description: "Jedlá inšpirované pouličnou kuchyňou."
+    },
+    {
+      id: "comfort_food",
+      label: "🍲 Comfort food",
+      description: "Sýte a upokojujúce jedlá."
+    },
+    {
+      id: "slow_cooking",
+      label: "🧘 Pomalé varenie / comfort food",
+      description: "Jedlá pripravované pomaly pre plnú chuť."
+    },
+    {
+      id: "one_pot",
+      label: "🥘 One-pot recept",
+      description: "Jedlá pripravované v jednom hrnci."
+    },
+    {
+      id: "no_oven",
+      label: "🍳 Bez rúry",
+      description: "Recepty, ktoré nevyžadujú rúru."
+    },
+    {
+      id: "few_steps",
+      label: "🔢 Minimum krokov",
+      description: "Rýchle recepty s minimom krokov."
+    },
+  ],
+},
+
+  {
+  category: "Funkčné ciele",
+  items: [
+    {
+      id: "pre_workout",
+      label: "🏃 Pred tréningom",
+      description: "Jedlá vhodné pred fyzickou aktivitou."
+    },
+    {
+      id: "post_workout",
+      label: "💪 Po tréningu",
+      description: "Jedlá podporujúce regeneráciu po tréningu."
+    },
+    {
+      id: "focus_support",
+      label: "🧠 Podpora sústredenia",
+      description: "Jedlá podporujúce mentálnu výkonnosť."
+    },
+  ],
+},
+{
+  category: "Alergici",
+  items: [
+    {
+      id: "no-gluten",
+      label: "🌾 Bez lepku",
+      description: "Vylúči všetky potraviny obsahujúce lepok (pšenica, jačmeň, raž). Vhodné pre celiatikov."
+    },
+    {
+      id: "no-lactose",
+      label: "🥛 Bez laktózy",
+      description: "Vylúči mlieko a mliečne výrobky obsahujúce laktózu."
+    },
+    {
+      id: "no-milk-protein",
+      label: "🍼 Bez mliečnej bielkoviny",
+      description: "Vylúči všetky mliečne produkty vrátane bezlaktózových."
+    },
+    {
+      id: "no-eggs",
+      label: "🥚 Bez vajec",
+      description: "Vylúči vajcia a potraviny, ktoré ich obsahujú."
+    },
+    {
+      id: "no-peanuts",
+      label: "🥜 Bez arašidov",
+      description: "Vylúči arašidy a produkty, ktoré ich môžu obsahovať."
+    },
+    {
+      id: "no-tree-nuts",
+      label: "🌰 Bez orechov",
+      description: "Vylúči všetky stromové orechy (vlašské, lieskové, mandle, kešu atď.)."
+    },
+    {
+      id: "no-soy",
+      label: "🫘 Bez sóje",
+      description: "Vylúči sóju a výrobky zo sóje."
+    },
+    {
+      id: "no-fish",
+      label: "🐟 Bez rýb",
+      description: "Vylúči ryby a produkty z nich."
+    },
+    {
+      id: "no-shellfish",
+      label: "🦐 Bez kôrovcov a mäkkýšov",
+      description: "Vylúči krevety, kraby, mušle, ustrice a podobné morské plody."
+    },
+    {
+      id: "no-sesame",
+      label: "🌿 Bez sezamu",
+      description: "Vylúči sezamové semienka a sezamové produkty."
+    },
+    {
+      id: "no-mustard",
+      label: "🌱 Bez horčice",
+      description: "Vylúči horčicu a výrobky, ktoré ju obsahujú."
+    },
+    {
+      id: "no-celery",
+      label: "🥬 Bez zeleru",
+      description: "Vylúči zeler a jedlá, kde sa používa ako prísada."
+    },
+    {
+      id: "no-sulfites",
+      label: "⚗️ Bez siričitanov",
+      description: "Vylúči potraviny a nápoje obsahujúce siričitany."
+    }
+  ]
+}
+,
 ];
 const availablePreferences = ALL_PREFERENCES.filter(
     pref => !selectedPreferences.some(sel => sel.id === pref.id)
   );
 
-  const TIME_OPTIONS = [
-  { id: "5-10", label: "5-10 min" },
-  { id: "10-15", label: "10-15 min" },
-  { id: "15-30", label: "15-30 min" },
-  { id: "30-45", label: "30-45 min" },
-  { id: "45-60", label: "45-60 min" },
-  { id: "60-90", label: "60-90 min" },
-  { id: "90-120", label: "90-120 min" },
-  { id: "120-180", label: "2-3 hod" },
-  { id: "180+", label: "3+ hod" },
-];
+
   return (
     <>
       <View style={styles.recipesContainer}>
@@ -304,6 +589,25 @@ const availablePreferences = ALL_PREFERENCES.filter(
             minHeight: 50,
           }}
         >
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
+  <Text style={{ fontSize: 16, fontWeight: "bold", marginRight: 6 }}>
+    Preferencie
+  </Text>
+
+  <Pressable
+    onPress={() => setShowPreferenceInfo(true)}
+    style={{
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: "#4ade80",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 12 }}>i</Text>
+  </Pressable>
+</View>
           {selectedPreferences.length === 0 ? (
             <Text style={{ color: "#999" }}>Vybrané preferencie sa zobrazia tu…</Text>
           ) : (
@@ -373,27 +677,30 @@ const availablePreferences = ALL_PREFERENCES.filter(
           </Text>
         </Pressable>
 
-        {showAdditionalPreferences && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
-            {ADDITIONAL_PREFERENCES.filter(
-              pref => !selectedPreferences.some(sel => sel.id === pref.id)
-            ).map(pref => (
-              <Pressable
-                key={pref.id}
-                onPress={() => setSelectedPreferences(prev => [...prev, pref])}
-                style={{
-                  backgroundColor: "#d1fae5",
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  margin: 4,
-                }}
-              >
-                <Text>{pref.label}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+        {showAdditionalPreferences && ADDITIONAL_PREFERENCES.map(section => (
+  <View key={section.category} style={{ marginBottom: 12 }}>
+    <Text style={{ fontWeight: "bold", marginBottom: 6 }}>{section.category}</Text>
+    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+      {section.items
+        .filter(pref => !selectedPreferences.some(sel => sel.id === pref.id))
+        .map(pref => (
+          <Pressable
+            key={pref.id}
+            onPress={() => setSelectedPreferences(prev => [...prev, pref])}
+            style={{
+              backgroundColor: "#d1fae5",
+              paddingHorizontal: 12,
+              paddingVertical: 8,
+              borderRadius: 20,
+              margin: 4,
+            }}
+          >
+            <Text>{pref.label}</Text>
+          </Pressable>
+      ))}
+    </View>
+  </View>
+))}
 
         {/* FITNESS GOAL a PANTRY ITEMS */}
         <View >
@@ -483,36 +790,67 @@ const availablePreferences = ALL_PREFERENCES.filter(
         </View>
 
         {/* Čas receptu */}
-        <View style={{ marginBottom: 20 }}>
-          <Text style={{ marginBottom: 10, fontWeight: "bold" }}>Čas na recept:</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {TIME_OPTIONS.map(option => (
-              <Pressable
-                key={option.id}
-                onPress={() => setCookingTime(option.id)}
-                style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  borderRadius: 20,
-                  margin: 4,
-                  backgroundColor: cookingTime === option.id ? "#4ade80" : "#e0e0e0",
-                }}
-              >
-                <Text style={{ color: cookingTime === option.id ? "#fff" : "#000" }}>
-                  {option.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
+<View style={{ marginBottom: 20 }}>
+  <Text style={{ marginBottom: 10, fontWeight: "bold", fontSize: 16 }}>
+    Maximálny čas varenia: {maxCookingTime} min
+  </Text>
+  
+  <Slider
+    minimumValue={5}
+    maximumValue={180}
+    step={5}
+    value={maxCookingTime}
+    onValueChange={setMaxCookingTime}
+    minimumTrackTintColor="#4ade80"
+    maximumTrackTintColor="#ccc"
+    thumbTintColor="#4ade80"
+  />
+</View>
 
-        {/* Text a tlačidlá na generovanie */}
-        <Text style={{ textAlign: "center", marginBottom: 20 }}>
-          Chceš vygenerovať nový recept pomocou AI?
-        </Text>
+      {/* RESET BUTTON */}
+<Pressable
+  onPress={() => {
+    setSelectedPreferences([]);
+    setUseFitnessGoal(false);
+    setUsePantryItems(false);
+    setSelectedPantryItems([]);
+    setRequireAllSelected(true);
+    setCookingTime(null);
+    setMaxCookingTime(60); 
+  }}
+  style={{
+    backgroundColor: "#f87171", // červené tlačidlo
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    alignSelf: "center",
+    marginBottom: 15,
+  }}
+>
+  <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+    Resetovať všetko
+  </Text>
+</Pressable>
+
+{/* INFO TEXT  */}
+<Text style={{ textAlign: "center", marginBottom: 20, fontSize: 20 }}>
+  ⚠️ Pri alergiách odporúčame vždy kontrolovať presné zloženie potravín!
+</Text>
+<Text style={{ textAlign: "center", marginBottom: 20, fontSize: 15 }}>
+  Chceš vygenerovať nový recept pomocou AI?
+</Text>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <Pressable
-            onPress={() => setGenerateModalVisible(false)}
+            onPress={() => {setGenerateModalVisible(false),
+              setSelectedRecept(null),
+    setGeneratedRecipeModal(null),
+    // Reset všetkých nastavení
+    setSelectedPreferences([]),
+    setUseFitnessGoal(false),
+    setUsePantryItems(false),
+    setSelectedPantryItems([]),
+    setRequireAllSelected(true),
+    setMaxCookingTime(60)}}
             style={{
               flex: 1,
               marginRight: 5,
@@ -526,9 +864,16 @@ const availablePreferences = ALL_PREFERENCES.filter(
 
           <Pressable
             onPress={async () => {
-              setGenerateModalVisible(false);
-              await generateRecipe();
-            }}
+    setGenerateModalVisible(false);
+    await generateRecipe();
+    // Reset nastavení po generovaní
+    setSelectedPreferences([]);
+    setUseFitnessGoal(false);
+    setUsePantryItems(false);
+    setSelectedPantryItems([]);
+    setRequireAllSelected(true);
+    setMaxCookingTime(60); 
+  }}
             style={{
               flex: 1,
               marginLeft: 5,
@@ -855,5 +1200,88 @@ const availablePreferences = ALL_PREFERENCES.filter(
     </View>
   </View>
 </Modal>
+<Modal
+  visible={showPreferenceInfo}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setShowPreferenceInfo(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={[styles.modalContainer, { maxHeight: "85%" }]}>
+      <ScrollView>
 
+        <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 10 }}>
+          Vysvetlenie preferencií
+        </Text>
+
+        {/* ZÁKLADNÉ PREFERENCIE */}
+        <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 6 }}>
+          Základné
+        </Text>
+
+        {ALL_PREFERENCES.map(pref => (
+          <View
+            key={pref.id}
+            style={{
+              backgroundColor: "#f0fdf4",
+              padding: 10,
+              borderRadius: 10,
+              marginBottom: 6,
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: "600" }}>
+              {pref.label}
+            </Text>
+            <Text style={{ fontSize: 14, color: "#555", marginTop: 2 }}>
+              {pref.description}
+            </Text>
+          </View>
+        ))}
+
+        {/* KATEGORIZOVANÉ PREFERENCIE */}
+        {ADDITIONAL_PREFERENCES.map(section => (
+          <View key={section.category} style={{ marginTop: 14 }}>
+            <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 6 }}>
+              {section.category}
+            </Text>
+
+            {section.items.map(item => (
+              <View
+                key={item.id}
+                style={{
+                  backgroundColor: "#f0fdf4",
+                  padding: 10,
+                  borderRadius: 10,
+                  marginBottom: 6,
+                }}
+              >
+                <Text style={{ fontSize: 16, fontWeight: "600" }}>
+                  {item.label}
+                </Text>
+                <Text style={{ fontSize: 14, color: "#555", marginTop: 2 }}>
+                  {item.description}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ))}
+
+        <Pressable
+          onPress={() => setShowPreferenceInfo(false)}
+          style={{
+            marginTop: 16,
+            backgroundColor: "#4ade80",
+            paddingVertical: 10,
+            borderRadius: 10,
+          }}
+        >
+          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
+            Zavrieť
+          </Text>
+        </Pressable>
+
+      </ScrollView>
+    </View>
+  </View>
+</Modal>
         </>)}
