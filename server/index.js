@@ -377,9 +377,7 @@ async function start() {
   app.post("/api/generateRecipe", async (req, res) => {
   try {
     if (gptRequestCount >= GPT_REQUEST_LIMIT) {
-      return res.status(429).json({
-        error: "GPT request limit reached on server",
-      });
+      return res.status(429).json({ error: "GPT request limit reached on server" });
     }
 
     gptRequestCount++;
@@ -391,87 +389,121 @@ async function start() {
     const user = await users.findOne({ email });
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // --- Získaj produkty zo špajze, ak je povolené ---
+    // --- Získaj produkty zo špajze ---
     let pantryText = "";
     if (usePantryItems && user.products && user.products.length > 0) {
       const productNames = user.products.map(p => p.name).join(", ");
       pantryText = `Použi tieto produkty zo špajze: ${productNames}.`;
     }
 
-    // --- Získaj fitness cieľ používateľa, ak je povolené ---
+    // --- Získaj fitness cieľ používateľa ---
     let goalText = "";
+    let calorieGuideline = "";
     if (useFitnessGoal && user.goal) {
       goalText = `Zohľadni fitness cieľ používateľa: ${user.goal}.`;
+
+        if (user.goal === "lose") {
+        calorieGuideline = "Celkové kalórie receptu MUSIA byť nižšie (200-400), vhodné pre chudnutie.";
+      } else if (user.goal === "maintain") {
+        calorieGuideline = "Celkové kalórie receptu MUSIA byť priemerné (401-600), vhodné pre udržanie váhy.";
+      } else if (user.goal === "gain") {
+        calorieGuideline = "Celkové kalórie receptu MUSIA byť vyššie (601-800), vhodné pre priberanie.";
+      }
     }
 
+    // --- SYSTEM PROMPT (nový kompletný) ---
     const systemPrompt = `
-Si ten najdokonalejší AI šéfkuchár na planéte.
-*Dôležité pravidlá*
-1. Odpovedaj **VÝHRADNE po slovensky**. Nevysvetľuj nič, nevypisuj text v inom jazyku
-2. Vráť *len platný JSON* podľa presnej štruktúry. Žiadny text mimo JSON 
-3. Recept MUSÍ byť *skutočný a overiteľný*. Nevymýšľaj ingrediencie ani jedlá
-4. Ingrediencie MUSIA byť reálne potraviny, ktoré sa dajú kúpiť
-5. Kroky MUSIA byť jasné, presné a očíslované
-6. Čas prípravy MUSÍ byť realistický pre daný recept
-7. Recepty musia byť originálne a rôznorodé, neopakuj suroviny
-8. Dodrž všetky užívateľom nastavené preferencie a parametre.
-9. Ak existujú produkty zo špajze, použij ich podľa možnosti v receptoch.
+Si profesionálny AI šéfkuchár a nutričný analytik.
+
+PRAVIDLÁ:
+1. Odpovedaj výhradne po slovensky.
+2. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
+3. Recept MUSÍ byť reálny, overiteľný a prakticky vykonateľný.
+4. Ingrediencie musia byť bežne dostupné v obchodoch.
+5. Kroky musia byť jasné, očíslované a zrozumiteľné.
+6. Čas prípravy musí byť realistický pre daný recept.
+7. Recept musí byť originálny, neopakuj predchádzajúce recepty.
+8. Dodrž všetky používateľské preferencie (sladké, štipľavé, mäsité, vegánske, bezmäsité, atď.).
+9. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
 10. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
-11. Každému receptu priradíš kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé
-12. JSON štruktúra MUSÍ byť:
+11. Priraď každému receptu jednu kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé.
+12. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií – kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
+13. Nepoužívaj odhady typu "cca" alebo "približne".
+14. Ak nevieš presnú hodnotu, použi databázový priemer.
+15. Celkové kalórie musia korešpondovať so súčtom makroživín.
+16. Hodnoty sú pre celú porciu (celý recept), čísla nie stringy.
+17. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
+18. Skontroluj, že JSON je validný.
+19. Odpoveď MUSÍ začínať { a končiť }.
+
+JSON ŠTRUKTÚRA:
 {
   "name": "Názov receptu",
-  "estimatedCookingTime": "Čas prípravy v minútach, napr. '25 minút'",
-  "category": Názov kategórie,
+  "category": "mäsité | bezmäsité | vegánske | sladké | štipľavé",
+  "estimatedCookingTime": "25 minút",
+  "nutrition": {
+    "calories": 520,
+    "proteins": 38,
+    "carbohydrates": 45,
+    "fats": 18,
+    "fiber": 7,
+    "salt": 2.1,
+    "sugars": 6
+  },
   "ingredients": [
     { "name": "Názov ingrediencie", "amountGrams": 100 }
   ],
   "steps": [
-    "Krok 1",
-    "Krok 2",
-    "Krok 3"
+    "1. Prvý krok",
+    "2. Druhý krok"
   ]
 }
 `;
 
-    // skombinuj userPrompt s pantryText a goalText
+     // --- Skombinuj userPrompt s pantryText, goalText a calorieGuideline ---
     const finalPrompt = `${userPrompt}
 ${pantryText ? pantryText : ""}
-${goalText ? goalText : ""}`;
+${goalText ? goalText : ""}
+${calorieGuideline ? calorieGuideline : ""}`;
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: finalPrompt },
-      ],
-      max_tokens: 610,
-      temperature: 0.8,
-    });
+    // --- RETRY pri nevalidnom JSON ---
+    let parsedJSON = null;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 3;
 
-    const rawResponse = completion.choices[0].message.content;
-
-    let parsedJSON;
-    try {
-      parsedJSON = JSON.parse(rawResponse);
-    } catch (jsonErr) {
-      console.error("❌ Invalid JSON from GPT:", rawResponse);
-      return res.status(500).json({
-        error: "Invalid JSON received from AI",
+    while (!parsedJSON && attempts < MAX_ATTEMPTS) {
+      attempts++;
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: finalPrompt }
+        ],
+        max_tokens: 700,       // zvýšené tokeny
+        temperature: 0.8
       });
+
+      const rawResponse = completion.choices[0].message.content;
+
+      try {
+        parsedJSON = JSON.parse(rawResponse);
+      } catch (err) {
+        console.warn(`⚠️ GPT vrátil nevalidný JSON, retry ${attempts}...`);
+      }
     }
 
-    return res.json({
-      success: true,
-      recipe: parsedJSON,
-    });
+    if (!parsedJSON) {
+      return res.status(500).json({ error: "GPT vrátil nevalidný JSON aj po retry" });
+    }
+
+    return res.json({ success: true, recipe: parsedJSON });
+
   } catch (err) {
     console.error("❌ GPT error:", err);
-    res.status(500).json({
-      error: "Failed to generate recipe",
-    });
+    res.status(500).json({ error: "Failed to generate recipe" });
   }
 });
+
 
   // ------------------ SAVE RECIPE TO DB ------------------
   app.post("/api/addRecipe", async (req, res) => {

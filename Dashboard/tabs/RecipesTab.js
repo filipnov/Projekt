@@ -513,27 +513,46 @@ const availablePreferences = ALL_PREFERENCES.filter(
               )}
 
               {/* AI / GENERATED RECEPT */}
-              {(selectedRecept?.type === "ai" || generatedRecipeModal) && (
-                <>
-                  <Text style={{ fontWeight: "bold", marginTop: 10 }}>Kategória:</Text>
-                  <Text>{selectedRecept?.category || generatedRecipeModal?.category}</Text>
+{(selectedRecept?.type === "ai" || generatedRecipeModal) && (
+  <>
+    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Kategória:</Text>
+    <Text>{selectedRecept?.category || generatedRecipeModal?.category}</Text>
 
-                  <Text style={{ fontWeight: "bold", marginTop: 10 }}>Čas prípravy:</Text>
-                  <Text>{selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}</Text>
+    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Čas prípravy:</Text>
+    <Text>{selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}</Text>
 
-                  <Text style={{ fontWeight: "bold", marginTop: 10 }}>Ingrediencie:</Text>
-                  {(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
-                    <Text key={idx}>
-                      • {ing.name}: {ing.amountGrams} g
-                    </Text>
-                  ))}
+    {/* --- NUTRITION TABLE --- */}
+    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Nutričné hodnoty (celý recept):</Text>
+    <View style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 10 }}>
+      {(() => {
+        const nutrition = selectedRecept?.nutrition || generatedRecipeModal?.nutrition || {};
+        return (
+          <>
+            <Text>Kalórie: {nutrition.calories ?? "-"} kcal</Text>
+            <Text>Bielkoviny: {nutrition.proteins ?? "-"} g</Text>
+            <Text>Sacharidy: {nutrition.carbohydrates ?? "-"} g</Text>
+            <Text>Tuky: {nutrition.fats ?? "-"} g</Text>
+            <Text>Vláknina: {nutrition.fiber ?? "-"} g</Text>
+            <Text>Soľ: {nutrition.salt ?? "-"} g</Text>
+            <Text>Cukry: {nutrition.sugars ?? "-"} g</Text>
+          </>
+        );
+      })()}
+    </View>
 
-                  <Text style={{ fontWeight: "bold", marginTop: 10 }}>Postup:</Text>
-                  {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
-                    <Text key={idx}>{step}</Text>
-                  ))}
-                </>
-              )}
+    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Ingrediencie:</Text>
+    {(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
+      <Text key={idx}>
+        • {ing.name}: {ing.amountGrams} g
+      </Text>
+    ))}
+
+    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Postup:</Text>
+    {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
+      <Text key={idx}>{step}</Text>
+    ))}
+  </>
+)}
             </ScrollView>
 
             {/* BUTTONS */}
