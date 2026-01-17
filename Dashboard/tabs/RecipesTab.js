@@ -8,6 +8,7 @@ import {
   Pressable,
   Modal,
   ScrollView,
+  Switch
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../styles";
@@ -27,6 +28,9 @@ export default function RecipesTab() {
   const [isGenerating, setIsGenerating] = useState(false);
 const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false);
   const [showUnitInfo, setShowUnitInfo] = useState(false);
+const [pantryItems, setPantryItems] = useState([]); // všetky produkty zo špajze
+const [selectedPantryItems, setSelectedPantryItems] = useState([]); // vybrané produkty
+const [requireAllSelected, setRequireAllSelected] = useState(true); // toggle "všetky vs niektoré"
 
   // Načítanie emailu prihláseného používateľa
   useEffect(() => {
@@ -41,6 +45,25 @@ const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false
     if (userEmail) fetchSavedRecipes();
   }, [userEmail]);
 
+ useEffect(() => {
+  if (!userEmail || !usePantryItems) return;
+
+  const fetchPantryItems = async () => {
+    try {
+      const res = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${userEmail}`);
+      const data = await res.json();
+      if (data.success) {
+        setPantryItems(data.products);
+        // Nepredvolené – necháme všetky vypnuté
+        setSelectedPantryItems([]);
+      }
+    } catch (err) {
+      console.error("Failed to load pantry items:", err);
+    }
+  };
+
+  fetchPantryItems();
+}, [userEmail, usePantryItems]);
   // Funkcia na generovanie receptu z AI
   const generateRecipe = async () => {
   if (!userEmail) return;
@@ -212,6 +235,7 @@ const ALL_PREFERENCES = [
   { id: "seafood", label: "🦐 Morské plody" },
   { id: "dessert", label: "🍮 Dezert" },
   { id: "healthy", label: "🥗 Zdravé" },
+  { id: "soup", label: "🍲 Polievka" },
 ];
 const ADDITIONAL_PREFERENCES = [
   { id: "low_carb", label: "🥖 Nízkosacharidové" },
@@ -230,9 +254,15 @@ const availablePreferences = ALL_PREFERENCES.filter(
   );
 
   const TIME_OPTIONS = [
-  { id: "0-30", label: "0-30 min" },
-  { id: "30-60", label: "30-60 min" },
-  { id: "60-120", label: "60-120 min" },
+  { id: "5-10", label: "5-10 min" },
+  { id: "10-15", label: "10-15 min" },
+  { id: "15-30", label: "15-30 min" },
+  { id: "30-45", label: "30-45 min" },
+  { id: "45-60", label: "45-60 min" },
+  { id: "60-90", label: "60-90 min" },
+  { id: "90-120", label: "90-120 min" },
+  { id: "120-180", label: "2-3 hod" },
+  { id: "180+", label: "3+ hod" },
 ];
   return (
     <>
@@ -366,48 +396,90 @@ const availablePreferences = ALL_PREFERENCES.filter(
         )}
 
         {/* FITNESS GOAL a PANTRY ITEMS */}
-        <View style={{ marginBottom: 20 }}>
-          <Pressable
-            onPress={() => setUseFitnessGoal(prev => !prev)}
-            style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
-          >
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderWidth: 1,
-                borderColor: "#777",
-                marginRight: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: useFitnessGoal ? "#4ade80" : "#fff",
-              }}
-            >
-              {useFitnessGoal && <Text style={{ color: "#fff" }}>✔</Text>}
-            </View>
-            <Text>Generovať recepty podľa fitness cieľa</Text>
-          </Pressable>
+        <View >
+          {/* FITNESS GOAL */}
+<View>
+  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+    <Switch
+      trackColor={{ false: "#ccc", true: "#4ade80" }}
+      thumbColor="#fff"
+      ios_backgroundColor="#ccc"
+      value={useFitnessGoal}
+      onValueChange={setUseFitnessGoal}
+    />
+    <Text style={{ marginLeft: 8, fontSize: 14, fontWeight: "500", color: "#333" }}>
+      Generovať recepty podľa fitness cieľa
+    </Text>
+  </View>
+</View>
 
-          <Pressable
-            onPress={() => setUsePantryItems(prev => !prev)}
-            style={{ flexDirection: "row", alignItems: "center" }}
-          >
-            <View
-              style={{
-                width: 20,
-                height: 20,
-                borderWidth: 1,
-                borderColor: "#777",
-                marginRight: 10,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: usePantryItems ? "#4ade80" : "#fff",
-              }}
-            >
-              {usePantryItems && <Text style={{ color: "#fff" }}>✔</Text>}
-            </View>
-            <Text>Použiť položky zo špajze</Text>
-          </Pressable>
+          <View>
+  {/* Hlavný switch pre použitie špajze */}
+  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+    <Switch
+      trackColor={{ false: "#ccc", true: "#4ade80" }}
+      thumbColor="#fff"
+      ios_backgroundColor="#ccc"
+      value={usePantryItems}
+      onValueChange={(value) => {
+  setUsePantryItems(value);
+  if (!value) setSelectedPantryItems([]); // reset
+}}
+    />
+    <Text style={{ marginLeft: 8, fontSize: 14, fontWeight: "500", color: "#333" }}>
+      Použiť produkty zo špajze
+    </Text>
+  </View>
+
+  {/* Zoznam položiek zo špajze */}
+  {usePantryItems && pantryItems.length > 0 && (
+    <View style={{ paddingLeft: 5 }}>
+      {pantryItems.map((item) => (
+        <View
+          key={item.productId}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginBottom: 4,
+            backgroundColor: "#f5f5f5",
+            paddingVertical: 6,
+            paddingHorizontal: 8,
+            borderRadius: 8,
+          }}
+        >
+          <Switch
+            style={{ transform: [{ scale: 0.8 }] }}
+            trackColor={{ false: "#ccc", true: "#4ade80" }}
+            thumbColor="#fff"
+            ios_backgroundColor="#ccc"
+            value={selectedPantryItems.includes(item.name)}
+            onValueChange={(checked) => {
+              if (checked) {
+                setSelectedPantryItems(prev => [...prev, item.name]);
+              } else {
+                setSelectedPantryItems(prev => prev.filter(name => name !== item.name));
+              }
+            }}
+          />
+          <Text style={{ marginLeft: 8, fontSize: 14, color: "#333" }}>{item.name}</Text>
+        </View>
+      ))}
+
+      {/* Toggle: Všetky vs len niektoré */}
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <Text style={{ fontSize: 14, color: "#333", marginRight: 8 }}>Použiť niektoré vybrané</Text>
+        <Switch
+          trackColor={{ false: "#ccc", true: "#4ade80" }}
+          thumbColor="#fff"
+          ios_backgroundColor="#ccc"
+          value={requireAllSelected}
+          onValueChange={setRequireAllSelected}
+        />
+        <Text style={{ fontSize: 14, color: "#333", marginRight: 8 }}>Použiť všetky vybrané</Text>
+      </View>
+    </View>
+  )}
+</View>
         </View>
 
         {/* Čas receptu */}
