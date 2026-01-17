@@ -288,6 +288,7 @@ export default StyleSheet.create({
     height: 50,
     borderRadius: 10,
     margin: "auto",
+    marginTop: 10,
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
@@ -332,7 +333,7 @@ export default StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    width: "85%",
+    width: "95%",
     maxHeight: "95%",
     backgroundColor: "white",
     borderRadius: 10,

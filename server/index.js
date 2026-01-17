@@ -433,9 +433,12 @@ PRAVIDLÁ:
 15. Celkové kalórie musia korešpondovať so súčtom makroživín.
 16. Hodnoty sú pre celú porciu (celý recept), čísla nie stringy.
 17. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
-18. Skontroluj, že JSON je validný.
-19. Odpoveď MUSÍ začínať { a končiť }.
-20. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
+18. "estimatedCookingTime" MUSÍ byť realistický a vychádzať z reálneho postupu receptu.
+19. Čas musí zahŕňať prípravu surovín aj samotné varenie/pečenie.
+20. Odhadni čas každého kroku a výsledok urči ako ich súčet, zaokrúhlený na 5 minút.
+21. Skontroluj, že JSON je validný.
+22. Odpoveď MUSÍ začínať { a končiť }.
+23. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
 
 JSON ŠTRUKTÚRA:
 {

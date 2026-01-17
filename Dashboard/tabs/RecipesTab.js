@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../styles";
+import { ActivityIndicator } from "react-native";
 
 export default function RecipesTab() {
   const [recipe, setRecipe] = useState("");
@@ -23,6 +24,8 @@ export default function RecipesTab() {
   const [useFitnessGoal, setUseFitnessGoal] = useState(false);
   const [usePantryItems, setUsePantryItems] = useState(false);
   const [cookingTime, setCookingTime] = useState(null); 
+  const [isGenerating, setIsGenerating] = useState(false);
+
   
 
   // Načítanie emailu prihláseného používateľa
@@ -42,6 +45,7 @@ export default function RecipesTab() {
   const generateRecipe = async () => {
   if (!userEmail) return;
 
+  setIsGenerating(true);
   const preferencesText =
     selectedPreferences.length > 0
       ? selectedPreferences.map(p => p.label).join(", ")
@@ -80,6 +84,8 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
     setGeneratedRecipeModal(data.recipe);
   } catch (error) {
     console.error("❌ ERROR:", error);
+  }finally {
+    setIsGenerating(false);
   }
 };
   // Funkcia na uloženie receptu do DB
@@ -221,7 +227,9 @@ const availablePreferences = ALL_PREFERENCES.filter(
   onPress={() => setGenerateModalVisible(true)}
   style={styles.recipeButton}
 >
-  <Text>Vyrobiť recept</Text>
+  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
+  Vytvoriť recept
+</Text>
 </Pressable>
       </View>
 
@@ -427,7 +435,9 @@ const availablePreferences = ALL_PREFERENCES.filter(
   </View>
 </Modal>
 
-      <Text>Overené recepty</Text>
+     <Text style={{ fontSize: 22, fontWeight: "bold", marginVertical: 10, marginLeft: 15 }}>
+  Overené klasické recepty
+</Text>
       <View style={styles.grid}>
         {recepty.map((item) => (
           <Pressable
@@ -446,7 +456,9 @@ const availablePreferences = ALL_PREFERENCES.filter(
         ))}
       </View>
 
-      <Text>Uložené recepty</Text>
+      <Text style={{ fontSize: 22, fontWeight: "bold", marginVertical: 10, marginLeft: 15 }}>
+  Moje recepty
+</Text>
       <View style={styles.grid}>
         {savedRecipes.map((item) => (
           <Pressable
@@ -644,6 +656,47 @@ const availablePreferences = ALL_PREFERENCES.filter(
           </Pressable>
         )}
       </View>
+    </View>
+  </View>
+</Modal>
+<Modal
+  visible={isGenerating}
+  transparent
+  animationType="fade"
+>
+  <View style={styles.modalOverlay}>
+    <View
+      style={{
+        backgroundColor: "#fff",
+        padding: 30,
+        borderRadius: 20,
+        alignItems: "center",
+        width: "80%",
+      }}
+    >
+      <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
+
+      <Text
+        style={{
+          marginTop: 15,
+          fontSize: 18,
+          fontWeight: "600",
+          textAlign: "center",
+        }}
+      >
+        Vytváram recept…
+      </Text>
+
+      <Text
+        style={{
+          marginTop: 6,
+          fontSize: 14,
+          color: "#666",
+          textAlign: "center",
+        }}
+      >
+        Môže to trvať niekoľko sekúnd
+      </Text>
     </View>
   </View>
 </Modal>
