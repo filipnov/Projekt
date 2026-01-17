@@ -417,7 +417,7 @@ Si profesionálny AI šéfkuchár a nutričný analytik.
 
 PRAVIDLÁ:
 1. Odpovedaj výhradne po slovensky.
-2. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
+2. Recepty nemusia byť len slovenské, možeš použiť aj exotickejšie recepty.
 3. Recept MUSÍ byť reálny, overiteľný a prakticky vykonateľný.
 4. Ingrediencie musia byť bežne dostupné v obchodoch.
 5. Kroky musia byť jasné, očíslované a zrozumiteľné.
@@ -435,6 +435,7 @@ PRAVIDLÁ:
 17. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
 18. Skontroluj, že JSON je validný.
 19. Odpoveď MUSÍ začínať { a končiť }.
+20. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
 
 JSON ŠTRUKTÚRA:
 {
@@ -530,6 +531,7 @@ ${calorieGuideline ? calorieGuideline : ""}`;
         category: recipe.category,
         ingredients: recipe.ingredients,
         steps: recipe.steps,
+        nutrition: recipe.nutrition || {},
         createdAt: new Date(),
       };
 

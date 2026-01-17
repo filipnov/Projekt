@@ -84,36 +84,41 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
 };
   // Funkcia na uloženie receptu do DB
   const saveGeneratedRecipe = async () => {
-    if (!userEmail || !generatedRecipeModal) return;
-
-    try {
-      const saveResponse = await fetch("http://10.0.2.2:3000/api/addRecipe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail, recipe: generatedRecipeModal }),
-      });
-      const saveData = await saveResponse.json();
-      if (saveData.success) fetchSavedRecipes();
-    } catch (error) {
-      console.error("❌ ERROR saving recipe:", error);
-    } finally {
+  if (!generatedRecipeModal || !userEmail) return;
+  try {
+    const res = await fetch(`http://10.0.2.2:3000/api/addRecipe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        recipe: generatedRecipeModal,
+      }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert("Recept uložený!");
       setGeneratedRecipeModal(null);
+      // refresh receptov
+      fetchSavedRecipes();
     }
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
 
-  const fetchSavedRecipes = async () => {
-    if (!userEmail) return;
-
-    try {
-      const res = await fetch(
-        `http://10.0.2.2:3000/api/getRecipes?email=${userEmail}`
-      );
-      const data = await res.json();
-      if (data.success) setSavedRecipes(data.recipes);
-    } catch (err) {
-      console.error("❌ Failed to fetch recipes:", err);
+// Načítanie receptov
+const fetchSavedRecipes = async () => {
+  if (!userEmail) return;
+  try {
+    const res = await fetch(`http://10.0.2.2:3000/api/getRecipes?email=${userEmail}`);
+    const data = await res.json();
+    if (data.success) {
+      setSavedRecipes(data.recipes); // každý recept má teraz aj nutrition
     }
-  };
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const deleteRecipe = async () => {
     if (!userEmail || !selectedRecept?.recipeId) return;
@@ -462,148 +467,185 @@ const availablePreferences = ALL_PREFERENCES.filter(
 
       {/* --- MODAL PRE VSETKY RECEPTY --- */}
       <Modal
-        visible={selectedRecept !== null || generatedRecipeModal !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          setSelectedRecept(null);
-          setGeneratedRecipeModal(null);
-        }}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <ScrollView>
-              {/* IMAGE */}
-              <Image
-                source={
-                  selectedRecept
-                    ? selectedRecept.type === "static"
-                      ? selectedRecept.obrazok
-                      : getRecipeImage(selectedRecept.category)
-                    : generatedRecipeModal
-                    ? getRecipeImage(generatedRecipeModal.category)
-                    : require("../../assets/logo.png")
-                }
-                style={{ width: "100%", height: 200, borderRadius: 12, marginBottom: 15 }}
-                resizeMode="cover"
-              />
+  visible={selectedRecept !== null || generatedRecipeModal !== null}
+  transparent
+  animationType="fade"
+  onRequestClose={() => {
+    setSelectedRecept(null);
+    setGeneratedRecipeModal(null);
+  }}
+>
+  <View style={styles.modalOverlay}>
+    <View style={[styles.modalContainer, { padding: 20 }]}>
+      <ScrollView>
 
-              {/* TITLE */}
-              <Text style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 10 }}>
-                {selectedRecept?.nazov || selectedRecept?.name || generatedRecipeModal?.name}
-              </Text>
+        {/* IMAGE */}
+        <Image
+          source={
+            selectedRecept
+              ? selectedRecept.type === "static"
+                ? selectedRecept.obrazok
+                : getRecipeImage(selectedRecept.category)
+              : generatedRecipeModal
+              ? getRecipeImage(generatedRecipeModal.category)
+              : require("../../assets/logo.png")
+          }
+          style={{ width: "100%", height: 220, borderRadius: 16, marginBottom: 15 }}
+          resizeMode="cover"
+        />
 
-              {/* STATIC RECEPT */}
-              {selectedRecept?.type === "static" && (
-                <>
-                  {selectedRecept?.ingrediencie && (
-                    <Text>
-                      <Text style={{ fontWeight: "bold" }}>Ingrediencie:{"\n"}</Text>
-                      {selectedRecept.ingrediencie}
-                    </Text>
-                  )}
-                  {selectedRecept?.postup && (
-                    <Text>
-                      <Text style={{ fontWeight: "bold" }}>Postup:{"\n"}</Text>
-                      {selectedRecept.postup}
-                    </Text>
-                  )}
-                  {selectedRecept?.obsah && <Text>{selectedRecept.obsah}</Text>}
-                </>
-              )}
+        {/* TITLE */}
+        <Text style={{ fontSize: 26, fontWeight: "bold", textAlign: "center", marginBottom: 15 }}>
+          {selectedRecept?.nazov || selectedRecept?.name || generatedRecipeModal?.name}
+        </Text>
 
-              {/* AI / GENERATED RECEPT */}
-{(selectedRecept?.type === "ai" || generatedRecipeModal) && (
-  <>
-    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Kategória:</Text>
-    <Text>{selectedRecept?.category || generatedRecipeModal?.category}</Text>
-
-    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Čas prípravy:</Text>
-    <Text>{selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}</Text>
-
-    {/* --- NUTRITION TABLE --- */}
-    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Nutričné hodnoty (celý recept):</Text>
-    <View style={{ borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 10 }}>
-      {(() => {
-        const nutrition = selectedRecept?.nutrition || generatedRecipeModal?.nutrition || {};
-        return (
+        {/* STATIC RECEPT */}
+        {selectedRecept?.type === "static" && (
           <>
-            <Text>Kalórie: {nutrition.calories ?? "-"} kcal</Text>
-            <Text>Bielkoviny: {nutrition.proteins ?? "-"} g</Text>
-            <Text>Sacharidy: {nutrition.carbohydrates ?? "-"} g</Text>
-            <Text>Tuky: {nutrition.fats ?? "-"} g</Text>
-            <Text>Vláknina: {nutrition.fiber ?? "-"} g</Text>
-            <Text>Soľ: {nutrition.salt ?? "-"} g</Text>
-            <Text>Cukry: {nutrition.sugars ?? "-"} g</Text>
+            {selectedRecept?.ingrediencie && (
+              <Text style={{ fontSize: 18, marginBottom: 8 }}>
+                <Text style={{ fontWeight: "bold" }}>Ingrediencie:{"\n"}</Text>
+                {selectedRecept.ingrediencie}
+              </Text>
+            )}
+            {selectedRecept?.postup && (
+              <Text style={{ fontSize: 18, marginBottom: 8 }}>
+                <Text style={{ fontWeight: "bold" }}>Postup:{"\n"}</Text>
+                {selectedRecept.postup}
+              </Text>
+            )}
+            {selectedRecept?.obsah && <Text style={{ fontSize: 18 }}>{selectedRecept.obsah}</Text>}
           </>
-        );
-      })()}
-    </View>
+        )}
 
-    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Ingrediencie:</Text>
-    {(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
-      <Text key={idx}>
-        • {ing.name}: {ing.amountGrams} g
-      </Text>
-    ))}
+        {/* AI / GENERATED RECEPT */}
+        {(selectedRecept?.type === "ai" || generatedRecipeModal) && (
+          <>
+            {/* CATEGORY & TIME */}
+            <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10 }}>Kategória:</Text>
+            <Text style={{ fontSize: 18, marginBottom: 8 }}>
+              {selectedRecept?.category || generatedRecipeModal?.category}
+            </Text>
 
-    <Text style={{ fontWeight: "bold", marginTop: 10 }}>Postup:</Text>
-    {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
-      <Text key={idx}>{step}</Text>
-    ))}
-  </>
-)}
-            </ScrollView>
+            <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 5 }}>Čas prípravy:</Text>
+            <Text style={{ fontSize: 18, marginBottom: 10 }}>
+              {selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}
+            </Text>
 
-            {/* BUTTONS */}
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 15 }}>
-              <Pressable
-                onPress={() => {
-                  setSelectedRecept(null);
-                  setGeneratedRecipeModal(null);
-                }}
-                style={{
-                  flex: 1,
-                  marginRight: 5,
-                  backgroundColor: "grey",
-                  paddingVertical: 10,
-                  borderRadius: 10,
-                }}
-              >
-                <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>Zavrieť</Text>
-              </Pressable>
-
-              {generatedRecipeModal && (
-                <Pressable
-                  onPress={saveGeneratedRecipe}
-                  style={{
-                    flex: 1,
-                    marginLeft: 5,
-                    backgroundColor: "hsla(129, 56%, 43%, 1)",
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                  }}
-                >
-                  <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>Uložiť</Text>
-                </Pressable>
-              )}
-
-              {selectedRecept?.type === "ai" && (
-                <Pressable
-                  onPress={deleteRecipe}
-                  style={{
-                    flex: 1,
-                    marginLeft: 5,
-                    backgroundColor: "#ff4d4d",
-                    paddingVertical: 10,
-                    borderRadius: 10,
-                  }}
-                >
-                  <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>🗑️ Zmazať recept</Text>
-                </Pressable>
-              )}
+            {/* --- NUTRITION TABLE --- */}
+            <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 8 }}>Nutričné hodnoty:</Text>
+            <View style={{
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 12,
+              padding: 12,
+              backgroundColor: "#f0fdf4",
+              marginBottom: 15,
+            }}>
+              {(() => {
+                const nutrition = selectedRecept?.nutrition || generatedRecipeModal?.nutrition || {};
+                const values = [
+                  { label: "Kalórie", value: nutrition.calories, unit: "kcal" },
+                  { label: "Bielkoviny", value: nutrition.proteins, unit: "g" },
+                  { label: "Sacharidy", value: nutrition.carbohydrates, unit: "g" },
+                  { label: "Tuky", value: nutrition.fats, unit: "g" },
+                  { label: "Vláknina", value: nutrition.fiber, unit: "g" },
+                  { label: "Soľ", value: nutrition.salt, unit: "g" },
+                  { label: "Cukry", value: nutrition.sugars, unit: "g" },
+                ];
+                return values.map((item, idx) => (
+                  <View key={idx} style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    paddingVertical: 4,
+                    backgroundColor: idx % 2 === 0 ? "#e6f4ea" : "#f0fdf4",
+                    paddingHorizontal: 8,
+                    borderRadius: 8,
+                    marginVertical: 2,
+                  }}>
+                    <Text style={{ fontSize: 18 }}>{item.label}:</Text>
+                    <Text style={{ fontSize: 18, fontWeight: "bold" }}>
+                      {item.value ?? "-"} {item.unit}
+                    </Text>
+                  </View>
+                ));
+              })()}
             </View>
-          </View>
-        </View>
-        </Modal>
+
+            {/* INGREDIENTS */}
+            <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 6 }}>Ingrediencie:</Text>
+            {(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
+              <Text key={idx} style={{ fontSize: 18, marginBottom: 2 }}>
+                • {ing.name}: {ing.amountGrams} g
+              </Text>
+            ))}
+
+            {/* STEPS */}
+            <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10, marginBottom: 6 }}>Postup:</Text>
+            {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
+              <View key={idx} style={{
+                backgroundColor: "#d1fae5",
+                padding: 8,
+                borderRadius: 10,
+                marginBottom: 6,
+              }}>
+                <Text style={{ fontSize: 18 }}>{step}</Text>
+              </View>
+            ))}
+          </>
+        )}
+      </ScrollView>
+
+      {/* BUTTONS */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 15 }}>
+        <Pressable
+          onPress={() => {
+            setSelectedRecept(null);
+            setGeneratedRecipeModal(null);
+          }}
+          style={{
+            flex: 1,
+            marginRight: 5,
+            backgroundColor: "grey",
+            paddingVertical: 12,
+            borderRadius: 12,
+          }}
+        >
+          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold", fontSize: 18 }}>Zavrieť</Text>
+        </Pressable>
+
+        {generatedRecipeModal && (
+          <Pressable
+            onPress={saveGeneratedRecipe}
+            style={{
+              flex: 1,
+              marginLeft: 5,
+              backgroundColor: "hsla(129, 56%, 43%, 1)",
+              paddingVertical: 12,
+              borderRadius: 12,
+            }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold", fontSize: 18 }}>Uložiť</Text>
+          </Pressable>
+        )}
+
+        {selectedRecept?.type === "ai" && (
+          <Pressable
+            onPress={deleteRecipe}
+            style={{
+              flex: 1,
+              marginLeft: 5,
+              backgroundColor: "#ff4d4d",
+              paddingVertical: 12,
+              borderRadius: 12,
+            }}
+          >
+            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold", fontSize: 18 }}>🗑️ Zmazať recept</Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  </View>
+</Modal>
+
         </>)}
