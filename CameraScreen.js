@@ -101,12 +101,12 @@ export default function CameraScreen() {
       ...product,
       quantity: weight,
       totalCalories: Number(((product.calories / 100) * weight).toFixed(0)),
-      totalFat: Number(((product.fat / 100) * weight).toFixed(0)),
-      totalCarbs: Number(((product.carbs / 100) * weight).toFixed(0)),
-      totalSugar: Number(((product.sugar / 100) * weight).toFixed(0)),
-      totalProteins: Number(((product.proteins / 100) * weight).toFixed(0)),
-      totalSalt: Number(((product.salt / 100) * weight).toFixed(0)),
-      totalFiber: Number(((product.fiber / 100) * weight).toFixed(0)),
+      totalFat: Number(((product.fat / 100) * weight).toFixed(1)),
+      totalCarbs: Number(((product.carbs / 100) * weight).toFixed(1)),
+      totalSugar: Number(((product.sugar / 100) * weight).toFixed(1)),
+      totalProteins: Number(((product.proteins / 100) * weight).toFixed(1)),
+      totalSalt: Number(((product.salt / 100) * weight).toFixed(1)),
+      totalFiber: Number(((product.fiber / 100) * weight).toFixed(1)),
     };
   }
 
@@ -126,7 +126,7 @@ export default function CameraScreen() {
         const weight = Number(product.product_quantity);
 
         const productInfo = {
-          name: product.product_name,
+          name: product.product_name || "Neznámy produkt",
           image: product.image_url,
           calories: n?.["energy-kcal_100g"] || 0,
           fat: n?.fat_100g || 0,
