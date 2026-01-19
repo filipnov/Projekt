@@ -30,12 +30,15 @@ export default function NutritionDisplay({
         <View
           style={[
             styles.caloriesBar,
-            { width: `${barPercent}%`, backgroundColor: barPercent >= 100 ? "#FF3B30" : "#4CAF50" },
+            {
+              width: `${barPercent}%`,
+              backgroundColor: barPercent >= 100 ? "#FF3B30" : "#4CAF50",
+            },
           ]}
         />
       </View>
       <Text style={{ color: "white", marginBottom: 5 }}>
-        {valueConsumed} / {valueGoal} g
+        {valueConsumed.toFixed(0)} / {valueGoal} g
       </Text>
     </View>
   );
@@ -43,7 +46,12 @@ export default function NutritionDisplay({
   return (
     <View style={styles.nutriDisplay_container}>
       <View style={{ flexDirection: "row" }}>
-        {renderNutriItem("Bielkoviny", proteinConsumed, proteinGoal, proteinBar)}
+        {renderNutriItem(
+          "Bielkoviny",
+          proteinConsumed,
+          proteinGoal,
+          proteinBar,
+        )}
         {renderNutriItem("Sacharidy", carbConsumed, carbGoal, carbBar)}
         {renderNutriItem("Tuky", fatConsumed, fatGoal, fatBar)}
       </View>
