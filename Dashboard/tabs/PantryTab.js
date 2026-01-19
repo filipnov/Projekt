@@ -21,8 +21,8 @@ export default function PantryTab({
     try {
       const res = await fetch(
         `http://10.0.2.2:3000/api/getProducts?email=${encodeURIComponent(
-          email
-        )}`
+          email,
+        )}`,
       );
       const data = await res.json();
       if (data.success) {
@@ -31,13 +31,20 @@ export default function PantryTab({
           productId: p.productId,
           name: p.name,
           image: p.image,
-          calories: p.totalCalories || 0,
-          proteins: p.totalProteins || 0,
-          carbs: p.totalCarbs || 0,
-          fat: p.totalFat || 0,
-          fiber: p.totalFiber || 0,
-          sugar: p.totalSugar || 0,
-          salt: p.totalSalt || 0,
+          calories: p.calories || 0, // <-- na 100g
+          proteins: p.proteins || 0, // <-- na 100g
+          carbs: p.carbs || 0,
+          fat: p.fat || 0,
+          fiber: p.fiber || 0,
+          sugar: p.sugar || 0,
+          salt: p.salt || 0,
+          totalCalories: p.totalCalories || 0, // celkové
+          totalProteins: p.totalProteins || 0,
+          totalCarbs: p.totalCarbs || 0,
+          totalFat: p.totalFat || 0,
+          totalFiber: p.totalFiber || 0,
+          totalSugar: p.totalSugar || 0,
+          totalSalt: p.totalSalt || 0,
         }));
 
         setMealBoxes(boxes);
@@ -66,7 +73,7 @@ export default function PantryTab({
       if (userEmail) {
         fetchMealBoxes(userEmail);
       }
-    }, [userEmail])
+    }, [userEmail]),
   );
 
   const openWindow = (box) => {

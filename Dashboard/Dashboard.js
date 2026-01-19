@@ -52,7 +52,12 @@ export default function Dashboard({ setIsLoggedIn }) {
 
   const [overviewData, setOverviewData] = useState({});
 
-  const [currentDate] = useState(Date.now());
+  const formatDateSK = () => {
+    const d = new Date();
+    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+  };
+
+  const [currentDate] = useState(formatDateSK());
 
   // Load initial tab from route
   useEffect(() => {
@@ -96,14 +101,14 @@ export default function Dashboard({ setIsLoggedIn }) {
       }
 
       reloadProfileFromStorage();
-    }, [])
+    }, []),
   );
 
   const fetchUserProducts = async () => {
     if (!email) return [];
     try {
       const response = await fetch(
-        `http://10.0.2.2:3000/api/getProducts?email=${email}`
+        `http://10.0.2.2:3000/api/getProducts?email=${email}`,
       );
       const data = await response.json();
       if (!data.success) return [];
@@ -131,7 +136,7 @@ export default function Dashboard({ setIsLoggedIn }) {
             if (products && products.length > 0) {
               setMealBox((prev) => {
                 const newProducts = products.filter(
-                  (p) => !prev.some((b) => b.name === p.name)
+                  (p) => !prev.some((b) => b.name === p.name),
                 );
                 return [
                   ...prev,
@@ -157,7 +162,7 @@ export default function Dashboard({ setIsLoggedIn }) {
       }
 
       loadStoredData();
-    }, [email])
+    }, [email]),
   );
 
   // Save mealBox and eatenTotals to AsyncStorage
@@ -192,13 +197,13 @@ export default function Dashboard({ setIsLoggedIn }) {
   const addEatenValues = (box) => {
     setEatenTotals((prev) => {
       const updated = {
-        calories: prev.calories + (box.calories || 0),
-        proteins: prev.proteins + (box.proteins || 0),
-        carbs: prev.carbs + (box.carbs || 0),
-        fat: prev.fat + (box.fat || 0),
-        fiber: prev.fiber + (box.fiber || 0),
-        sugar: prev.sugar + (box.sugar || 0),
-        salt: prev.salt + (box.salt || 0),
+        calories: prev.calories + (box.totalCalories || 0),
+        proteins: prev.proteins + (box.totalProteins || 0),
+        carbs: prev.carbs + (box.totalCarbs || 0),
+        fat: prev.fat + (box.totalFat || 0),
+        fiber: prev.fiber + (box.totalFiber || 0),
+        sugar: prev.sugar + (box.totalSugar || 0),
+        salt: prev.salt + (box.totalSalt || 0),
       };
       return updated;
     });
@@ -267,22 +272,22 @@ export default function Dashboard({ setIsLoggedIn }) {
       eatOutput,
       eatenOutput: `${Math.round(calories)} / ${Math.round(cal)} kcal`,
       proteinGoal,
-      proteinConsumed: proteins,
+      proteinConsumed: Number(proteins).toFixed(0),
       proteinBar,
       carbGoal,
-      carbConsumed: carbs,
+      carbConsumed: Number(carbs).toFixed(0),
       carbBar,
       fatGoal,
-      fatConsumed: fat,
+      fatConsumed: Number(fat).toFixed(0),
       fatBar,
       fiberGoal,
-      fiberConsumed: fiber,
+      fiberConsumed: Number(fiber).toFixed(0),
       fiberBar,
       sugarGoal,
-      sugarConsumed: sugar,
+      sugarConsumed: Number(sugar).toFixed(0),
       sugarBar,
       saltGoal,
-      saltConsumed: salt,
+      saltConsumed: Number(salt).toFixed(0),
       saltBar,
       bmiOutput,
       bmiBar,
@@ -330,7 +335,7 @@ export default function Dashboard({ setIsLoggedIn }) {
               if (!products || products.length === 0)
                 return alert("Ešte si nenaskenoval žiaden produkt");
               const newProducts = products.filter(
-                (p) => !mealBox.some((b) => b.name === p.name)
+                (p) => !mealBox.some((b) => b.name === p.name),
               );
               if (newProducts.length === 0)
                 return alert("Všetky produkty už sú v jedálničku!");

@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Image,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import styles from "./styles";
 
 const SERVER_URL = "http://10.0.2.2:3000";
 
@@ -15,6 +17,20 @@ export default function MealBoxWindow({ productName, email, close }) {
   const [loading, setLoading] = useState(true);
   const [product, setProduct] = useState(null);
   const [error, setError] = useState(null);
+
+  const [isPer100g, setIsPer100g] = useState();
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem("isPer100g");
+        if (storedValue !== null) {
+          setIsPer100g(JSON.parse(storedValue));
+        }
+      } catch (err) {
+        console.error("Chyba pri načítaní nastavení:", err);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -34,7 +50,7 @@ export default function MealBoxWindow({ productName, email, close }) {
       setError(null);
       try {
         const url = `${SERVER_URL}/api/getProductByName?email=${encodeURIComponent(
-          email
+          email,
         )}&name=${encodeURIComponent(productName)}`;
         const res = await fetch(url);
         if (!res.ok) {
@@ -88,50 +104,75 @@ export default function MealBoxWindow({ productName, email, close }) {
               }}
               resizeMode="cover"
             />
+
+            <View style={localStyles.nutritionRow}>
+              <Text style={{ margin: "auto", fontWeight: "bold" }}>
+                {" "}
+                {isPer100g ? "Hodnoty na 100g" : "Hodnoty na celý produkt"}
+              </Text>
+            </View>
+
             <View style={localStyles.nutritionRow}>
               <Text style={localStyles.label}>Kalórie</Text>
               <Text style={localStyles.value}>
-                {product.totalCalories ?? "—"} kcal
+                {isPer100g
+                  ? `${product.calories ?? "N/A"} kcal`
+                  : `${product.totalCalories ?? "N/A"} kcal`}
               </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
               <Text style={localStyles.label}>Bielkoviny</Text>
               <Text style={localStyles.value}>
-                {product.totalProteins ?? "—"} g
+                {isPer100g
+                  ? `${product.proteins ?? "N/A"} g`
+                  : `${product.totalProteins ?? "N/A"} g`}
               </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
               <Text style={localStyles.label}>Sacharidy</Text>
               <Text style={localStyles.value}>
-                {product.totalCarbs ?? "—"} g
+                {isPer100g
+                  ? `${product.carbs ?? "N/A"} g`
+                  : `${product.totalCarbs ?? "N/A"} g`}
               </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
               <Text style={localStyles.label}>Tuky</Text>
-              <Text style={localStyles.value}>{product.totalFat ?? "—"} g</Text>
+              <Text style={localStyles.value}>
+                {" "}
+                {isPer100g
+                  ? `${product.fat ?? "N/A"} g`
+                  : `${product.totalFat ?? "N/A"} g`}
+              </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
               <Text style={localStyles.label}>Vlákniny</Text>
               <Text style={localStyles.value}>
-                {product.totalFiber ?? "—"} g
+                {isPer100g
+                  ? `${product.fiber ?? "N/A"} g`
+                  : `${product.totalFiber ?? "N/A"} g`}
               </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
               <Text style={localStyles.label}>Cukry</Text>
               <Text style={localStyles.value}>
-                {product.totalSugar ?? "—"} g
+                {isPer100g
+                  ? `${product.sugar ?? "N/A"} g`
+                  : `${product.totalSugar ?? "N/A"} g`}
               </Text>
             </View>
 
             <View style={localStyles.nutritionRow}>
               <Text style={localStyles.label}>Soľ</Text>
               <Text style={localStyles.value}>
-                {product.totalSalt ?? "—"} g
+                {isPer100g
+                  ? `${product.salt ?? "N/A"} g`
+                  : `${product.totalSalt ?? "N/A"} g`}
               </Text>
             </View>
 
@@ -202,5 +243,5 @@ const localStyles = StyleSheet.create({
     color: "red",
     textAlign: "center",
     marginBottom: 10,
-  }
+  },
 });
