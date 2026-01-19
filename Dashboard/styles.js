@@ -359,4 +359,462 @@ unitInfoCloseButtonText: {
   fontWeight: "bold",
   fontSize: 18,
 },
+createRecipeText: {
+  color: "#fff",
+  fontSize: 18,
+  fontWeight: "bold",
+},generateModalContainer: {
+  flex: 1,
+  maxHeight: "90%",
+  padding: 16,
+},
+
+scrollPaddingBottom: {
+  paddingBottom: 20,
+},
+
+generateTitle: {
+  fontSize: 22,
+  fontWeight: "bold",
+  textAlign: "center",
+  marginBottom: 10,
+},
+
+selectedPreferencesBox: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 10,
+  padding: 10,
+  backgroundColor: "#f5f5f5",
+  marginBottom: 15,
+  minHeight: 50,
+},
+
+preferencesHeader: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 6,
+},
+
+preferencesTitle: {
+  fontSize: 16,
+  fontWeight: "bold",
+  marginRight: 6,
+},
+
+infoCircleSmall: {
+  width: 22,
+  height: 22,
+  borderRadius: 11,
+  backgroundColor: "#4ade80",
+  alignItems: "center",
+  justifyContent: "center",
+},
+
+infoCircleSmallText: {
+  color: "#fff",
+  fontWeight: "bold",
+  fontSize: 12,
+},
+
+emptyPreferencesText: {
+  color: "#999",
+},
+
+preferencesWrap: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+},
+
+selectedPreferenceChip: {
+  flexDirection: "row",
+  alignItems: "center",
+  backgroundColor: "#e0e0e0",
+  paddingHorizontal: 10,
+  paddingVertical: 6,
+  borderRadius: 20,
+  margin: 4,
+},
+
+selectedPreferenceText: {
+  marginRight: 6,
+},
+
+removePreferenceText: {
+  fontWeight: "bold",
+},availablePreferencesContainer: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  marginBottom: 20,
+},
+
+availablePreferenceChip: {
+  backgroundColor: "#d1fae5",
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  borderRadius: 20,
+  margin: 4,
+},additionalPreferencesButton: {
+  backgroundColor: "#a5f3fc",
+  paddingHorizontal: 12,
+  paddingVertical: 8,
+  borderRadius: 20,
+  marginBottom: 10,
+  alignSelf: "flex-start",
+},
+
+additionalPreferencesButtonText: {
+  fontWeight: "bold",
+},additionalPreferencesSection: {
+  marginBottom: 12,
+},
+
+additionalPreferencesCategory: {
+  fontWeight: "bold",
+  marginBottom: 6,
+},
+
+additionalPreferencesWrap: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+},
+switchRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 10,
+},
+
+switchLabel: {
+  marginLeft: 8,
+  fontSize: 14,
+  fontWeight: "500",
+  color: "#333",
+},
+pantryListContainer: {
+  paddingLeft: 5,
+},
+
+pantryItemRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 4,
+  backgroundColor: "#f5f5f5",
+  paddingVertical: 6,
+  paddingHorizontal: 8,
+  borderRadius: 8,
+},
+
+pantrySwitch: {
+  transform: [{ scale: 0.8 }],
+},
+
+pantryItemText: {
+  marginLeft: 8,
+  fontSize: 14,
+  color: "#333",
+},
+pantryToggleRow: {
+  flexDirection: "row",
+  alignItems: "center",
+},
+
+pantryToggleText: {
+  fontSize: 14,
+  color: "#333",
+  marginRight: 8,
+},
+cookingTimeContainer: {
+  marginBottom: 20,
+},
+
+cookingTimeLabel: {
+  marginBottom: 10,
+  fontWeight: "bold",
+  fontSize: 16,
+},
+resetButton: {
+  backgroundColor: "#f87171", // červené tlačidlo
+  paddingVertical: 10,
+  paddingHorizontal: 15,
+  borderRadius: 10,
+  alignSelf: "center",
+  marginBottom: 15,
+},
+
+resetButtonText: {
+  color: "#fff",
+  fontWeight: "bold",
+  fontSize: 16,
+},
+infoText: {
+  textAlign: "center",
+  marginBottom: 20,
+  fontSize: 20,
+},
+
+modalButtonRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+},
+
+cancelButton: {
+  flex: 1,
+  marginRight: 5,
+  backgroundColor: "grey",
+  paddingVertical: 10,
+  borderRadius: 10,
+},
+
+cancelButtonText: {
+  color: "#fff",
+  textAlign: "center",
+  fontWeight: "bold",
+},
+
+generateButton: {
+  flex: 1,
+  marginLeft: 5,
+  backgroundColor: "hsla(129, 56%, 43%, 1)",
+  paddingVertical: 10,
+  borderRadius: 10,
+},
+
+generateButtonText: {
+  color: "#fff",
+  textAlign: "center",
+  fontWeight: "bold",
+},
+sectionTitle: {
+  fontSize: 22,
+  fontWeight: "bold",
+  marginVertical: 10,
+  marginLeft: 15,
+},
+sectionTitle: {
+  fontSize: 22,
+  fontWeight: "bold",
+  marginVertical: 10,
+  marginLeft: 15,
+},
+recipeModalImage: {
+  width: "100%",
+  height: 220,
+  borderRadius: 16,
+  marginBottom: 15,
+},
+
+recipeModalTitle: {
+  fontSize: 26,
+  fontWeight: "bold",
+  textAlign: "center",
+  marginBottom: 15,
+},
+staticText: {
+  fontSize: 18,
+  marginBottom: 8,
+},
+aiSectionTitle: {
+  fontSize: 20,
+  fontWeight: "bold",
+  marginTop: 10,
+},
+
+aiSectionText: {
+  fontSize: 18,
+  marginBottom: 8,
+},
+nutritionTitle: {
+  fontSize: 20,
+  fontWeight: "bold",
+  marginBottom: 8,
+},
+
+nutritionContainer: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 12,
+  padding: 12,
+  backgroundColor: "#f0fdf4",
+  marginBottom: 15,
+},
+
+nutritionRow: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  paddingVertical: 4,
+  paddingHorizontal: 8,
+  borderRadius: 8,
+  marginVertical: 2,
+},
+
+nutritionLabel: {
+  fontSize: 18,
+},
+
+nutritionValue: {
+  fontSize: 18,
+  fontWeight: "bold",
+},
+ingredientsHeader: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 6,
+},
+
+ingredientsTitle: {
+  fontSize: 20,
+  fontWeight: "bold",
+},
+
+ingredientsInfoButton: {
+  width: 24,
+  height: 24,
+  borderRadius: 12,
+  backgroundColor: "#4ade80",
+  alignItems: "center",
+  justifyContent: "center",
+  marginLeft: 8,
+},
+
+ingredientsInfoButtonText: {
+  color: "#fff",
+  fontWeight: "bold",
+},
+unitInfoModal: {
+  maxHeight: 300,
+},
+
+unitInfoTitle: {
+  fontSize: 20,
+  fontWeight: "bold",
+  marginBottom: 10,
+},
+
+unitInfoText: {
+  fontSize: 16,
+  marginBottom: 4, // pre medzeru medzi riadkami
+},
+stepsTitle: {
+  fontSize: 20,
+  fontWeight: "bold",
+  marginTop: 10,
+  marginBottom: 6,
+},
+
+stepContainer: {
+  backgroundColor: "#d1fae5",
+  padding: 8,
+  borderRadius: 10,
+  marginBottom: 6,
+},
+
+stepText: {
+  fontSize: 18,
+},
+modalButtonsContainer: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  marginTop: 15,
+},
+
+modalButtonClose: {
+  flex: 1,
+  marginRight: 5,
+  backgroundColor: "grey",
+  paddingVertical: 12,
+  borderRadius: 12,
+},
+
+modalButtonText: {
+  color: "#fff",
+  textAlign: "center",
+  fontWeight: "bold",
+  fontSize: 18,
+},
+modalButtonSave: {
+  flex: 1,
+  marginLeft: 5,
+  backgroundColor: "hsla(129, 56%, 43%, 1)",
+  paddingVertical: 12,
+  borderRadius: 12,
+},
+
+modalButtonDelete: {
+  flex: 1,
+  marginLeft: 5,
+  backgroundColor: "#ff4d4d",
+  paddingVertical: 12,
+  borderRadius: 12,
+},
+generatingModalContainer: {
+  backgroundColor: "#fff",
+  padding: 30,
+  borderRadius: 20,
+  alignItems: "center",
+  width: "80%",
+},
+
+generatingModalTitle: {
+  marginTop: 15,
+  fontSize: 18,
+  fontWeight: "600",
+  textAlign: "center",
+},
+
+generatingModalSubtitle: {
+  marginTop: 6,
+  fontSize: 14,
+  color: "#666",
+  textAlign: "center",
+},
+preferenceInfoModalContainer: {
+  maxHeight: "85%",
+},
+
+preferenceInfoTitle: {
+  fontSize: 22,
+  fontWeight: "bold",
+  marginBottom: 10,
+},
+
+preferenceCategoryTitle: {
+  fontSize: 18,
+  fontWeight: "600",
+  marginBottom: 6,
+},
+
+preferenceItem: {
+  backgroundColor: "#f0fdf4",
+  padding: 10,
+  borderRadius: 10,
+  marginBottom: 6,
+},
+
+preferenceItemLabel: {
+  fontSize: 16,
+  fontWeight: "600",
+},
+
+preferenceItemDescription: {
+  fontSize: 14,
+  color: "#555",
+  marginTop: 2,
+},
+preferenceSection: {
+  marginTop: 14,
+},
+
+preferenceCloseButton: {
+  marginTop: 16,
+  backgroundColor: "#4ade80",
+  paddingVertical: 10,
+  borderRadius: 10,
+},
+
+preferenceCloseButtonText: {
+  color: "#fff",
+  textAlign: "center",
+  fontWeight: "bold",
+},
+
 });
