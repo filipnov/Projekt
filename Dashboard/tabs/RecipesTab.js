@@ -4,73 +4,64 @@ import {
   View,
   ImageBackground,
   Image,
-  TextInput,
   Pressable,
   Modal,
   ScrollView,
-  Switch
+  Switch,
+  ActivityIndicator
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from "@react-native-async-storage/async-storage"; 
+import Slider from '@react-native-community/slider'; 
 import styles from "../styles";
-import { ActivityIndicator } from "react-native";
-import Slider from '@react-native-community/slider';
-
 
 export default function RecipesTab() {
-  const [recipe, setRecipe] = useState("");
   const [selectedRecept, setSelectedRecept] = useState(null);
-  const [userEmail, setUserEmail] = useState(null);
-  const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
-  const [generateModalVisible, setGenerateModalVisible] = useState(false);
-  const [savedRecipes, setSavedRecipes] = useState([]);
-  const [selectedPreferences, setSelectedPreferences] = useState([]);
-  const [useFitnessGoal, setUseFitnessGoal] = useState(false);
-  const [usePantryItems, setUsePantryItems] = useState(false);
-  const [cookingTime, setCookingTime] = useState(null); 
-  const [isGenerating, setIsGenerating] = useState(false);
+const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
+const [generateModalVisible, setGenerateModalVisible] = useState(false);
+const [savedRecipes, setSavedRecipes] = useState([]);
+const [userEmail, setUserEmail] = useState(null);
+
+const [selectedPreferences, setSelectedPreferences] = useState([]);
 const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false);
-  const [showUnitInfo, setShowUnitInfo] = useState(false);
-const [pantryItems, setPantryItems] = useState([]); // všetky produkty zo špajze
-const [selectedPantryItems, setSelectedPantryItems] = useState([]); // vybrané produkty
-const [requireAllSelected, setRequireAllSelected] = useState(true); // toggle "všetky vs niektoré"
-const [maxCookingTime, setMaxCookingTime] = useState(60); // predvolená hodnota 60 min
 const [showPreferenceInfo, setShowPreferenceInfo] = useState(false);
 
-  // Načítanie emailu prihláseného používateľa
-  useEffect(() => {
-    const loadEmail = async () => {
-      const email = await AsyncStorage.getItem("userEmail");
-      if (email) setUserEmail(email);
-    };
-    loadEmail();
-  }, []);
+const [useFitnessGoal, setUseFitnessGoal] = useState(false);
+const [usePantryItems, setUsePantryItems] = useState(false);
+const [pantryItems, setPantryItems] = useState([]);
+const [selectedPantryItems, setSelectedPantryItems] = useState([]);
+const [requireAllSelected, setRequireAllSelected] = useState(true);
+
+const [isGenerating, setIsGenerating] = useState(false);
+const [maxCookingTime, setMaxCookingTime] = useState(60);
+const [showUnitInfo, setShowUnitInfo] = useState(false);
+
+
+useEffect(() => { 
+  const loadEmail = async () => { 
+    const email = await AsyncStorage.getItem("userEmail");
+     setUserEmail(email); }; loadEmail(); }, []);
+
+ useEffect(() => { 
+  fetchSavedRecipes();
+ }, [userEmail]);
 
   useEffect(() => {
-    if (userEmail) fetchSavedRecipes();
-  }, [userEmail]);
+     if (!userEmail || !usePantryItems) return;
+      const fetchPantryItems = async () => {
+         try { 
+          const res = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${$userEmail}`); 
+          const data = await res.json();
+           if (data.success) { 
+            setPantryItems(data.products); 
+            setSelectedPantryItems([]); } 
+          } catch (err) 
+          { console.error("Failed to load pantry items:", err); 
 
- useEffect(() => {
-  if (!userEmail || !usePantryItems) return;
+          } }; fetchPantryItems(); 
+        }, [userEmail, usePantryItems]);
 
-  const fetchPantryItems = async () => {
-    try {
-      const res = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${userEmail}`);
-      const data = await res.json();
-      if (data.success) {
-        setPantryItems(data.products);
-        // Nepredvolené – necháme všetky vypnuté
-        setSelectedPantryItems([]);
-      }
-    } catch (err) {
-      console.error("Failed to load pantry items:", err);
-    }
-  };
-
-  fetchPantryItems();
-}, [userEmail, usePantryItems]);
   // Funkcia na generovanie receptu z AI
   const generateRecipe = async () => {
-  if (!userEmail) return;
 
   setIsGenerating(true);
   const preferencesText =
@@ -80,22 +71,15 @@ const [showPreferenceInfo, setShowPreferenceInfo] = useState(false);
         .join(", ")
     : "žiadne špecifické preferencie";
 
-  const fitnessText = useFitnessGoal
-    ? "Použiť fitness cieľ používateľa pri generovaní receptu."
-    : "";
-
-  const timeText = maxCookingTime
-  ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.`
-  : "";
-
   const userPrompt = `
 Vygeneruj recept podľa týchto kritérií:
-- Preferencie: ${preferencesText}
-${fitnessText ? `- ${fitnessText}` : ""}
-${timeText ? `- ${timeText}` : ""}
+- Preferencie: ${selectedPreferences.length > 0
+    ? selectedPreferences.map(p => p.label.replace(/^[^\w\s]+ /, "")).join(", ")
+    : "žiadne špecifické preferencie"}
+${useFitnessGoal ? `- Použiť fitness cieľ používateľa pri generovaní receptu.` : ""}
+${maxCookingTime ? `- Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.` : ""}
 Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kroky, realistický čas, originálny recept).
 `;
-
   try {
     const response = await fetch("http://10.0.2.2:3000/api/generateRecipe", {
       method: "POST",
@@ -110,7 +94,6 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
     });
     const data = await response.json();
     if (!data.success || !data.recipe) return;
-
     setGeneratedRecipeModal(data.recipe);
   } catch (error) {
     console.error("❌ ERROR:", error);
@@ -120,7 +103,6 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
 };
   // Funkcia na uloženie receptu do DB
   const saveGeneratedRecipe = async () => {
-  if (!generatedRecipeModal || !userEmail) return;
   try {
     const res = await fetch(`http://10.0.2.2:3000/api/addRecipe`, {
       method: "POST",
@@ -132,9 +114,7 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
     });
     const data = await res.json();
     if (data.success) {
-      alert("Recept uložený!");
       setGeneratedRecipeModal(null);
-      // refresh receptov
       fetchSavedRecipes();
     }
   } catch (err) {
@@ -144,7 +124,6 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
 
 // Načítanie receptov
 const fetchSavedRecipes = async () => {
-  if (!userEmail) return;
   try {
     const res = await fetch(`http://10.0.2.2:3000/api/getRecipes?email=${userEmail}`);
     const data = await res.json();
@@ -157,26 +136,25 @@ const fetchSavedRecipes = async () => {
 };
 
   const deleteRecipe = async () => {
-    if (!userEmail || !selectedRecept?.recipeId) return;
+  if (!selectedRecept?.recipeId) return;
+  try {
+    const { success } = await (await fetch("http://10.0.2.2:3000/api/deleteRecipe", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        recipeId: selectedRecept.recipeId,
+      }),
+    })).json();
 
-    try {
-      const res = await fetch("http://10.0.2.2:3000/api/deleteRecipe", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: userEmail,
-          recipeId: selectedRecept.recipeId,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSelectedRecept(null);
-        fetchSavedRecipes();
-      }
-    } catch (err) {
-      console.error("❌ Failed to delete recipe:", err);
+    if (success) {
+      setSelectedRecept(null);
+      fetchSavedRecipes();
     }
-  };
+  } catch (err) {
+    console.error("❌ Failed to delete recipe:", err);
+  }
+};
 
   const recipeImagesByCategory = {
     mäsité: require("./../../assets/meat.png"),
@@ -201,9 +179,6 @@ const fetchSavedRecipes = async () => {
   setMaxCookingTime(60);
   setShowAdditionalPreferences(false);
 };
-
-
-  // Hardcoded recepty
   const recepty = [
     {
       id: 1,
@@ -294,283 +269,176 @@ const ALL_PREFERENCES = [
     id: "soup",
     label: "🍲 Polievka",
     description: "Tekuté alebo krémové jedlá vhodné ako predjedlo alebo ľahké hlavné jedlo."
-  },
-];
+  },];
 
 const ADDITIONAL_PREFERENCES = [
  {
   category: "Druh jedla",
   items: [
     {
-      id: "breakfast",
-      label: "🍳 Raňajky",
-      description: "Jedlá vhodné na ráno – rýchle, výživné a ľahké na trávenie."
+      id: "breakfast", label: "🍳 Raňajky", description: "Jedlá vhodné na ráno – rýchle, výživné a ľahké na trávenie."
     },
     {
-      id: "lunch",
-      label: "🥪 Obed",
-      description: "Plnohodnotné jedlá vhodné na obed."
+      id: "lunch",    label: "🥪 Obed",   description: "Plnohodnotné jedlá vhodné na obed."
     },
     {
-      id: "dinner",
-      label: "🍽️ Večera",
-      description: "Jedlá vhodné na večer, často ľahšie alebo sýte podľa preferencie."
+      id: "dinner",    label: "🍽️ Večera", description: "Jedlá vhodné na večer, často ľahšie alebo sýte podľa preferencie."
     },
-    {
-      id: "snack",
-      label: "🍿 Snack",
-      description: "Malé jedlá medzi hlavnými chodmi."
-    },
-  ],
-},
+    { 
+      id: "snack",    label: "🍿 Snack",   description: "Malé jedlá medzi hlavnými chodmi."
+    },],},
   {
   category: "Nutričné / diétne",
   items: [
     {
-      id: "low_carb",
-      label: "🥖 Nízkosacharidové",
-      description: "Jedlá s obmedzeným množstvom sacharidov."
+      id: "low_carb", label: "🥖 Nízkosacharidové", description: "Jedlá s obmedzeným množstvom sacharidov."
     },
     {
-      id: "high_protein",
-      label: "💪 Vysokoproteínové",
-      description: "Recepty s vysokým obsahom bielkovín."
+      id: "high_protein", label: "💪 Vysokoproteínové", description: "Recepty s vysokým obsahom bielkovín."
     },
     {
-      id: "gluten_free",
-      label: "🌾 Bezlepkové",
-      description: "Jedlá bez lepku, vhodné pre celiatikov."
+      id: "gluten_free", label: "🌾 Bezlepkové", description: "Jedlá bez lepku, vhodné pre celiatikov."
     },
     {
-      id: "dairy_free",
-      label: "🥛 Bez laktózy",
-      description: "Recepty bez mliečnych výrobkov."
-    },
-  ],
-},
+      id: "dairy_free", label: "🥛 Bez laktózy", description: "Recepty bez mliečnych výrobkov."
+    },],},
  {
   category: "Pre koho",
   items: [
     {
-      id: "kids",
-      label: "👶 Pre deti",
-      description: "Jedlá prispôsobené chutiam a potrebám detí."
+      id: "kids", label: "👶 Pre deti", description: "Jedlá prispôsobené chutiam a potrebám detí."
     },
     {
-      id: "seniors",
-      label: "👵 Pre seniorov",
-      description: "Ľahko stráviteľné a výživné jedlá."
+      id: "seniors", label: "👵 Pre seniorov", description: "Ľahko stráviteľné a výživné jedlá."
     },
     {
-      id: "pregnancy",
-      label: "🤰 Pre tehotné",
-      description: "Jedlá s dôrazom na bezpečné a výživné suroviny."
+      id: "pregnancy", label: "🤰 Pre tehotné", description: "Jedlá s dôrazom na bezpečné a výživné suroviny."
     },
     {
-      id: "beginner",
-      label: "🧑‍🍳 Pre začiatočníkov",
-      description: "Jednoduché recepty bez zložitých postupov."
+      id: "beginner", label: "🧑‍🍳 Pre začiatočníkov", description: "Jednoduché recepty bez zložitých postupov."
     },
     {
-      id: "meal_prep",
-      label: "🏋️ Meal prep (na viac dní)",
-      description: "Jedlá vhodné na prípravu dopredu."
-    },
-  ],
-},
-
+      id: "meal_prep", label: "🏋️ Meal prep (na viac dní)", description: "Jedlá vhodné na prípravu dopredu."
+    },],},
   {
   category: "Zdravotné & citlivé",
   items: [
     {
-      id: "low_salt",
-      label: "🧂 Nízky obsah soli",
-      description: "Jedlá s obmedzeným množstvom soli."
+      id: "low_salt", label: "🧂 Nízky obsah soli", description: "Jedlá s obmedzeným množstvom soli."
     },
     {
-      id: "no_added_sugar",
-      label: "🍬 Bez pridaného cukru",
-      description: "Recepty bez pridaného cukru."
+      id: "no_added_sugar", label: "🍬 Bez pridaného cukru", description: "Recepty bez pridaného cukru."
     },
     {
-      id: "nut_free",
-      label: "🥜 Bez orechov",
-      description: "Jedlá bez orechov, vhodné pre alergikov."
+      id: "nut_free", label: "🥜 Bez orechov", description: "Jedlá bez orechov, vhodné pre alergikov."
     },
     {
-      id: "no_alcohol",
-      label: "🍷 Bez alkoholu",
-      description: "Recepty neobsahujúce alkohol."
+      id: "no_alcohol", label: "🍷 Bez alkoholu", description: "Recepty neobsahujúce alkohol."
     },
     {
-      id: "not_spicy",
-      label: "🌶️ Bez štipľavosti",
-      description: "Jemné jedlá bez pálivých ingrediencií."
-    },
-  ],
-},
-
+      id: "not_spicy", label: "🌶️ Bez štipľavosti", description: "Jemné jedlá bez pálivých ingrediencií."
+    },],},
   {
   category: "Štýl",
   items: [
     {
-      id: "plant_based",
-      label: "🌱 Plant-based",
-      description: "Jedlá založené prevažne na rastlinných surovinách."
+      id: "plant_based", label: "🌱 Plant-based", description: "Jedlá založené prevažne na rastlinných surovinách."
     },
     {
-      id: "traditional",
-      label: "🍽️ Tradičný recept",
-      description: "Klasické recepty podľa tradičných postupov."
+      id: "traditional", label: "🍽️ Tradičný recept", description: "Klasické recepty podľa tradičných postupov."
     },
     {
-      id: "modern_fitness",
-      label: "🧠 Moderná / fitness kuchyňa",
-      description: "Moderné recepty zamerané na zdravý životný štýl."
+      id: "modern_fitness", label: "🧠 Moderná / fitness kuchyňa", description: "Moderné recepty zamerané na zdravý životný štýl."
     },
     {
-      id: "street_food",
-      label: "🌍 Street food štýl",
-      description: "Jedlá inšpirované pouličnou kuchyňou."
+      id: "street_food", label: "🌍 Street food štýl", description: "Jedlá inšpirované pouličnou kuchyňou."
     },
     {
-      id: "comfort_food",
-      label: "🍲 Comfort food",
-      description: "Sýte a upokojujúce jedlá."
+      id: "comfort_food", label: "🍲 Comfort food", description: "Sýte a upokojujúce jedlá."
     },
     {
-      id: "slow_cooking",
-      label: "🧘 Pomalé varenie / comfort food",
-      description: "Jedlá pripravované pomaly pre plnú chuť."
+      id: "slow_cooking", label: "🧘 Pomalé varenie / comfort food", description: "Jedlá pripravované pomaly pre plnú chuť."
     },
     {
-      id: "one_pot",
-      label: "🥘 One-pot recept",
-      description: "Jedlá pripravované v jednom hrnci."
+      id: "one_pot", label: "🥘 One-pot recept", description: "Jedlá pripravované v jednom hrnci."
     },
     {
-      id: "no_oven",
-      label: "🍳 Bez rúry",
-      description: "Recepty, ktoré nevyžadujú rúru."
+      id: "no_oven", label: "🍳 Bez rúry", description: "Recepty, ktoré nevyžadujú rúru."
     },
     {
-      id: "few_steps",
-      label: "🔢 Minimum krokov",
-      description: "Rýchle recepty s minimom krokov."
-    },
-  ],
-},
-
+      id: "few_steps", label: "🔢 Minimum krokov", description: "Rýchle recepty s minimom krokov."
+    },],},
   {
   category: "Funkčné ciele",
   items: [
     {
-      id: "pre_workout",
-      label: "🏃 Pred tréningom",
-      description: "Jedlá vhodné pred fyzickou aktivitou."
+      id: "pre_workout", label: "🏃 Pred tréningom", description: "Jedlá vhodné pred fyzickou aktivitou."
     },
     {
-      id: "post_workout",
-      label: "💪 Po tréningu",
-      description: "Jedlá podporujúce regeneráciu po tréningu."
+      id: "post_workout", label: "💪 Po tréningu", description: "Jedlá podporujúce regeneráciu po tréningu."
     },
     {
-      id: "focus_support",
-      label: "🧠 Podpora sústredenia",
-      description: "Jedlá podporujúce mentálnu výkonnosť."
-    },
-  ],
-},
+      id: "focus_support", label: "🧠 Podpora sústredenia", description: "Jedlá podporujúce mentálnu výkonnosť."
+    },],},
 {
   category: "Alergici",
   items: [
     {
-      id: "no-gluten",
-      label: "🌾 Bez lepku",
-      description: "Vylúči všetky potraviny obsahujúce lepok (pšenica, jačmeň, raž). Vhodné pre celiatikov."
+      id: "no-gluten", label: "🌾 Bez lepku", description: "Vylúči všetky potraviny obsahujúce lepok. Vhodné pre celiatikov."
     },
     {
-      id: "no-lactose",
-      label: "🥛 Bez laktózy",
-      description: "Vylúči mlieko a mliečne výrobky obsahujúce laktózu."
+      id: "no-lactose", label: "🥛 Bez laktózy", description: "Vylúči mlieko a mliečne výrobky obsahujúce laktózu."
     },
     {
-      id: "no-milk-protein",
-      label: "🍼 Bez mliečnej bielkoviny",
-      description: "Vylúči všetky mliečne produkty vrátane bezlaktózových."
+      id: "no-milk-protein", label: "🍼 Bez mliečnej bielkoviny", description: "Vylúči všetky mliečne produkty vrátane bezlaktózových."
     },
     {
-      id: "no-eggs",
-      label: "🥚 Bez vajec",
-      description: "Vylúči vajcia a potraviny, ktoré ich obsahujú."
+      id: "no-eggs", label: "🥚 Bez vajec", description: "Vylúči vajcia a potraviny, ktoré ich obsahujú."
     },
     {
-      id: "no-peanuts",
-      label: "🥜 Bez arašidov",
-      description: "Vylúči arašidy a produkty, ktoré ich môžu obsahovať."
+      id: "no-peanuts", label: "🥜 Bez arašidov", description: "Vylúči arašidy a produkty, ktoré ich môžu obsahovať."
     },
     {
-      id: "no-tree-nuts",
-      label: "🌰 Bez orechov",
-      description: "Vylúči všetky stromové orechy (vlašské, lieskové, mandle, kešu atď.)."
+      id: "no-tree-nuts", label: "🌰 Bez orechov", description: "Vylúči všetky stromové orechy (vlašské, lieskové, mandle, kešu atď.)."
     },
     {
-      id: "no-soy",
-      label: "🫘 Bez sóje",
-      description: "Vylúči sóju a výrobky zo sóje."
+      id: "no-soy", label: "🫘 Bez sóje", description: "Vylúči sóju a výrobky zo sóje."
     },
     {
-      id: "no-fish",
-      label: "🐟 Bez rýb",
-      description: "Vylúči ryby a produkty z nich."
+      id: "no-fish", label: "🐟 Bez rýb", description: "Vylúči ryby a produkty z nich."
     },
     {
-      id: "no-shellfish",
-      label: "🦐 Bez kôrovcov a mäkkýšov",
-      description: "Vylúči krevety, kraby, mušle, ustrice a podobné morské plody."
+      id: "no-shellfish", label: "🦐 Bez kôrovcov a mäkkýšov", description: "Vylúči krevety, kraby, mušle, ustrice a podobné morské plody."
     },
     {
-      id: "no-sesame",
-      label: "🌿 Bez sezamu",
-      description: "Vylúči sezamové semienka a sezamové produkty."
+      id: "no-sesame", label: "🌿 Bez sezamu", description: "Vylúči sezamové semienka a sezamové produkty."
     },
     {
-      id: "no-mustard",
-      label: "🌱 Bez horčice",
-      description: "Vylúči horčicu a výrobky, ktoré ju obsahujú."
+      id: "no-mustard", label: "🌱 Bez horčice", description: "Vylúči horčicu a výrobky, ktoré ju obsahujú."
     },
     {
-      id: "no-celery",
-      label: "🥬 Bez zeleru",
-      description: "Vylúči zeler a jedlá, kde sa používa ako prísada."
+      id: "no-celery", label: "🥬 Bez zeleru", description: "Vylúči zeler a jedlá, kde sa používa ako prísada."
     },
     {
-      id: "no-sulfites",
-      label: "⚗️ Bez siričitanov",
-      description: "Vylúči potraviny a nápoje obsahujúce siričitany."
-    }
-  ]
-}
-,
-];
+      id: "no-sulfites", label: "⚗️ Bez siričitanov", description: "Vylúči potraviny a nápoje obsahujúce siričitany."
+    }],},];
+
 const availablePreferences = ALL_PREFERENCES.filter(
     pref => !selectedPreferences.some(sel => sel.id === pref.id)
   );
 
-
   return (
     <>
       <View style={styles.recipesContainer}>
-        
-       <Pressable
-  onPress={() => setGenerateModalVisible(true)}
-  style={styles.recipeButton}
->
-  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "bold" }}>
-  Vytvoriť recept
-</Text>
-</Pressable>
-      </View>
+  <Pressable
+    onPress={() => setGenerateModalVisible(true)}
+    style={styles.recipeButton}
+  >
+    <Text style={styles.createRecipeText}>
+      Vytvoriť recept
+    </Text>
+  </Pressable>
+</View>
 
       <Modal
   visible={generateModalVisible}
@@ -580,142 +448,121 @@ const availablePreferences = ALL_PREFERENCES.filter(
 >
   <View style={styles.modalOverlay}>
     {/* Hlavný container dostane flex:1 a maxHeight pre správne scrollovanie */}
-    <View style={[styles.modalContainer, { flex: 1, maxHeight: "90%", padding: 16 }]}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={true}>
-        <Text style={{ fontSize: 22, fontWeight: "bold", textAlign: "center", marginBottom: 10 }}>
-          Generovanie receptu
+    <View style={[styles.modalContainer, styles.generateModalContainer]}>
+  <ScrollView
+    contentContainerStyle={styles.scrollPaddingBottom}
+    showsVerticalScrollIndicator={true}
+  >
+    <Text style={styles.generateTitle}>
+      Generovanie receptu
+    </Text>
+
+    {/* Vybrané preferencie */}
+    <View style={styles.selectedPreferencesBox}>
+      <View style={styles.preferencesHeader}>
+        <Text style={styles.preferencesTitle}>
+          Preferencie
         </Text>
 
-        {/* Vybrané preferencie */}
-        <View
-          style={{
-            borderWidth: 1,
-            borderColor: "#ccc",
-            borderRadius: 10,
-            padding: 10,
-            backgroundColor: "#f5f5f5",
-            marginBottom: 15,
-            minHeight: 50,
-          }}
+        <Pressable
+          onPress={() => setShowPreferenceInfo(true)}
+          style={styles.infoCircleSmall}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-  <Text style={{ fontSize: 16, fontWeight: "bold", marginRight: 6 }}>
-    Preferencie
-  </Text>
+          <Text style={styles.infoCircleSmallText}>i</Text>
+        </Pressable>
+      </View>
 
-  <Pressable
-    onPress={() => setShowPreferenceInfo(true)}
-    style={{
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      backgroundColor: "#4ade80",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 12 }}>i</Text>
-  </Pressable>
-</View>
-          {selectedPreferences.length === 0 ? (
-            <Text style={{ color: "#999" }}>Vybrané preferencie sa zobrazia tu…</Text>
-          ) : (
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              {selectedPreferences.map(pref => (
-                <View
-                  key={pref.id}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    backgroundColor: "#e0e0e0",
-                    paddingHorizontal: 10,
-                    paddingVertical: 6,
-                    borderRadius: 20,
-                    margin: 4,
-                  }}
-                >
-                  <Text style={{ marginRight: 6 }}>{pref.label}</Text>
-                  <Pressable
-                    onPress={() =>
-                      setSelectedPreferences(prev =>
-                        prev.filter(p => p.id !== pref.id)
-                      )
-                    }
-                  >
-                    <Text style={{ fontWeight: "bold" }}>✕</Text>
-                  </Pressable>
-                </View>
-              ))}
+      {selectedPreferences.length === 0 ? (
+        <Text style={styles.emptyPreferencesText}>
+          Vybrané preferencie sa zobrazia tu…
+        </Text>
+      ) : (
+        <View style={styles.preferencesWrap}>
+          {selectedPreferences.map(pref => (
+            <View
+              key={pref.id}
+              style={styles.selectedPreferenceChip}
+            >
+              <Text style={styles.selectedPreferenceText}>
+                {pref.label}
+              </Text>
+
+              <Pressable
+                onPress={() =>
+                  setSelectedPreferences(prev =>
+                    prev.filter(p => p.id !== pref.id)
+                  )
+                }
+              >
+                <Text style={styles.removePreferenceText}>✕</Text>
+              </Pressable>
             </View>
-          )}
+          ))}
         </View>
+      )}
+    </View>
 
         {/* Dostupné preferencie */}
-        <View style={{ flexDirection: "row", flexWrap: "wrap", marginBottom: 20 }}>
-          {availablePreferences.map(pref => (
+<View style={styles.availablePreferencesContainer}>
+  {availablePreferences.map(pref => (
+    <Pressable
+      key={pref.id}
+      onPress={() => setSelectedPreferences(prev => [...prev, pref])}
+      style={styles.availablePreferenceChip}
+    >
+      <Text>{pref.label}</Text>
+    </Pressable>
+  ))}
+</View>
+
+       {/* Ďalšie preferencie */}
+<Pressable
+  onPress={() => setShowAdditionalPreferences(prev => !prev)}
+  style={styles.additionalPreferencesButton}
+>
+  <Text style={styles.additionalPreferencesButtonText}>
+    {showAdditionalPreferences
+      ? "Skryť ďalšie preferencie"
+      : "Ďalšie preferencie"}
+  </Text>
+</Pressable>
+
+        {showAdditionalPreferences &&
+  ADDITIONAL_PREFERENCES.map(section => (
+    <View
+      key={section.category}
+      style={styles.additionalPreferencesSection}
+    >
+      <Text style={styles.additionalPreferencesCategory}>
+        {section.category}
+      </Text>
+
+      <View style={styles.additionalPreferencesWrap}>
+        {section.items
+          .filter(
+            pref =>
+              !selectedPreferences.some(sel => sel.id === pref.id)
+          )
+          .map(pref => (
             <Pressable
               key={pref.id}
-              onPress={() => setSelectedPreferences(prev => [...prev, pref])}
-              style={{
-                backgroundColor: "#d1fae5",
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 20,
-                margin: 4,
-              }}
+              onPress={() =>
+                setSelectedPreferences(prev => [...prev, pref])
+              }
+              style={styles.availablePreferenceChip}
             >
               <Text>{pref.label}</Text>
             </Pressable>
           ))}
-        </View>
-
-        {/* Ďalšie preferencie */}
-        <Pressable
-          onPress={() => setShowAdditionalPreferences(prev => !prev)}
-          style={{
-            backgroundColor: "#a5f3fc",
-            paddingHorizontal: 12,
-            paddingVertical: 8,
-            borderRadius: 20,
-            marginBottom: 10,
-            alignSelf: "flex-start",
-          }}
-        >
-          <Text style={{ fontWeight: "bold" }}>
-            {showAdditionalPreferences ? "Skryť ďalšie preferencie" : "Ďalšie preferencie"}
-          </Text>
-        </Pressable>
-
-        {showAdditionalPreferences && ADDITIONAL_PREFERENCES.map(section => (
-  <View key={section.category} style={{ marginBottom: 12 }}>
-    <Text style={{ fontWeight: "bold", marginBottom: 6 }}>{section.category}</Text>
-    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-      {section.items
-        .filter(pref => !selectedPreferences.some(sel => sel.id === pref.id))
-        .map(pref => (
-          <Pressable
-            key={pref.id}
-            onPress={() => setSelectedPreferences(prev => [...prev, pref])}
-            style={{
-              backgroundColor: "#d1fae5",
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 20,
-              margin: 4,
-            }}
-          >
-            <Text>{pref.label}</Text>
-          </Pressable>
-      ))}
+      </View>
     </View>
-  </View>
-))}
+  ))}
 
         {/* FITNESS GOAL a PANTRY ITEMS */}
         <View >
           {/* FITNESS GOAL */}
 <View>
-  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+  <View style={styles.switchRow}>
     <Switch
       trackColor={{ false: "#ccc", true: "#4ade80" }}
       thumbColor="#fff"
@@ -723,7 +570,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
       value={useFitnessGoal}
       onValueChange={setUseFitnessGoal}
     />
-    <Text style={{ marginLeft: 8, fontSize: 14, fontWeight: "500", color: "#333" }}>
+    <Text style={styles.switchLabel}>
       Generovať recepty podľa fitness cieľa
     </Text>
   </View>
@@ -731,78 +578,69 @@ const availablePreferences = ALL_PREFERENCES.filter(
 
           <View>
   {/* Hlavný switch pre použitie špajze */}
-  <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-    <Switch
-      trackColor={{ false: "#ccc", true: "#4ade80" }}
-      thumbColor="#fff"
-      ios_backgroundColor="#ccc"
-      value={usePantryItems}
-      onValueChange={(value) => {
-  setUsePantryItems(value);
-  if (!value) setSelectedPantryItems([]); // reset
-}}
-    />
-    <Text style={{ marginLeft: 8, fontSize: 14, fontWeight: "500", color: "#333" }}>
-      Použiť produkty zo špajze
-    </Text>
-  </View>
+<View style={styles.switchRow}>
+  <Switch
+    trackColor={{ false: "#ccc", true: "#4ade80" }}
+    thumbColor="#fff"
+    ios_backgroundColor="#ccc"
+    value={usePantryItems}
+    onValueChange={(value) => {
+      setUsePantryItems(value);
+      if (!value) setSelectedPantryItems([]);
+    }}
+  />
+  <Text style={styles.switchLabel}>
+    Použiť produkty zo špajze
+  </Text>
+</View>
 
   {/* Zoznam položiek zo špajze */}
-  {usePantryItems && pantryItems.length > 0 && (
-    <View style={{ paddingLeft: 5 }}>
-      {pantryItems.map((item) => (
-        <View
-          key={item.productId}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 4,
-            backgroundColor: "#f5f5f5",
-            paddingVertical: 6,
-            paddingHorizontal: 8,
-            borderRadius: 8,
-          }}
-        >
-          <Switch
-            style={{ transform: [{ scale: 0.8 }] }}
-            trackColor={{ false: "#ccc", true: "#4ade80" }}
-            thumbColor="#fff"
-            ios_backgroundColor="#ccc"
-            value={selectedPantryItems.includes(item.name)}
-            onValueChange={(checked) => {
-              if (checked) {
-                setSelectedPantryItems(prev => [...prev, item.name]);
-              } else {
-                setSelectedPantryItems(prev => prev.filter(name => name !== item.name));
-              }
-            }}
-          />
-          <Text style={{ marginLeft: 8, fontSize: 14, color: "#333" }}>{item.name}</Text>
-        </View>
-      ))}
-
-      {/* Toggle: Všetky vs len niektoré */}
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Text style={{ fontSize: 14, color: "#333", marginRight: 8 }}>Použiť všetky položky</Text>
+{usePantryItems && pantryItems.length > 0 && (
+  <View style={styles.pantryListContainer}>
+    {pantryItems.map((item) => (
+      <View key={item.productId} style={styles.pantryItemRow}>
         <Switch
+          style={styles.pantrySwitch}
           trackColor={{ false: "#ccc", true: "#4ade80" }}
           thumbColor="#fff"
           ios_backgroundColor="#ccc"
-          value={requireAllSelected}
-          onValueChange={setRequireAllSelected}
+          value={selectedPantryItems.includes(item.name)}
+          onValueChange={(checked) => {
+            if (checked) {
+              setSelectedPantryItems(prev => [...prev, item.name]);
+            } else {
+              setSelectedPantryItems(prev =>
+                prev.filter(name => name !== item.name)
+              );
+            }
+          }}
         />
+        <Text style={styles.pantryItemText}>{item.name}</Text>
       </View>
+    ))}
+
+      {/* Toggle: Všetky vs len niektoré */}
+<View style={styles.pantryToggleRow}>
+  <Text style={styles.pantryToggleText}>Použiť všetky položky</Text>
+  <Switch
+    trackColor={{ false: "#ccc", true: "#4ade80" }}
+    thumbColor="#fff"
+    ios_backgroundColor="#ccc"
+    value={requireAllSelected}
+    onValueChange={setRequireAllSelected}
+  />
+</View>
     </View>
   )}
 </View>
         </View>
 
         {/* Čas receptu */}
-<View style={{ marginBottom: 20 }}>
-  <Text style={{ marginBottom: 10, fontWeight: "bold", fontSize: 16 }}>
+<View style={styles.cookingTimeContainer}>
+  <Text style={styles.cookingTimeLabel}>
     Maximálny čas varenia: {maxCookingTime} min
   </Text>
-  
+
   <Slider
     minimumValue={5}
     maximumValue={180}
@@ -815,110 +653,95 @@ const availablePreferences = ALL_PREFERENCES.filter(
   />
 </View>
 
-      {/* RESET BUTTON */}
+     {/* RESET BUTTON */}
 <Pressable
   onPress={() => {
     resetState();
   }}
-  style={{
-    backgroundColor: "#f87171", // červené tlačidlo
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    alignSelf: "center",
-    marginBottom: 15,
-  }}
+  style={styles.resetButton}
 >
-  <Text style={{ color: "#fff", fontWeight: "bold", fontSize: 16 }}>
+  <Text style={styles.resetButtonText}>
     Resetovať všetko
   </Text>
 </Pressable>
 
 {/* INFO TEXT  */}
-<Text style={{ textAlign: "center", marginBottom: 20, fontSize: 20 }}>
+<Text style={styles.infoText}>
   ⚠️ Pri alergiách odporúčame vždy kontrolovať presné zloženie potravín!
 </Text>
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <Pressable
-            onPress={() => {setGenerateModalVisible(false),
-              setSelectedRecept(null),
-    setGeneratedRecipeModal(null),
-    resetState()}}
-            style={{
-              flex: 1,
-              marginRight: 5,
-              backgroundColor: "grey",
-              paddingVertical: 10,
-              borderRadius: 10,
-            }}
-          >
-            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>Zrušiť</Text>
-          </Pressable>
 
-          <Pressable
-            onPress={async () => {
-    setGenerateModalVisible(false);
-    await generateRecipe();
-    resetState(); 
-  }}
-            style={{
-              flex: 1,
-              marginLeft: 5,
-              backgroundColor: "hsla(129, 56%, 43%, 1)",
-              paddingVertical: 10,
-              borderRadius: 10,
-            }}
-          >
-            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>Generovať recept</Text>
-          </Pressable>
-        </View>
+<View style={styles.modalButtonRow}>
+  <Pressable
+    onPress={() => {
+      setGenerateModalVisible(false);
+      setSelectedRecept(null);
+      setGeneratedRecipeModal(null);
+      resetState();
+    }}
+    style={styles.cancelButton}
+  >
+    <Text style={styles.cancelButtonText}>Zrušiť</Text>
+  </Pressable>
+
+  <Pressable
+    onPress={async () => {
+      setGenerateModalVisible(false);
+      await generateRecipe();
+      resetState();
+    }}
+    style={styles.generateButton}
+  >
+    <Text style={styles.generateButtonText}>Generovať recept</Text>
+  </Pressable>
+</View>
       </ScrollView>
     </View>
   </View>
 </Modal>
 
-
-     <Text style={{ fontSize: 22, fontWeight: "bold", marginVertical: 10, marginLeft: 15 }}>
+     <Text style={styles.sectionTitle}>
   Overené klasické recepty
 </Text>
-      <View style={styles.grid}>
-        {recepty.map((item) => (
-          <Pressable
-            key={item.id}
-            style={({ pressed }) => [styles.card, { opacity: pressed ? 0.7 : 1 }]}
-            onPress={() => setSelectedRecept({ ...item, type: "static" })}
-          >
-            <ImageBackground
-              source={item.obrazok}
-              style={styles.imageBackground}
-              imageStyle={styles.image}
-            >
-              <Text style={styles.cardText}>{item.nazov}</Text>
-            </ImageBackground>
-          </Pressable>
-        ))}
-      </View>
 
-      <Text style={{ fontSize: 22, fontWeight: "bold", marginVertical: 10, marginLeft: 15 }}>
+<View style={styles.grid}>
+  {recepty.map((item) => (
+    <Pressable
+      key={item.id}
+      style={({ pressed }) => [styles.card, { opacity: pressed ? 0.7 : 1 }]}
+      onPress={() => setSelectedRecept({ ...item, type: "static" })}
+    >
+      <ImageBackground
+        source={item.obrazok}
+        style={styles.imageBackground}
+        imageStyle={styles.image}
+      >
+        <Text style={styles.cardText}>{item.nazov}</Text>
+      </ImageBackground>
+    </Pressable>
+  ))}
+</View>
+      <Text style={styles.sectionTitle}>
   Moje recepty
 </Text>
-      <View style={styles.grid}>
-        {savedRecipes.map((item) => (
-          <Pressable
-            key={item.recipeId}
-            style={({ pressed }) => [styles.card, { opacity: pressed ? 0.7 : 1 }]}
-            onPress={() => setSelectedRecept({ ...item, type: "ai" })}
-          >
-            <ImageBackground
-              source={getRecipeImage(item.category)}
-              style={styles.imageBackground}
-              imageStyle={styles.image}
-            >
-              <Text style={styles.cardText}>{item.name}</Text>
-            </ImageBackground>
-          </Pressable>
-        ))}
-      </View>
+
+<View style={styles.grid}>
+  {savedRecipes.map((item) => (
+    <Pressable
+      key={item.recipeId}
+      style={({ pressed }) => [styles.card, { opacity: pressed ? 0.7 : 1 }]}
+      onPress={() => setSelectedRecept({ ...item, type: "ai" })}
+    >
+      <ImageBackground
+        source={getRecipeImage(item.category)}
+        style={styles.imageBackground}
+        imageStyle={styles.image}
+      >
+        <Text style={styles.cardText}>{item.name}</Text>
+      </ImageBackground>
+    </Pressable>
+  ))}
+</View>
+
 
       {/* --- MODAL PRE VSETKY RECEPTY --- */}
       <Modal
@@ -935,115 +758,98 @@ const availablePreferences = ALL_PREFERENCES.filter(
       <ScrollView>
 
         {/* IMAGE */}
-        <Image
-          source={
-            selectedRecept
-              ? selectedRecept.type === "static"
-                ? selectedRecept.obrazok
-                : getRecipeImage(selectedRecept.category)
-              : generatedRecipeModal
-              ? getRecipeImage(generatedRecipeModal.category)
-              : require("../../assets/logo.png")
-          }
-          style={{ width: "100%", height: 220, borderRadius: 16, marginBottom: 15 }}
-          resizeMode="cover"
-        />
+<Image
+  source={
+    selectedRecept
+      ? selectedRecept.type === "static"
+        ? selectedRecept.obrazok
+        : getRecipeImage(selectedRecept.category)
+      : generatedRecipeModal
+      ? getRecipeImage(generatedRecipeModal.category)
+      : require("../../assets/logo.png")
+  }
+  style={styles.recipeModalImage}
+  resizeMode="cover"
+/>
 
-        {/* TITLE */}
-        <Text style={{ fontSize: 26, fontWeight: "bold", textAlign: "center", marginBottom: 15 }}>
-          {selectedRecept?.nazov || selectedRecept?.name || generatedRecipeModal?.name}
-        </Text>
+{/* TITLE */}
+<Text style={styles.recipeModalTitle}>
+  {selectedRecept?.nazov || selectedRecept?.name || generatedRecipeModal?.name}
+</Text>
+
 
         {/* STATIC RECEPT */}
-        {selectedRecept?.type === "static" && (
-          <>
-            {selectedRecept?.ingrediencie && (
-              <Text style={{ fontSize: 18, marginBottom: 8 }}>
-                <Text style={{ fontWeight: "bold" }}>Ingrediencie:{"\n"}</Text>
-                {selectedRecept.ingrediencie}
-              </Text>
-            )}
-            {selectedRecept?.postup && (
-              <Text style={{ fontSize: 18, marginBottom: 8 }}>
-                <Text style={{ fontWeight: "bold" }}>Postup:{"\n"}</Text>
-                {selectedRecept.postup}
-              </Text>
-            )}
-            {selectedRecept?.obsah && <Text style={{ fontSize: 18 }}>{selectedRecept.obsah}</Text>}
-          </>
-        )}
+{selectedRecept?.type === "static" && (
+  <>
+    {selectedRecept?.ingrediencie && (
+      <Text style={styles.staticText}>
+        <Text style={{ fontWeight: "bold" }}>Ingrediencie:{"\n"}</Text>
+        {selectedRecept.ingrediencie}
+      </Text>
+    )}
+    {selectedRecept?.postup && (
+      <Text style={styles.staticText}>
+        <Text style={{ fontWeight: "bold" }}>Postup:{"\n"}</Text>
+        {selectedRecept.postup}
+      </Text>
+    )}
+    {selectedRecept?.obsah && (
+      <Text style={styles.staticText}>{selectedRecept.obsah}</Text>
+    )}
+  </>
+)}
+       {/* AI / GENERATED RECEPT */}
+{(selectedRecept?.type === "ai" || generatedRecipeModal) && (
+  <>
+    {/* CATEGORY & TIME */}
+    <Text style={styles.aiSectionTitle}>Kategória:</Text>
+    <Text style={styles.aiSectionText}>
+      {selectedRecept?.category || generatedRecipeModal?.category}
+    </Text>
 
-        {/* AI / GENERATED RECEPT */}
-        {(selectedRecept?.type === "ai" || generatedRecipeModal) && (
-          <>
-            {/* CATEGORY & TIME */}
-            <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10 }}>Kategória:</Text>
-            <Text style={{ fontSize: 18, marginBottom: 8 }}>
-              {selectedRecept?.category || generatedRecipeModal?.category}
-            </Text>
-
-            <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 5 }}>Čas prípravy:</Text>
-            <Text style={{ fontSize: 18, marginBottom: 10 }}>
-              {selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}
-            </Text>
+    <Text style={styles.aiSectionTitle}>Čas prípravy:</Text>
+    <Text style={styles.aiSectionText}>
+      {selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}
+    </Text>
 
             {/* --- NUTRITION TABLE --- */}
-            <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 8 }}>Nutričné hodnoty:</Text>
-            <View style={{
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 12,
-              padding: 12,
-              backgroundColor: "#f0fdf4",
-              marginBottom: 15,
-            }}>
-              {(() => {
-                const nutrition = selectedRecept?.nutrition || generatedRecipeModal?.nutrition || {};
-                const values = [
-                  { label: "Kalórie", value: nutrition.calories, unit: "kcal" },
-                  { label: "Bielkoviny", value: nutrition.proteins, unit: "g" },
-                  { label: "Sacharidy", value: nutrition.carbohydrates, unit: "g" },
-                  { label: "Tuky", value: nutrition.fats, unit: "g" },
-                  { label: "Vláknina", value: nutrition.fiber, unit: "g" },
-                  { label: "Soľ", value: nutrition.salt, unit: "g" },
-                  { label: "Cukry", value: nutrition.sugars, unit: "g" },
-                ];
-                return values.map((item, idx) => (
-                  <View key={idx} style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    paddingVertical: 4,
-                    backgroundColor: idx % 2 === 0 ? "#e6f4ea" : "#f0fdf4",
-                    paddingHorizontal: 8,
-                    borderRadius: 8,
-                    marginVertical: 2,
-                  }}>
-                    <Text style={{ fontSize: 18 }}>{item.label}:</Text>
-                    <Text style={{ fontSize: 18, fontWeight: "bold" }}>
-                      {item.value ?? "-"} {item.unit}
-                    </Text>
-                  </View>
-                ));
-              })()}
-            </View>
+<Text style={styles.nutritionTitle}>Nutričné hodnoty:</Text>
 
+<View style={styles.nutritionContainer}>
+  {(() => {
+    const nutrition = selectedRecept?.nutrition || generatedRecipeModal?.nutrition || {};
+    const values = [
+      { label: "Kalórie", value: nutrition.calories, unit: "kcal" },
+      { label: "Bielkoviny", value: nutrition.proteins, unit: "g" },
+      { label: "Sacharidy", value: nutrition.carbohydrates, unit: "g" },
+      { label: "Tuky", value: nutrition.fats, unit: "g" },
+      { label: "Vláknina", value: nutrition.fiber, unit: "g" },
+      { label: "Soľ", value: nutrition.salt, unit: "g" },
+      { label: "Cukry", value: nutrition.sugars, unit: "g" },
+    ];
+
+    return values.map((item, idx) => (
+      <View
+        key={idx}
+        style={[styles.nutritionRow, { backgroundColor: idx % 2 === 0 ? "#e6f4ea" : "#f0fdf4" }]}
+      >
+        <Text style={styles.nutritionLabel}>{item.label}:</Text>
+        <Text style={styles.nutritionValue}>
+          {item.value ?? "-"} {item.unit}
+        </Text>
+      </View>
+    ));
+  })()}
+</View>
             {/* INGREDIENTS */}
-<View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-  <Text style={{ fontSize: 20, fontWeight: "bold" }}>Ingrediencie</Text>
+<View style={styles.ingredientsHeader}>
+  <Text style={styles.ingredientsTitle}>Ingrediencie</Text>
   {/* Info button */}
   <Pressable
     onPress={() => setShowUnitInfo(true)}
-    style={{
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      backgroundColor: "#4ade80",
-      alignItems: "center",
-      justifyContent: "center",
-      marginLeft: 8,
-    }}
+    style={styles.ingredientsInfoButton}
   >
-    <Text style={{ color: "#fff", fontWeight: "bold" }}>i</Text>
+    <Text style={styles.ingredientsInfoButtonText}>i</Text>
   </Pressable>
 </View>
 
@@ -1054,6 +860,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
   </Text>
 ))}
 
+
 {/* INFO MODAL PRE JEDNOTKY */}
 <Modal
   visible={showUnitInfo}
@@ -1062,86 +869,63 @@ const availablePreferences = ALL_PREFERENCES.filter(
   onRequestClose={() => setShowUnitInfo(false)}
 >
   <View style={styles.modalOverlay}>
-    <View style={[styles.modalContainer, { maxHeight: 300 }]}>
-      <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>
-        Jednotky surovín
-      </Text>
-      <Text>• 1 polievková lyžica = cca 15 g</Text>
-      <Text>• 1 malá čajová lyžica = cca 5 g</Text>
-      <Text>• 1 pohár = cca 250 ml / 240 g tekutiny</Text>
+    <View style={[styles.modalContainer, styles.unitInfoModal]}>
+      <Text style={styles.unitInfoTitle}>Jednotky surovín</Text>
+      <Text style={styles.unitInfoText}>• 1 polievková lyžica = cca 15 g</Text>
+      <Text style={styles.unitInfoText}>• 1 malá čajová lyžica = cca 5 g</Text>
+      <Text style={styles.unitInfoText}>• 1 pohár = cca 250 ml / 240 g tekutiny</Text>
 
-     <Pressable
-  onPress={() => setShowUnitInfo(false)}
-  style={styles.unitInfoCloseButton}
->
-  <Text style={styles.unitInfoCloseButtonText}>Zavrieť</Text>
-</Pressable>
+      <Pressable
+        onPress={() => setShowUnitInfo(false)}
+        style={styles.unitInfoCloseButton}
+      >
+        <Text style={styles.unitInfoCloseButtonText}>Zavrieť</Text>
+      </Pressable>
     </View>
   </View>
 </Modal>
             {/* STEPS */}
-            <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 10, marginBottom: 6 }}>Postup:</Text>
-            {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
-              <View key={idx} style={{
-                backgroundColor: "#d1fae5",
-                padding: 8,
-                borderRadius: 10,
-                marginBottom: 6,
-              }}>
-                <Text style={{ fontSize: 18 }}>{step}</Text>
-              </View>
-            ))}
+<Text style={styles.stepsTitle}>Postup:</Text>
+{(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
+  <View key={idx} style={styles.stepContainer}>
+    <Text style={styles.stepText}>{step}</Text>
+  </View>
+))}
           </>
         )}
       </ScrollView>
 
       {/* BUTTONS */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 15 }}>
-        <Pressable
-          onPress={() => {
-            setSelectedRecept(null);
-            setGeneratedRecipeModal(null);
-          }}
-          style={{
-            flex: 1,
-            marginRight: 5,
-            backgroundColor: "grey",
-            paddingVertical: 12,
-            borderRadius: 12,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold", fontSize: 18 }}>Zavrieť</Text>
-        </Pressable>
+<View style={styles.modalButtonsContainer}>
+  <Pressable
+    onPress={() => {
+      setSelectedRecept(null);
+      setGeneratedRecipeModal(null);
+    }}
+    style={styles.modalButtonClose}
+  >
+    <Text style={styles.modalButtonText}>Zavrieť</Text>
+  </Pressable>
+
 
         {generatedRecipeModal && (
-          <Pressable
-            onPress={saveGeneratedRecipe}
-            style={{
-              flex: 1,
-              marginLeft: 5,
-              backgroundColor: "hsla(129, 56%, 43%, 1)",
-              paddingVertical: 12,
-              borderRadius: 12,
-            }}
-          >
-            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold", fontSize: 18 }}>Uložiť</Text>
-          </Pressable>
-        )}
+  <Pressable
+    onPress={saveGeneratedRecipe}
+    style={styles.modalButtonSave}
+  >
+    <Text style={styles.modalButtonText}>Uložiť</Text>
+  </Pressable>
+)}
 
-        {selectedRecept?.type === "ai" && (
-          <Pressable
-            onPress={deleteRecipe}
-            style={{
-              flex: 1,
-              marginLeft: 5,
-              backgroundColor: "#ff4d4d",
-              paddingVertical: 12,
-              borderRadius: 12,
-            }}
-          >
-            <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold", fontSize: 18 }}>🗑️ Zmazať recept</Text>
-          </Pressable>
-        )}
+{selectedRecept?.type === "ai" && (
+  <Pressable
+    onPress={deleteRecipe}
+    style={styles.modalButtonDelete}
+  >
+    <Text style={styles.modalButtonText}>🗑️ Zmazať recept</Text>
+  </Pressable>
+)}
+
       </View>
     </View>
   </View>
@@ -1152,41 +936,20 @@ const availablePreferences = ALL_PREFERENCES.filter(
   animationType="fade"
 >
   <View style={styles.modalOverlay}>
-    <View
-      style={{
-        backgroundColor: "#fff",
-        padding: 30,
-        borderRadius: 20,
-        alignItems: "center",
-        width: "80%",
-      }}
-    >
+    <View style={styles.generatingModalContainer}>
       <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
 
-      <Text
-        style={{
-          marginTop: 15,
-          fontSize: 18,
-          fontWeight: "600",
-          textAlign: "center",
-        }}
-      >
+      <Text style={styles.generatingModalTitle}>
         Vytváram recept…
       </Text>
 
-      <Text
-        style={{
-          marginTop: 6,
-          fontSize: 14,
-          color: "#666",
-          textAlign: "center",
-        }}
-      >
+      <Text style={styles.generatingModalSubtitle}>
         Môže to trvať niekoľko sekúnd
       </Text>
     </View>
   </View>
 </Modal>
+
 <Modal
   visible={showPreferenceInfo}
   transparent
@@ -1194,79 +957,56 @@ const availablePreferences = ALL_PREFERENCES.filter(
   onRequestClose={() => setShowPreferenceInfo(false)}
 >
   <View style={styles.modalOverlay}>
-    <View style={[styles.modalContainer, { maxHeight: "85%" }]}>
+    <View style={[styles.modalContainer, styles.preferenceInfoModalContainer]}>
       <ScrollView>
 
-        <Text style={{ fontSize: 22, fontWeight: "bold", marginBottom: 10 }}>
+        <Text style={styles.preferenceInfoTitle}>
           Vysvetlenie preferencií
         </Text>
 
         {/* ZÁKLADNÉ PREFERENCIE */}
-        <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 6 }}>
+        <Text style={styles.preferenceCategoryTitle}>
           Základné
         </Text>
 
         {ALL_PREFERENCES.map(pref => (
-          <View
-            key={pref.id}
-            style={{
-              backgroundColor: "#f0fdf4",
-              padding: 10,
-              borderRadius: 10,
-              marginBottom: 6,
-            }}
-          >
-            <Text style={{ fontSize: 16, fontWeight: "600" }}>
+          <View key={pref.id} style={styles.preferenceItem}>
+            <Text style={styles.preferenceItemLabel}>
               {pref.label}
             </Text>
-            <Text style={{ fontSize: 14, color: "#555", marginTop: 2 }}>
+            <Text style={styles.preferenceItemDescription}>
               {pref.description}
             </Text>
           </View>
         ))}
-
         {/* KATEGORIZOVANÉ PREFERENCIE */}
-        {ADDITIONAL_PREFERENCES.map(section => (
-          <View key={section.category} style={{ marginTop: 14 }}>
-            <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 6 }}>
-              {section.category}
-            </Text>
+{ADDITIONAL_PREFERENCES.map(section => (
+  <View key={section.category} style={styles.preferenceSection}>
+    <Text style={styles.preferenceCategoryTitle}>
+      {section.category}
+    </Text>
 
-            {section.items.map(item => (
-              <View
-                key={item.id}
-                style={{
-                  backgroundColor: "#f0fdf4",
-                  padding: 10,
-                  borderRadius: 10,
-                  marginBottom: 6,
-                }}
-              >
-                <Text style={{ fontSize: 16, fontWeight: "600" }}>
-                  {item.label}
-                </Text>
-                <Text style={{ fontSize: 14, color: "#555", marginTop: 2 }}>
-                  {item.description}
-                </Text>
-              </View>
-            ))}
-          </View>
-        ))}
+    {section.items.map(item => (
+      <View key={item.id} style={styles.preferenceItem}>
+        <Text style={styles.preferenceItemLabel}>
+          {item.label}
+        </Text>
+        <Text style={styles.preferenceItemDescription}>
+          {item.description}
+        </Text>
+      </View>
+    ))}
+  </View>
+))}
 
-        <Pressable
-          onPress={() => setShowPreferenceInfo(false)}
-          style={{
-            marginTop: 16,
-            backgroundColor: "#4ade80",
-            paddingVertical: 10,
-            borderRadius: 10,
-          }}
-        >
-          <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>
-            Zavrieť
-          </Text>
-        </Pressable>
-
+<Pressable
+  onPress={() => setShowPreferenceInfo(false)}
+  style={styles.preferenceCloseButton}
+>
+  <Text style={styles.preferenceCloseButtonText}>
+    Zavrieť
+  </Text>
+</Pressable>
       </ScrollView>
     </View>
   </View>
