@@ -9,7 +9,7 @@ import crypto from "crypto";
 import path from "path";
 import OpenAI from "openai";
 
-dotenv.config({ path: path.resolve("./server/.env") });
+dotenv.config({ path: path.resolve("../server/.env") });
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
@@ -373,6 +373,38 @@ async function start() {
   });
 
   //------------ FIND PRODUCT INFO BY NAME ------------------
+  app.get("/api/getProductByName", async (req, res) => {
+    console.log("📥 Incoming /api/getProductByName request:", req.query);
+
+    const { email, name } = req.query;
+
+    try {
+      if (!email || !name) {
+        return res.status(400).json({ error: "Missing email or product name" });
+      }
+
+      const user = await users.findOne({ email });
+      console.log("👤 Found user:", user ? user.email : "NOT FOUND");
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const products = user.products || [];
+      const product = products.find(p => p.name === name);
+
+      if (!product) {
+        console.log("❌ Product not found:", name);
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      console.log("📤 Returning product:", product);
+      res.json({ success: true, product });
+    } catch (err) {
+      console.error("❌ Get product by name error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
 
   app.post("/api/generateRecipe", async (req, res) => {
   try {
