@@ -49,7 +49,7 @@ useEffect(() => {
      if (!userEmail || !usePantryItems) return;
       const fetchPantryItems = async () => {
          try { 
-          const res = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${$userEmail}`); 
+          const res = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${userEmail}`); 
           const data = await res.json();
            if (data.success) { 
             setPantryItems(data.products); 

@@ -15,6 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import styles from "./Dashboard/styles";
 
 export default function RegistrationScreen() {
   const navigation = useNavigation();
@@ -86,182 +87,76 @@ export default function RegistrationScreen() {
   }
 
   return (
-    <View style={styles.layout}>
-      <View style={styles.image}>
-        <Image style={styles.avatar} source={logo} />
+  <View style={styles.mainLayout}>
+    <View style={styles.bgImage}>
+      <Image style={styles.profileAvatar} source={logo} />
 
-        <View style={styles.container}>
-          <Text style={styles.text}>Registruj sa!</Text>
+      <View style={styles.cardContainer}>
+        <Text style={styles.titleText}>Registruj sa!</Text>
 
-          <Text style={styles.info_text}>Zadaj email:</Text>
-          <TextInput
-            placeholder="e-mail"
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
-          
-          <Text style={styles.info_text}>Zadaj ako ťa máme volať:</Text>
-          <TextInput
-            placeholder="prezývka"
-            style={styles.input}
-            value={nick}
-            onChangeText={setNick}
-            autoCapitalize="words"
-          />
+        <Text style={styles.infoLabel}>Zadaj email:</Text>
+        <TextInput
+          placeholder="e-mail"
+          style={styles.textInput}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+        />
 
-          <Text style={styles.info_text}>Zadaj svoje heslo:</Text>
-          <TextInput
-            placeholder="heslo"
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-          />
+        <Text style={styles.infoLabel}>Zadaj ako ťa máme volať:</Text>
+        <TextInput
+          placeholder="prezývka"
+          style={styles.textInput}
+          value={nick}
+          onChangeText={setNick}
+          autoCapitalize="words"
+        />
 
-          <Text style={styles.info_text}>Zopakuj heslo:</Text>
-          <TextInput
-            placeholder="heslo znova"
-            style={styles.input}
-            value={passwordConfirm}
-            onChangeText={setPasswordConfirm}
-            secureTextEntry
-            autoCapitalize="none"
-          />
+        <Text style={styles.infoLabel}>Zadaj svoje heslo:</Text>
+        <TextInput
+          placeholder="heslo"
+          style={styles.textInput}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+        />
 
-          <Pressable
-            style={({ pressed }) =>
-              pressed ? styles.button_pressed : styles.button
-            }
-            onPress={() => !loading && handleRegistration()}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <Text style={styles.button_text}>Registrovať sa!</Text>
-            )}
-          </Pressable>
-        </View>
+        <Text style={styles.infoLabel}>Zopakuj heslo:</Text>
+        <TextInput
+          placeholder="heslo znova"
+          style={styles.textInput}
+          value={passwordConfirm}
+          onChangeText={setPasswordConfirm}
+          secureTextEntry
+          autoCapitalize="none"
+        />
 
-        <Pressable style={({pressed}) => 
-        pressed ? styles.arrow_pressed : styles.arrow_container} 
-        onPress={() => navigation.navigate("HomeScreen")}>
-          <Image source={arrow} style={styles.arrow} />
+        <Pressable
+          style={({ pressed }) =>
+            pressed ? styles.actionButtonPressed : styles.actionButton
+          }
+          onPress={() => !loading && handleRegistration()}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" />
+          ) : (
+            <Text style={styles.actionButtonText}>Registrovať sa!</Text>
+          )}
         </Pressable>
       </View>
-    </View>
-  );
-}
 
-// Styles
-const styles = StyleSheet.create({
-  layout: {
-   flex: 1,
-    backgroundColor: "#618a335d",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-  },
-  image: {
-    resizeMode: "cover",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatar: {
-     height: 200,
-    width: 200,
-    marginBottom: 20,
-    ckgroundColor: "white",
-    borderRadius: 20,
-  },
- arrow_container: {
-    height: 60,
-    width: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40
-  },
-  arrow: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: 50
-  },
-  arrow_pressed: {
-    height: 58,
-    width: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    opacity: 0.8
-  },
-  text: {
-   fontSize: 50,
-    fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)"
-  },
-  container: {
-    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
-    padding: 10,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "white",
-    height: 500,
-    width: 340,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  input: {
-     backgroundColor: "white",
-    fontSize: 20,
-    fontWeight: "200",
-    width: 240,
-    height: 55,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 5,
-    textAlign: "center",
-    elevation: 6,
-  },
-  info_text: {
-    fontWeight: "800",
-    fontSize: 14,
-    marginTop: 5,
-    alignSelf: "flex-start",
-    marginLeft: 40,
-    color: "hsla(0, 0%, 15%, 1.00)"
-  },
-  button: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 225,
-    height: 55,
-    borderRadius: 10,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  button_pressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: 225,
-    height: 55,
-    borderRadius: 10,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  button_text: {
-    color: "white",
-    fontSize: 28,
-    fontWeight: "900",
-  },
-});
+      <Pressable
+        style={({ pressed }) =>
+          pressed ? styles.backArrowPressed : styles.backArrowContainer
+        }
+        onPress={() => navigation.navigate("HomeScreen")}
+      >
+        <Image source={arrow} style={styles.backArrow} />
+      </Pressable>
+    </View>
+  </View>
+);}
