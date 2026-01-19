@@ -192,8 +192,17 @@ const fetchSavedRecipes = async () => {
     return recipeImagesByCategory[key] || require("../../assets/logo.png");
   };
 
-  const recipePromptPreview =
-  "AI vygeneruje recept podľa vybraných preferencií.";
+  const resetState = () => {
+  setSelectedPreferences([]);
+  setUseFitnessGoal(false);
+  setUsePantryItems(false);
+  setSelectedPantryItems([]);
+  setRequireAllSelected(true);
+  setMaxCookingTime(60);
+  setShowAdditionalPreferences(false);
+};
+
+
   // Hardcoded recepty
   const recepty = [
     {
@@ -774,7 +783,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
 
       {/* Toggle: Všetky vs len niektoré */}
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Text style={{ fontSize: 14, color: "#333", marginRight: 8 }}>Použiť niektoré vybrané</Text>
+        <Text style={{ fontSize: 14, color: "#333", marginRight: 8 }}>Použiť všetky položky</Text>
         <Switch
           trackColor={{ false: "#ccc", true: "#4ade80" }}
           thumbColor="#fff"
@@ -782,7 +791,6 @@ const availablePreferences = ALL_PREFERENCES.filter(
           value={requireAllSelected}
           onValueChange={setRequireAllSelected}
         />
-        <Text style={{ fontSize: 14, color: "#333", marginRight: 8 }}>Použiť všetky vybrané</Text>
       </View>
     </View>
   )}
@@ -810,13 +818,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
       {/* RESET BUTTON */}
 <Pressable
   onPress={() => {
-    setSelectedPreferences([]);
-    setUseFitnessGoal(false);
-    setUsePantryItems(false);
-    setSelectedPantryItems([]);
-    setRequireAllSelected(true);
-    setCookingTime(null);
-    setMaxCookingTime(60); 
+    resetState();
   }}
   style={{
     backgroundColor: "#f87171", // červené tlačidlo
@@ -836,21 +838,12 @@ const availablePreferences = ALL_PREFERENCES.filter(
 <Text style={{ textAlign: "center", marginBottom: 20, fontSize: 20 }}>
   ⚠️ Pri alergiách odporúčame vždy kontrolovať presné zloženie potravín!
 </Text>
-<Text style={{ textAlign: "center", marginBottom: 20, fontSize: 15 }}>
-  Chceš vygenerovať nový recept pomocou AI?
-</Text>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
           <Pressable
             onPress={() => {setGenerateModalVisible(false),
               setSelectedRecept(null),
     setGeneratedRecipeModal(null),
-    // Reset všetkých nastavení
-    setSelectedPreferences([]),
-    setUseFitnessGoal(false),
-    setUsePantryItems(false),
-    setSelectedPantryItems([]),
-    setRequireAllSelected(true),
-    setMaxCookingTime(60)}}
+    resetState()}}
             style={{
               flex: 1,
               marginRight: 5,
@@ -866,13 +859,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
             onPress={async () => {
     setGenerateModalVisible(false);
     await generateRecipe();
-    // Reset nastavení po generovaní
-    setSelectedPreferences([]);
-    setUseFitnessGoal(false);
-    setUsePantryItems(false);
-    setSelectedPantryItems([]);
-    setRequireAllSelected(true);
-    setMaxCookingTime(60); 
+    resetState(); 
   }}
             style={{
               flex: 1,
