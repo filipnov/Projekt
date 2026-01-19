@@ -288,6 +288,7 @@ export default StyleSheet.create({
     height: 50,
     borderRadius: 10,
     margin: "auto",
+    marginTop: 10,
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
@@ -332,7 +333,7 @@ export default StyleSheet.create({
     alignItems: "center",
   },
   modalContainer: {
-    width: "85%",
+    width: "95%",
     maxHeight: "95%",
     backgroundColor: "white",
     borderRadius: 10,
@@ -346,4 +347,16 @@ export default StyleSheet.create({
   modalContent: {
     marginBottom: 16,
   },
+  unitInfoCloseButton: {
+  marginTop: 20,
+  backgroundColor: "hsla(129, 56%, 43%, 1)", 
+  padding: 12,
+  borderRadius: 8,
+  alignItems: "center",
+},
+unitInfoCloseButtonText: {
+  color: "white",
+  fontWeight: "bold",
+  fontSize: 18,
+},
 });
