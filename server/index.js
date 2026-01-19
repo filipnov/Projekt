@@ -27,7 +27,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-
 const GPT_REQUEST_LIMIT = 50;
 let gptRequestCount = 0;
 async function start() {
@@ -124,7 +123,7 @@ async function start() {
             goal: goal,
             updatedAt: new Date(),
           },
-        }
+        },
       );
 
       if (result.matchedCount === 0) {
@@ -138,7 +137,6 @@ async function start() {
     }
   });
 
-  
   app.get("/api/userProfile", async (req, res) => {
     try {
       const { email } = req.query;
@@ -184,7 +182,7 @@ async function start() {
       //Save token to user document
       await users.updateOne(
         { email },
-        { $set: { resetToken: token, resetTokenExpires: expiresAt } }
+        { $set: { resetToken: token, resetTokenExpires: expiresAt } },
       );
 
       console.log("EMAIL_USER:", process.env.EMAIL_USER);
@@ -252,7 +250,7 @@ async function start() {
         {
           $set: { password: hashedPassword },
           $unset: { resetToken: "", resetTokenExpires: "" },
-        }
+        },
       );
       console.log("✅ Password reset successful for user:", user.email);
       res.json({ ok: true, message: "Password reset succesful." });
@@ -276,7 +274,14 @@ async function start() {
       totalFiber,
       totalSalt,
       totalSugar,
-    } = req.body; 
+      calories,
+      proteins,
+      carbs,
+      fat,
+      fiber,
+      salt,
+      sugar,
+    } = req.body;
 
     try {
       const user = await users.findOne({ email });
@@ -296,6 +301,13 @@ async function start() {
         totalFiber: totalFiber ?? null,
         totalSalt: totalSalt ?? null,
         totalSugar: totalSugar ?? null,
+        calories: calories ?? null,
+        proteins: proteins ?? null,
+        carbs: carbs ?? null,
+        fat: fat ?? null,
+        fiber: fiber ?? null,
+        salt: salt ?? null,
+        sugar: sugar ?? null,
       };
 
       if (!user.products || user.products.length === 0) {
@@ -329,7 +341,7 @@ async function start() {
 
       const result = await users.updateOne(
         { email },
-        { $pull: { products: { productId: productId } } }
+        { $pull: { products: { productId: productId } } },
       );
 
       if (result.modifiedCount === 0) {
@@ -391,7 +403,7 @@ async function start() {
       }
 
       const products = user.products || [];
-      const product = products.find(p => p.name === name);
+      const product = products.find((p) => p.name === name);
 
       if (!product) {
         console.log("❌ Product not found:", name);
@@ -407,44 +419,55 @@ async function start() {
   });
 
   app.post("/api/generateRecipe", async (req, res) => {
-  try {
-    if (gptRequestCount >= GPT_REQUEST_LIMIT) {
-      return res.status(429).json({ error: "GPT request limit reached on server" });
-    }
+    try {
+      if (gptRequestCount >= GPT_REQUEST_LIMIT) {
+        return res
+          .status(429)
+          .json({ error: "GPT request limit reached on server" });
+      }
 
-    gptRequestCount++;
+      gptRequestCount++;
 
-    const { userPrompt, email, usePantryItems, useFitnessGoal, maxCookingTime  } = req.body;
-    if (!userPrompt) return res.status(400).json({ error: "Missing prompt" });
-    if (!email) return res.status(400).json({ error: "Missing user email" });
+      const {
+        userPrompt,
+        email,
+        usePantryItems,
+        useFitnessGoal,
+        maxCookingTime,
+      } = req.body;
+      if (!userPrompt) return res.status(400).json({ error: "Missing prompt" });
+      if (!email) return res.status(400).json({ error: "Missing user email" });
 
-    const user = await users.findOne({ email });
-    if (!user) return res.status(404).json({ error: "User not found" });
+      const user = await users.findOne({ email });
+      if (!user) return res.status(404).json({ error: "User not found" });
 
-    // --- Získaj produkty zo špajze ---
-    let pantryText = "";
-    if (usePantryItems && user.products && user.products.length > 0) {
-      const productNames = user.products.map(p => p.name).join(", ");
-      pantryText = `Použi tieto produkty zo špajze: ${productNames}.`;
-    }
+      // --- Získaj produkty zo špajze ---
+      let pantryText = "";
+      if (usePantryItems && user.products && user.products.length > 0) {
+        const productNames = user.products.map((p) => p.name).join(", ");
+        pantryText = `Použi tieto produkty zo špajze: ${productNames}.`;
+      }
 
-    // --- Získaj fitness cieľ používateľa ---
-    let goalText = "";
-    let calorieGuideline = "";
-    if (useFitnessGoal && user.goal) {
-      goalText = `Zohľadni fitness cieľ používateľa: ${user.goal}.`;
+      // --- Získaj fitness cieľ používateľa ---
+      let goalText = "";
+      let calorieGuideline = "";
+      if (useFitnessGoal && user.goal) {
+        goalText = `Zohľadni fitness cieľ používateľa: ${user.goal}.`;
 
         if (user.goal === "lose") {
-        calorieGuideline = "Celkové kalórie receptu MUSIA byť nižšie (200-400), vhodné pre chudnutie.";
-      } else if (user.goal === "maintain") {
-        calorieGuideline = "Celkové kalórie receptu MUSIA byť priemerné (401-600), vhodné pre udržanie váhy.";
-      } else if (user.goal === "gain") {
-        calorieGuideline = "Celkové kalórie receptu MUSIA byť vyššie (601-800), vhodné pre priberanie.";
+          calorieGuideline =
+            "Celkové kalórie receptu MUSIA byť nižšie (200-400), vhodné pre chudnutie.";
+        } else if (user.goal === "maintain") {
+          calorieGuideline =
+            "Celkové kalórie receptu MUSIA byť priemerné (401-600), vhodné pre udržanie váhy.";
+        } else if (user.goal === "gain") {
+          calorieGuideline =
+            "Celkové kalórie receptu MUSIA byť vyššie (601-800), vhodné pre priberanie.";
+        }
       }
-    }
 
-    // --- SYSTEM PROMPT (nový kompletný) ---
-    const systemPrompt = `
+      // --- SYSTEM PROMPT (nový kompletný) ---
+      const systemPrompt = `
 Si profesionálny AI šéfkuchár a nutričný analytik.
 
 PRAVIDLÁ:
@@ -503,51 +526,51 @@ JSON ŠTRUKTÚRA:
 }
 `;
 
-     // --- Skombinuj userPrompt s pantryText, goalText a calorieGuideline ---
-    const finalPrompt = `${userPrompt}
+      // --- Skombinuj userPrompt s pantryText, goalText a calorieGuideline ---
+      const finalPrompt = `${userPrompt}
 ${pantryText ? pantryText : ""}
 ${goalText ? goalText : ""}
 ${calorieGuideline ? calorieGuideline : ""}
 ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.` : ""}`;
 
-    // --- RETRY pri nevalidnom JSON ---
-    let parsedJSON = null;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 3;
+      // --- RETRY pri nevalidnom JSON ---
+      let parsedJSON = null;
+      let attempts = 0;
+      const MAX_ATTEMPTS = 3;
 
-    while (!parsedJSON && attempts < MAX_ATTEMPTS) {
-      attempts++;
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: finalPrompt }
-        ],
-        max_tokens: 700,       // zvýšené tokeny
-        temperature: 0.8
-      });
+      while (!parsedJSON && attempts < MAX_ATTEMPTS) {
+        attempts++;
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: finalPrompt },
+          ],
+          max_tokens: 700, // zvýšené tokeny
+          temperature: 0.8,
+        });
 
-      const rawResponse = completion.choices[0].message.content;
+        const rawResponse = completion.choices[0].message.content;
 
-      try {
-        parsedJSON = JSON.parse(rawResponse);
-      } catch (err) {
-        console.warn(`⚠️ GPT vrátil nevalidný JSON, retry ${attempts}...`);
+        try {
+          parsedJSON = JSON.parse(rawResponse);
+        } catch (err) {
+          console.warn(`⚠️ GPT vrátil nevalidný JSON, retry ${attempts}...`);
+        }
       }
+
+      if (!parsedJSON) {
+        return res
+          .status(500)
+          .json({ error: "GPT vrátil nevalidný JSON aj po retry" });
+      }
+
+      return res.json({ success: true, recipe: parsedJSON });
+    } catch (err) {
+      console.error("❌ GPT error:", err);
+      res.status(500).json({ error: "Failed to generate recipe" });
     }
-
-    if (!parsedJSON) {
-      return res.status(500).json({ error: "GPT vrátil nevalidný JSON aj po retry" });
-    }
-
-    return res.json({ success: true, recipe: parsedJSON });
-
-  } catch (err) {
-    console.error("❌ GPT error:", err);
-    res.status(500).json({ error: "Failed to generate recipe" });
-  }
-});
-
+  });
 
   // ------------------ SAVE RECIPE TO DB ------------------
   app.post("/api/addRecipe", async (req, res) => {
@@ -563,9 +586,9 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
       const user = await users.findOne({ email });
       console.log("👤 Found user:", user ? user.email : "NOT FOUND");
 
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
       const recipeObj = {
         recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -603,58 +626,58 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
   });
 
   // ------------------ GET USER RECIPES ------------------
-app.get("/api/getRecipes", async (req, res) => {
-  const { email } = req.query;
+  app.get("/api/getRecipes", async (req, res) => {
+    const { email } = req.query;
 
-  if (!email) {
-    return res.status(400).json({ error: "Missing email" });
-  }
-
-  try {
-    const user = await users.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+    if (!email) {
+      return res.status(400).json({ error: "Missing email" });
     }
 
-    res.json({
-      success: true,
-      recipes: user.recipes || [],
-    });
-  } catch (err) {
-    console.error("❌ Get recipes error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+    try {
+      const user = await users.findOne({ email });
 
-//DELETE RECIPE FROM SERVER//
-app.delete("/api/deleteRecipe", async (req, res) => {
-  const { email, recipeId } = req.body;
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
-  if (!email || !recipeId) {
-    return res.status(400).json({ success: false });
-  }
+      res.json({
+        success: true,
+        recipes: user.recipes || [],
+      });
+    } catch (err) {
+      console.error("❌ Get recipes error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
 
-  try {
-    const result = await users.updateOne(
-      { email },
-      { $pull: { recipes: { recipeId } } }
-    );
+  //DELETE RECIPE FROM SERVER//
+  app.delete("/api/deleteRecipe", async (req, res) => {
+    const { email, recipeId } = req.body;
 
-    if (result.modifiedCount === 0) {
-      return res.json({ success: false });
+    if (!email || !recipeId) {
+      return res.status(400).json({ success: false });
     }
 
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Delete recipe error:", err);
-    res.status(500).json({ success: false });
-  }
-});
+    try {
+      const result = await users.updateOne(
+        { email },
+        { $pull: { recipes: { recipeId } } },
+      );
+
+      if (result.modifiedCount === 0) {
+        return res.json({ success: false });
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error("❌ Delete recipe error:", err);
+      res.status(500).json({ success: false });
+    }
+  });
 
   // ------------------- START SERVER -------------------
   app.listen(PORT, () =>
-    console.log(`🚀 Server running on http://localhost:${PORT}`)
+    console.log(`🚀 Server running on http://localhost:${PORT}`),
   );
 }
 

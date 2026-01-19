@@ -38,7 +38,7 @@ export default function NutritionDisplay({
         />
       </View>
       <Text style={{ color: "white", marginBottom: 5 }}>
-        {valueConsumed.toFixed(0)} / {valueGoal} g
+        {valueConsumed} / {valueGoal} g
       </Text>
     </View>
   );

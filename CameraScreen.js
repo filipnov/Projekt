@@ -59,7 +59,14 @@ export default function CameraScreen() {
     totalFiber,
     totalSalt,
     totalSugar,
-    image
+    calories,
+    proteins,
+    carbs,
+    fat,
+    fiber,
+    salt,
+    sugar,
+    image,
   ) {
     try {
       const email = await AsyncStorage.getItem("userEmail");
@@ -69,7 +76,7 @@ export default function CameraScreen() {
         "Calories:",
         totalCalories,
         "Email:",
-        email
+        email,
       );
 
       const response = await debugFetch("http://10.0.2.2:3000/api/addProduct", {
@@ -85,6 +92,13 @@ export default function CameraScreen() {
           totalFiber,
           totalSalt,
           totalSugar,
+          calories,
+          proteins,
+          carbs,
+          fat,
+          fiber,
+          salt,
+          sugar,
           image,
         }),
       });
@@ -209,8 +223,16 @@ export default function CameraScreen() {
         productData.totalFiber,
         productData.totalSalt,
         productData.totalSugar,
-        productData.image
+        productData.calories, 
+        productData.proteins,
+        productData.carbs,
+        productData.fat,
+        productData.fiber,
+        productData.salt,
+        productData.sugar,
+        productData.image, 
       );
+
       setCode();
       setProductData(null);
     } catch (err) {
@@ -341,7 +363,7 @@ export default function CameraScreen() {
                     if (isNaN(weight) || weight <= 0) {
                       Alert.alert(
                         "Chyba",
-                        "Zadajte platnú hmotnosť (číslo väčšie ako 0)!"
+                        "Zadajte platnú hmotnosť (číslo väčšie ako 0)!",
                       );
                       return;
                     }

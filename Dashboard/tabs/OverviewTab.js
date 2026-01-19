@@ -45,9 +45,7 @@ export default function OverviewTab({
           />
         </View>
         <Text style={{ color: "white", marginBottom: 20 }}>{eatOutput}</Text>
-        <Text style={styles.dateText}>
-          {new Date(currentDate).toLocaleDateString()}
-        </Text>
+        <Text style={styles.dateText}>{currentDate}</Text>
       </View>
 
       <NutritionDisplay
@@ -75,7 +73,10 @@ export default function OverviewTab({
         <Text style={{ color: "white", textAlign: "center" }}>{bmiOutput}</Text>
         <View style={styles.caloriesBarContainer}>
           <View
-            style={[styles.caloriesBar, { width: `${bmiBar}%`, backgroundColor: bmiBarColor }]}
+            style={[
+              styles.caloriesBar,
+              { width: `${bmiBar}%`, backgroundColor: bmiBarColor },
+            ]}
           />
         </View>
       </View>
