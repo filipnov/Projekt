@@ -408,6 +408,32 @@ async function start() {
     }
   });
 
+  //--------------CONSUMED PULL--------------------------
+  app.get("/api/getDailyConsumption", async (req, res) => {
+    const { email, date } = req.query;
+
+    if (!email || !date)
+      return res.status(400).json({ error: "Missing email or date" });
+
+    try {
+      const user = await users.findOne({ email });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const totals = user.dailyConsumption?.[date] || null;
+
+      if (!totals) {
+        return res
+          .status(404)
+          .json({ error: "No daily consumption found for this date" });
+      }
+
+      res.json({ totals });
+    } catch (err) {
+      console.error("❌ Get daily consumption error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   //------------ FIND PRODUCT INFO BY NAME ------------------
   app.get("/api/getProductByName", async (req, res) => {
     console.log("📥 Incoming /api/getProductByName request:", req.query);
