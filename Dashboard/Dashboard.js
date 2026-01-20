@@ -336,6 +336,8 @@ function OverviewTab({
 }
 
 export default function Dashboard({ setIsLoggedIn }) {
+
+  const SERVER_URL = "https://app.bitewise.it.com"
   const navigation = useNavigation();
   const route = useRoute();
 
@@ -371,7 +373,7 @@ export default function Dashboard({ setIsLoggedIn }) {
 
     const pushConsumedToDB = async () => {
       try {
-        await fetch("http://10.0.2.2:3000/api/updateDailyConsumption", {
+        await fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -446,7 +448,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     if (!email) return [];
     try {
       const response = await fetch(
-        `http://10.0.2.2:3000/api/getProducts?email=${email}`,
+        `${SERVER_URL}/api/getProducts?email=${email}`,
       );
       const data = await response.json();
       if (!data.success) return [];
@@ -539,7 +541,7 @@ export default function Dashboard({ setIsLoggedIn }) {
   // Remove product from server
   const removeProduct = async (productId) => {
     try {
-      await fetch("http://10.0.2.2:3000/api/removeProduct", {
+      await fetch(`${SERVER_URL}/api/removeProduct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, productId }),

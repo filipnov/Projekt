@@ -40,6 +40,7 @@ export default function CameraScreen() {
       }
     })();
   }, []);
+const SERVER_URL = "https://app.bitewise.it.com"
 
   const API_URL = "https://world.openfoodfacts.org/api/v0/product";
 
@@ -79,7 +80,7 @@ export default function CameraScreen() {
         email,
       );
 
-      const response = await debugFetch("http://10.0.2.2:3000/api/addProduct", {
+      const response = await debugFetch(`${SERVER_URL}/api/addProduct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
