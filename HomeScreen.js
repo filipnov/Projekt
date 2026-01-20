@@ -1,4 +1,4 @@
-//HomeScreen.js
+// HomeScreen.js
 import { useState } from "react";
 import { Text, View, Image, TextInput, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -9,11 +9,9 @@ import styles from "./Dashboard/styles";
 export default function HomeScreen({ setIsLoggedIn }) {
   const navigation = useNavigation();
 
-  // State for user input
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Handle login process
   async function handleLogin() {
     if (!email || !password) {
       Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
@@ -33,46 +31,56 @@ export default function HomeScreen({ setIsLoggedIn }) {
         Alert.alert("Chyba", data.error || "Prihlásenie zlyhalo!");
         return;
       }
+
       setIsLoggedIn(true);
-      await AsyncStorage.setItem("userEmail", email);
+      await AsyncStorage.setItem("userEmail", data.user.email);
       await AsyncStorage.setItem("userNick", data.user.nick);
 
-      // Load eaten totals from AsyncStorage (initialize if missing)
-      try {
-        const storedTotals = await AsyncStorage.getItem("eatenTotals");
-        if (!storedTotals) {
-          const initialTotals = {
-            calories: 0,
-            proteins: 0,
-            carbs: 0,
-            fat: 0,
-            fiber: 0,
-            sugar: 0,
-            salt: 0,
-          };
-          await AsyncStorage.setItem(
-            "eatenTotals",
-            JSON.stringify(initialTotals),
-          );
-          console.log("eatenTotals initialized on login:", initialTotals);
-        } else {
-          console.log("eatenTotals loaded on login:", JSON.parse(storedTotals));
-        }
-      } catch (err) {
-        console.error("Error loading/initializing eatenTotals on login:", err);
+      let totalsToUse = null;
+
+      const storedTotals = await AsyncStorage.getItem("eatenTotals");
+      if (storedTotals) {
+        totalsToUse = JSON.parse(storedTotals);
       }
 
-      navigation.navigate("Dashboard", { email: data.user.email });
+      if (!totalsToUse) {
+        console.log("AsyncStorage prázdne, fetchujem z DB...");
+        try {
+          const isoDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+          const url = `http://10.0.2.2:3000/api/getDailyConsumption?email=${encodeURIComponent(
+            data.user.email,
+          )}&date=${encodeURIComponent(isoDate)}`;
 
-      /* navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: "Dashboard",
-            params: { email: data.user.email },
-          },
-        ],
-      });*/
+          const dbResponse = await fetch(url);
+
+          if (dbResponse.ok) {
+            const dbData = await dbResponse.json();
+            if (dbData && dbData.totals) {
+              totalsToUse = dbData.totals;
+            }
+          } else {
+            console.log("DB fetch failed, status:", dbResponse.status);
+          }
+        } catch (err) {
+          console.error("Error fetching eatenTotals from DB:", err);
+        }
+      }
+
+      if (!totalsToUse) {
+        totalsToUse = {
+          calories: 0,
+          proteins: 0,
+          carbs: 0,
+          fat: 0,
+          fiber: 0,
+          sugar: 0,
+          salt: 0,
+        };
+      }
+
+      await AsyncStorage.setItem("eatenTotals", JSON.stringify(totalsToUse));
+
+      navigation.navigate("Dashboard", { email: data.user.email });
     } catch (error) {
       console.error(error);
       Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");

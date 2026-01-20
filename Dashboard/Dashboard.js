@@ -52,6 +52,29 @@ export default function Dashboard({ setIsLoggedIn }) {
 
   const [eatenLoaded, setEatenLoaded] = useState(false);
 
+  useEffect(() => {
+    if (!eatenLoaded) return;
+    if (!email) return;
+
+    const pushConsumedToDB = async () => {
+      try {
+        await fetch("http://10.0.2.2:3000/api/updateDailyConsumption", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date: new Date().toISOString().slice(0, 10),
+            totals: eatenTotals,
+          }),
+        });
+      } catch (err) {
+        console.error("Error pushing consumed totals:", err);
+      }
+    };
+
+    pushConsumedToDB();
+  }, [eatenTotals, eatenLoaded, email]);
+
   const [overviewData, setOverviewData] = useState({});
 
   const formatDateSK = () => {

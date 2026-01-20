@@ -9,7 +9,7 @@ import crypto from "crypto";
 import path from "path";
 import OpenAI from "openai";
 
-dotenv.config({ path: path.resolve("./server/.env") });
+dotenv.config({ path: path.resolve("../server/.env") });
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
@@ -380,6 +380,56 @@ async function start() {
       res.json({ success: true, products });
     } catch (err) {
       console.error("❌ Get products error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  //--------------CONSUMED PUSH--------------------------
+
+  app.post("/api/updateDailyConsumption", async (req, res) => {
+    const { email, date, totals } = req.body;
+    if (!email || !date || !totals)
+      return res.status(400).json({ error: "Missing fields" });
+
+    try {
+      const user = await users.findOne({ email });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      // uloženie do DB
+      await users.updateOne(
+        { email },
+        { $set: { [`dailyConsumption.${date}`]: totals } }, // každý deň pod vlastným kľúčom
+      );
+
+      res.json({ ok: true, message: "Daily consumption updated" });
+    } catch (err) {
+      console.error("❌ Update daily consumption error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  //--------------CONSUMED PULL--------------------------
+  app.get("/api/getDailyConsumption", async (req, res) => {
+    const { email, date } = req.query;
+
+    if (!email || !date)
+      return res.status(400).json({ error: "Missing email or date" });
+
+    try {
+      const user = await users.findOne({ email });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const totals = user.dailyConsumption?.[date] || null;
+
+      if (!totals) {
+        return res
+          .status(404)
+          .json({ error: "No daily consumption found for this date" });
+      }
+
+      res.json({ totals });
+    } catch (err) {
+      console.error("❌ Get daily consumption error:", err);
       res.status(500).json({ error: "Server error" });
     }
   });
