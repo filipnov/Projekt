@@ -45,7 +45,7 @@ export default function SettingsTab({
           }
           onPress={() => navigation.navigate("ProfileCompletition")}
         >
-          <Text style={""}>Profil</Text>
+          <Text>Profil</Text>
         </Pressable>
       </View>
       <View style={{ padding: 20 }}>
@@ -64,10 +64,11 @@ export default function SettingsTab({
         <Pressable
           onPress={() => {
             setIsLoggedIn(false);
-            navigation.reset({
+            navigation.navigate("HomeScreen");
+            /* navigation.reset({
               index: 0,
               routes: [{ name: "HomeScreen" }],
-            });
+            });*/
           }}
           style={({ pressed }) =>
             pressed ? styles.logout_button_pressed : styles.logout_button
