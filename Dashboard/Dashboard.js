@@ -50,6 +50,8 @@ export default function Dashboard({ setIsLoggedIn }) {
     salt: 0,
   });
 
+  const [eatenLoaded, setEatenLoaded] = useState(false);
+
   const [overviewData, setOverviewData] = useState({});
 
   const formatDateSK = () => {
@@ -126,9 +128,32 @@ export default function Dashboard({ setIsLoggedIn }) {
         try {
           const storedMealBox = await AsyncStorage.getItem("mealBox");
           const storedTotals = await AsyncStorage.getItem("eatenTotals");
+          const storedLastDate = await AsyncStorage.getItem("lastEatenDate");
+          const today = formatDateSK();
 
           if (storedMealBox) setMealBox(JSON.parse(storedMealBox));
-          if (storedTotals) setEatenTotals(JSON.parse(storedTotals));
+          if (storedLastDate !== today) {
+            const initialTotals = {
+              calories: 0,
+              proteins: 0,
+              carbs: 0,
+              fat: 0,
+              fiber: 0,
+              sugar: 0,
+              salt: 0,
+            };
+            setEatenTotals(initialTotals);
+            await AsyncStorage.setItem(
+              "eatenTotals",
+              JSON.stringify(initialTotals),
+            );
+            await AsyncStorage.setItem("lastEatenDate", today);
+          } else if (storedTotals) {
+            setEatenTotals(JSON.parse(storedTotals));
+          }
+
+          // mark that we finished loading eatenTotals from storage
+          setEatenLoaded(true);
 
           // Fetch server products and merge without overwriting local
           if (email) {
@@ -171,8 +196,9 @@ export default function Dashboard({ setIsLoggedIn }) {
   }, [mealBox]);
 
   useEffect(() => {
+    if (!eatenLoaded) return;
     AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
-  }, [eatenTotals]);
+  }, [eatenTotals, eatenLoaded]);
 
   // Remove product from server
   const removeProduct = async (productId) => {
