@@ -12,6 +12,8 @@ export default function PantryTab({
   removeProduct,
   addEatenValues,
 }) {
+
+  const SERVER_URL = "https://app.bitewise.it.com"
   const [userEmail, setUserEmail] = useState(null);
   const [mealBoxes, setMealBoxes] = useState([]); // opravené z mealBox
   const [activeBox, setActiveBox] = useState(null);
@@ -20,7 +22,7 @@ export default function PantryTab({
   const fetchMealBoxes = async (email) => {
     try {
       const res = await fetch(
-        `http://10.0.2.2:3000/api/getProducts?email=${encodeURIComponent(
+        `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(
           email,
         )}`,
       );
