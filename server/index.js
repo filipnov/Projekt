@@ -9,7 +9,7 @@ import crypto from "crypto";
 import path from "path";
 import OpenAI from "openai";
 
-dotenv.config({ path: path.resolve("../server/.env") });
+dotenv.config({ path: path.resolve("./server/.env") });
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
@@ -481,7 +481,7 @@ async function start() {
       const {
         userPrompt,
         email,
-        usePantryItems,
+        pantryItems,
         useFitnessGoal,
         maxCookingTime,
       } = req.body;
@@ -493,10 +493,12 @@ async function start() {
 
       // --- Získaj produkty zo špajze ---
       let pantryText = "";
-      if (usePantryItems && user.products && user.products.length > 0) {
-        const productNames = user.products.map((p) => p.name).join(", ");
-        pantryText = `Použi tieto produkty zo špajze: ${productNames}.`;
-      }
+      if (Array.isArray(pantryItems) && pantryItems.length > 0) {
+  pantryText = `
+Použi tieto ingrediencie zo špajze:
+${pantryItems.join(", ")}
+`;
+}
 
       // --- Získaj fitness cieľ používateľa ---
       let goalText = "";

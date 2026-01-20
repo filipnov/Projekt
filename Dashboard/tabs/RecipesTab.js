@@ -29,8 +29,6 @@ const [useFitnessGoal, setUseFitnessGoal] = useState(false);
 const [usePantryItems, setUsePantryItems] = useState(false);
 const [pantryItems, setPantryItems] = useState([]);
 const [selectedPantryItems, setSelectedPantryItems] = useState([]);
-const [requireAllSelected, setRequireAllSelected] = useState(true);
-
 const [isGenerating, setIsGenerating] = useState(false);
 const [maxCookingTime, setMaxCookingTime] = useState(60);
 const [showUnitInfo, setShowUnitInfo] = useState(false);
@@ -71,14 +69,20 @@ useEffect(() => {
         .join(", ")
     : "žiadne špecifické preferencie";
 
-  const userPrompt = `
+    const pantryText =
+    selectedPantryItems.length > 0
+      ? `Musíš použiť tieto produkty zo špajze: ${selectedPantryItems.join(", ")}.
+      Cieľom je čo najmenej plýtvať jedlom, takže musíš použiť všetky produkty pokiaľ je to možné.
+      Pokiaľ nieje možné použiť všetky, použi ich čo najviac!`
+      : "";
+
+    const userPrompt = `
 Vygeneruj recept podľa týchto kritérií:
-- Preferencie: ${selectedPreferences.length > 0
-    ? selectedPreferences.map(p => p.label.replace(/^[^\w\s]+ /, "")).join(", ")
-    : "žiadne špecifické preferencie"}
-${useFitnessGoal ? `- Použiť fitness cieľ používateľa pri generovaní receptu.` : ""}
-${maxCookingTime ? `- Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.` : ""}
-Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kroky, realistický čas, originálny recept).
+- Preferencie: ${preferencesText}
+${useFitnessGoal ? "- Zohľadni fitness cieľ používateľa." : ""}
+${maxCookingTime ? `- Čas varenia max ${maxCookingTime} minút.` : ""}
+${pantryText}
+Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
 `;
   try {
     const response = await fetch("http://10.0.2.2:3000/api/generateRecipe", {
@@ -87,9 +91,9 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
       body: JSON.stringify({
         userPrompt,
         email: userEmail,
-        usePantryItems,
         useFitnessGoal,
-        maxCookingTime
+        maxCookingTime,
+        pantryItems: selectedPantryItems
       }),
     });
     const data = await response.json();
@@ -175,7 +179,6 @@ const fetchSavedRecipes = async () => {
   setUseFitnessGoal(false);
   setUsePantryItems(false);
   setSelectedPantryItems([]);
-  setRequireAllSelected(true);
   setMaxCookingTime(60);
   setShowAdditionalPreferences(false);
 };
@@ -618,18 +621,6 @@ const availablePreferences = ALL_PREFERENCES.filter(
         <Text style={styles.pantryItemText}>{item.name}</Text>
       </View>
     ))}
-
-      {/* Toggle: Všetky vs len niektoré */}
-<View style={styles.pantryToggleRow}>
-  <Text style={styles.pantryToggleText}>Použiť všetky položky</Text>
-  <Switch
-    trackColor={{ false: "#ccc", true: "#4ade80" }}
-    thumbColor="#fff"
-    ios_backgroundColor="#ccc"
-    value={requireAllSelected}
-    onValueChange={setRequireAllSelected}
-  />
-</View>
     </View>
   )}
 </View>

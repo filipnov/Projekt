@@ -9,7 +9,6 @@ import {
   Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import styles from "./styles";
 
 const SERVER_URL = "http://10.0.2.2:3000";
 
