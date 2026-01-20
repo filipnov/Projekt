@@ -15,6 +15,7 @@ import arrow from "./assets/left-arrow.png";
 import * as Linking from "expo-linking";
 
 export default function ResetPasswordScreen({ route }) {
+  const SERVER_URL = "https://app.bitewise.it.com"
   const navigation = useNavigation();
 
   const [newPassword, setNewPassword] = useState("");
@@ -45,7 +46,7 @@ export default function ResetPasswordScreen({ route }) {
     }
 
     try{
-      const res = await fetch("http://10.0.2.2:3000/api/reset-password", {
+      const res = await fetch(`${SERVER_URL}/api/reset-password`, {
         method: "POST",
         headers: {"Content-Type" : "application/json" },
         body: JSON.stringify({ token, newPassword }),

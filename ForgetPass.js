@@ -19,13 +19,15 @@ import arrow from "./assets/left-arrow.png";
 
 
 export default function PasswordForgetScreen() {
+
+  const SERVER_URL = "https://app.bitewise.it.com"
   const navigation = useNavigation();
 
     const [email, setEmail] = useState("");
 
     const handleForgot = async () => {
       try{
-        const res = await fetch("http://10.0.2.2:3000/api/forgot-password", {
+        const res = await fetch(`${SERVER_URL}/api/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),

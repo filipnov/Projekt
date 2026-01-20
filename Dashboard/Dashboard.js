@@ -158,21 +158,21 @@
       if (!eatenLoaded) return;
       if (!email) return;
 
-      const pushConsumedToDB = async () => {
-        try {
-          await fetch("http://10.0.2.2:3000/api/updateDailyConsumption", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email,
-              date: new Date().toISOString().slice(0, 10),
-              totals: { ...eatenTotals, drunkWater },
-            }),
-          });
-        } catch (err) {
-          console.error("Error pushing consumed totals:", err);
-        }
-      };
+    const pushConsumedToDB = async () => {
+      try {
+        await fetch("http://10.0.2.2:3000/api/updateDailyConsumption", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date: new Date().toISOString().slice(0, 10),
+            totals: eatenTotals,
+          }),
+        });
+      } catch (err) {
+        console.error("Error pushing consumed totals:", err);
+      }
+    };
 
       pushConsumedToDB();
     }, [eatenTotals, drunkWater, eatenLoaded, email]);
@@ -231,20 +231,20 @@
       }, []),
     );
 
-    const fetchUserProducts = async () => {
-      if (!email) return [];
-      try {
-        const response = await fetch(
-          `http://10.0.2.2:3000/api/getProducts?email=${email}`,
-        );
-        const data = await response.json();
-        if (!data.success) return [];
-        return data.products || [];
-      } catch (err) {
-        console.error("Fetch products error:", err);
-        return [];
-      }
-    };
+  const fetchUserProducts = async () => {
+    if (!email) return [];
+    try {
+      const response = await fetch(
+        `http://10.0.2.2:3000/api/getProducts?email=${email}`,
+      );
+      const data = await response.json();
+      if (!data.success) return [];
+      return data.products || [];
+    } catch (err) {
+      console.error("Fetch products error:", err);
+      return [];
+    }
+  };
 
     // Load mealBox and eatenTotals from AsyncStorage and merge with server data
     useFocusEffect(
@@ -367,18 +367,18 @@
       AsyncStorage.setItem("lastWaterDate", today);
     }, [drunkWater, eatenLoaded]);
 
-    // Remove product from server
-    const removeProduct = async (productId) => {
-      try {
-        await fetch("http://10.0.2.2:3000/api/removeProduct", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, productId }),
-        });
-      } catch (err) {
-        console.error("Error removing product:", err);
-      }
-    };
+  // Remove product from server
+  const removeProduct = async (productId) => {
+    try {
+      await fetch("http://10.0.2.2:3000/api/removeProduct", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, productId }),
+      });
+    } catch (err) {
+      console.error("Error removing product:", err);
+    }
+  };
 
     // Remove from mealBox and update eatenTotals
     const removeMealBox = (id, productId, box) => {

@@ -9,9 +9,8 @@ import {
   Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import styles from "./styles";
 
-const SERVER_URL = "http://10.0.2.2:3000";
+const SERVER_URL = "https://app.bitewise.it.com";
 
 export default function MealBoxWindow({ productName, email, close }) {
   const [loading, setLoading] = useState(true);

@@ -15,6 +15,8 @@ import Slider from '@react-native-community/slider';
 import styles from "../styles";
 
 export default function RecipesTab() {
+
+    const SERVER_URL = "https://app.bitewise.it.com"
   const [selectedRecept, setSelectedRecept] = useState(null);
 const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
 const [generateModalVisible, setGenerateModalVisible] = useState(false);
@@ -29,8 +31,6 @@ const [useFitnessGoal, setUseFitnessGoal] = useState(false);
 const [usePantryItems, setUsePantryItems] = useState(false);
 const [pantryItems, setPantryItems] = useState([]);
 const [selectedPantryItems, setSelectedPantryItems] = useState([]);
-const [requireAllSelected, setRequireAllSelected] = useState(true);
-
 const [isGenerating, setIsGenerating] = useState(false);
 const [maxCookingTime, setMaxCookingTime] = useState(60);
 const [showUnitInfo, setShowUnitInfo] = useState(false);
@@ -49,7 +49,7 @@ useEffect(() => {
      if (!userEmail || !usePantryItems) return;
       const fetchPantryItems = async () => {
          try { 
-          const res = await fetch(`http://10.0.2.2:3000/api/getProducts?email=${userEmail}`); 
+          const res = await fetch(`${SERVER_URL}/api/getProducts?email=${userEmail}`); 
           const data = await res.json();
            if (data.success) { 
             setPantryItems(data.products); 
@@ -71,25 +71,31 @@ useEffect(() => {
         .join(", ")
     : "žiadne špecifické preferencie";
 
-  const userPrompt = `
+    const pantryText =
+    selectedPantryItems.length > 0
+      ? `Musíš použiť tieto produkty zo špajze: ${selectedPantryItems.join(", ")}.
+      Cieľom je čo najmenej plýtvať jedlom, takže musíš použiť všetky produkty pokiaľ je to možné.
+      Pokiaľ nieje možné použiť všetky, použi ich čo najviac!`
+      : "";
+
+    const userPrompt = `
 Vygeneruj recept podľa týchto kritérií:
-- Preferencie: ${selectedPreferences.length > 0
-    ? selectedPreferences.map(p => p.label.replace(/^[^\w\s]+ /, "")).join(", ")
-    : "žiadne špecifické preferencie"}
-${useFitnessGoal ? `- Použiť fitness cieľ používateľa pri generovaní receptu.` : ""}
-${maxCookingTime ? `- Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.` : ""}
-Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kroky, realistický čas, originálny recept).
+- Preferencie: ${preferencesText}
+${useFitnessGoal ? "- Zohľadni fitness cieľ používateľa." : ""}
+${maxCookingTime ? `- Čas varenia max ${maxCookingTime} minút.` : ""}
+${pantryText}
+Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
 `;
   try {
-    const response = await fetch("http://10.0.2.2:3000/api/generateRecipe", {
+    const response = await fetch(`${SERVER_URL}/api/generateRecipe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         userPrompt,
         email: userEmail,
-        usePantryItems,
         useFitnessGoal,
-        maxCookingTime
+        maxCookingTime,
+        pantryItems: selectedPantryItems
       }),
     });
     const data = await response.json();
@@ -104,7 +110,7 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
   // Funkcia na uloženie receptu do DB
   const saveGeneratedRecipe = async () => {
   try {
-    const res = await fetch(`http://10.0.2.2:3000/api/addRecipe`, {
+    const res = await fetch(`${SERVER_URL}/api/addRecipe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -125,7 +131,7 @@ Dodrž všetky predchádzajúce pravidlá (jazyk, formát JSON, ingrediencie, kr
 // Načítanie receptov
 const fetchSavedRecipes = async () => {
   try {
-    const res = await fetch(`http://10.0.2.2:3000/api/getRecipes?email=${userEmail}`);
+    const res = await fetch(`${SERVER_URL}/api/getRecipes?email=${userEmail}`);
     const data = await res.json();
     if (data.success) {
       setSavedRecipes(data.recipes); // každý recept má teraz aj nutrition
@@ -138,7 +144,7 @@ const fetchSavedRecipes = async () => {
   const deleteRecipe = async () => {
   if (!selectedRecept?.recipeId) return;
   try {
-    const { success } = await (await fetch("http://10.0.2.2:3000/api/deleteRecipe", {
+    const { success } = await (await fetch(`${SERVER_URL}/api/deleteRecipe`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -175,7 +181,6 @@ const fetchSavedRecipes = async () => {
   setUseFitnessGoal(false);
   setUsePantryItems(false);
   setSelectedPantryItems([]);
-  setRequireAllSelected(true);
   setMaxCookingTime(60);
   setShowAdditionalPreferences(false);
 };
@@ -619,19 +624,27 @@ const availablePreferences = ALL_PREFERENCES.filter(
       </View>
     ))}
 
-      {/* Toggle: Všetky vs len niektoré */}
-<View style={styles.pantryToggleRow}>
-  <Text style={styles.pantryToggleText}>Použiť všetky položky</Text>
-  <Switch
-    trackColor={{ false: "#ccc", true: "#4ade80" }}
-    thumbColor="#fff"
-    ios_backgroundColor="#ccc"
-    value={requireAllSelected}
-    onValueChange={setRequireAllSelected}
-  />
-</View>
+    {/* SWITCH NA VYBRAT VSETKY */}
+    <View style={{flexDirection: "row", alignItems: "center", marginTop: 10 }}>
+      <Switch
+        trackColor={{ false: "#ccc", true: "#4ade80" }}
+        thumbColor="#fff"
+        ios_backgroundColor="#ccc"
+        value={selectedPantryItems.length === pantryItems.length}
+        onValueChange={(checked) => {
+          if (checked) {
+            // vyber všetky produkty
+            setSelectedPantryItems(pantryItems.map(p => p.name));
+          } else {
+            // zruš všetky výbery
+            setSelectedPantryItems([]);
+          }
+        }}
+      />
+      <Text style={styles.selectAllText}>Vybrať všetky produkty</Text>
     </View>
-  )}
+  </View>
+)}
 </View>
         </View>
 

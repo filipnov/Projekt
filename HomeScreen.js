@@ -6,7 +6,10 @@ import logo from "./assets/logo.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./Dashboard/styles";
 
+
 export default function HomeScreen({ setIsLoggedIn }) {
+const SERVER_URL = "https://app.bitewise.it.com"
+
   const navigation = useNavigation();
 
   const [email, setEmail] = useState("");
@@ -19,7 +22,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
     }
 
     try {
-      const response = await fetch(`http://10.0.2.2:3000/api/login`, {
+      const response = await fetch(`${SERVER_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -47,7 +50,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
         console.log("AsyncStorage prázdne, fetchujem z DB...");
         try {
           const isoDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-          const url = `http://10.0.2.2:3000/api/getDailyConsumption?email=${encodeURIComponent(
+          const url = `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(
             data.user.email,
           )}&date=${encodeURIComponent(isoDate)}`;
 

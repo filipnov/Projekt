@@ -31,7 +31,7 @@ export default function ProfileCompletition() {
     value: 1.375,
   });
 
-  const SERVER = "http://10.0.2.2:3000";
+  const SERVER = "https://app.bitewise.it.com";
   const UPDATE_URL = `${SERVER}/api/updateProfile`;
 
   useEffect(() => {
