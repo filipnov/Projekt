@@ -597,7 +597,7 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
             { role: "user", content: finalPrompt },
           ],
           max_tokens: 700, // zvýšené tokeny
-          temperature: 0.8,
+          temperature: 0.9,
         });
 
         const rawResponse = completion.choices[0].message.content;
