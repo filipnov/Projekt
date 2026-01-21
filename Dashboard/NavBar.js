@@ -1,7 +1,7 @@
 //NavBar.js
 import React from "react";
 import { View, Pressable, Text, Image } from "react-native";
-import styles from "./styles";
+import styles from "../styles";
 import speedometer from "../assets/speedometer.png";
 import recipes from "../assets/recipe-book.png";
 import plus from "../assets/plus.png";

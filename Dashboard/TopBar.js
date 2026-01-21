@@ -1,7 +1,7 @@
 //TopBar.js
 import React from "react";
 import { View, Text, Image, Pressable } from "react-native";
-import styles from "./styles";
+import styles from "../styles";
 import logo from "../assets/logo.png";
 import account from "../assets/avatar.png";
 

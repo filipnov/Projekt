@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import styles from "./Dashboard/styles";
+import styles from "./styles";
 
 export default function RegistrationScreen() {
   const navigation = useNavigation();
