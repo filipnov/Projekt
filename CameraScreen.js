@@ -15,6 +15,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import arrow from "./assets/left-arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import styles from "./styles"
 
 export default function CameraScreen() {
   const navigation = useNavigation();
@@ -185,26 +186,28 @@ const SERVER_URL = "https://app.bitewise.it.com"
     if (!showContent || productData) return null;
 
     return (
-      <View style={styles.manual_add_container}>
-        <Text style={styles.manual_add_text}>
-          Zadajte EAN pre pridanie produktu.
-        </Text>
+      <View style={styles.manualAddContainer}>
+  <Text style={styles.manualAddText}>
+    Zadajte EAN pre pridanie produktu.
+  </Text>
 
-        <TextInput
-          style={styles.manual_add_input}
-          value={code}
-          onChangeText={setCode}
-        />
+  <TextInput
+    style={styles.manualAddInput}
+    value={code}
+    onChangeText={setCode}
+  />
 
-        <Pressable
-          onPress={() => {
-            fetchProductData(code);
-          }}
-          style={styles.manual_add_container_button}
-        >
-          <Text style={styles.manual_add_container_button_text}>Pridať</Text>
-        </Pressable>
-      </View>
+  <Pressable
+    onPress={() => {
+      fetchProductData(code);
+    }}
+    style={styles.primaryActionButton}
+  >
+    <Text style={styles.primaryActionButtonText}>
+      Pridať
+    </Text>
+  </Pressable>
+</View>
     );
   };
 
@@ -293,241 +296,163 @@ const SERVER_URL = "https://app.bitewise.it.com"
 
   return (
     <View style={{ flex: 1 }}>
-      <CameraView
-        style={{ flex: 1 }}
-        facing="back"
-        onBarcodeScanned={handleBarCodeScanned}
-      />
+    <CameraView
+      style={{ flex: 1 }}
+      facing="back"
+      onBarcodeScanned={handleBarCodeScanned}
+    />
 
-      <View style={{ position: "absolute", bottom: 20, alignSelf: "center" }}>
-        {renderContent()}
+    <View style={{ position: "absolute", bottom: 20, alignSelf: "center" }}>
+      {renderContent()}
 
-        {!productData && (
-          <Pressable
-            style={styles.manual_add_button}
-            onPress={handleShowContent}
-          >
-            <Text style={styles.manual_add_button_text}>Zadať manuálne</Text>
-          </Pressable>
-        )}
-
+      {!productData && (
         <Pressable
-          style={({ pressed }) =>
-            pressed ? styles.arrow_pressed : styles.arrow_container
-          }
-          onPress={() => navigation.goBack()}
+          style={styles.manualAddButton}
+          onPress={handleShowContent}
         >
-          <Image source={arrow} style={styles.arrow} />
+          <Text style={styles.manualAddButtonText}>Zadať manuálne</Text>
         </Pressable>
+      )}
 
-        {productData && (
-          <ScrollView
-            style={{
-              maxHeight: 450,
-              marginBottom: 130,
-              backgroundColor: "#fff",
-              borderRadius: 10,
-              padding: 10,
-              width: 300,
-            }}
-            contentContainerStyle={{
-              alignItems: "center",
-            }}
+      <Pressable
+        style={({ pressed }) =>
+          pressed ? styles.backArrowPressed : styles.backArrowContainer
+        }
+        onPress={() => navigation.goBack()}
+      >
+        <Image source={arrow} style={styles.backArrowImage} />
+      </Pressable>
+
+      {productData && (
+        <ScrollView
+          style={{
+            maxHeight: 450,
+            marginBottom: 130,
+            backgroundColor: "#fff",
+            borderRadius: 10,
+            padding: 10,
+            width: 300,
+          }}
+          contentContainerStyle={{
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{ fontSize: 18, fontWeight: "bold", textAlign: "center" }}
           >
-            <Text
-              style={{ fontSize: 18, fontWeight: "bold", textAlign: "center" }}
-            >
-              {productData.name}
-            </Text>
-            {productData.image && (
-              <Image
-                source={{ uri: productData.image }}
-                style={{ width: 100, height: 100, marginTop: 10 }}
+            {productData.name}
+          </Text>
+
+          {productData.image && (
+            <Image
+              source={{ uri: productData.image }}
+              style={{ width: 100, height: 100, marginTop: 10 }}
+            />
+          )}
+
+          {awaitingQuantity ? (
+            <View style={{ marginTop: 10 }}>
+              <Text>Zadajte hmotnosť produktu (g) :</Text>
+
+              <TextInput
+                style={styles.manualAddInput}
+                value={quantityInput}
+                onChangeText={setQuantityInput}
+                placeholder="50"
+                keyboardType="numeric"
               />
-            )}
 
-            {awaitingQuantity ? (
-              <View style={{ marginTop: 10 }}>
-                <Text>Zadajte hmotnosť produktu (g) :</Text>
-                <TextInput
-                  style={styles.manual_add_input}
-                  value={quantityInput}
-                  onChangeText={setQuantityInput}
-                  placeholder="50"
-                  keyboardType="numeric"
-                />
-                <Pressable
-                  style={styles.manual_add_container_button}
-                  onPress={async () => {
-                    const weight = Number(quantityInput);
+              <Pressable
+                style={styles.primaryActionButton}
+                onPress={async () => {
+                  const weight = Number(quantityInput);
 
-                    if (isNaN(weight) || weight <= 0) {
-                      Alert.alert(
-                        "Chyba",
-                        "Zadajte platnú hmotnosť (číslo väčšie ako 0)!",
-                      );
-                      return;
-                    }
+                  if (isNaN(weight) || weight <= 0) {
+                    Alert.alert(
+                      "Chyba",
+                      "Zadajte platnú hmotnosť (číslo väčšie ako 0)!",
+                    );
+                    return;
+                  }
 
-                    setProductData(calculateTotals(productData, weight));
-                    setAwaitingQuantity(false);
-                  }}
-                >
-                  <Text style={styles.manual_add_container_button_text}>
-                    Uložiť hmotnosť
-                  </Text>
-                </Pressable>
-              </View>
-            ) : (
-              <Text>Hmotnosť: {productData.quantity} g</Text>
-            )}
+                  setProductData(calculateTotals(productData, weight));
+                  setAwaitingQuantity(false);
+                }}
+              >
+                <Text style={styles.primaryActionButtonText}>
+                  Uložiť hmotnosť
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Text>Hmotnosť: {productData.quantity} g</Text>
+          )}
 
-            <Text>
-              {showNutriValues && isPer100g
-                ? `Kalórie (100g): ${productData.calories ?? "N/A"} kcal`
-                : `Kalórie: ${productData.totalCalories ?? "N/A"} kcal`}
+          <Text>
+            {showNutriValues && isPer100g
+              ? `Kalórie (100g): ${productData.calories ?? "N/A"} kcal`
+              : `Kalórie: ${productData.totalCalories ?? "N/A"} kcal`}
+          </Text>
+
+          <Text>
+            {showNutriValues && isPer100g
+              ? `Tuky (100g): ${productData.fat ?? "N/A"} g`
+              : `Tuky: ${productData.totalFat ?? "N/A"} g`}
+          </Text>
+
+          <Text>
+            {showNutriValues && isPer100g
+              ? `Bielkoviny (100g): ${productData.proteins ?? "N/A"} g`
+              : `Bielkoviny: ${productData.totalProteins ?? "N/A"} g`}
+          </Text>
+
+          <Text>
+            {showNutriValues && isPer100g
+              ? `Sacharidy (100g): ${productData.carbs ?? "N/A"} g`
+              : `Sacharidy: ${productData.totalCarbs ?? "N/A"} g`}
+          </Text>
+
+          <Text>
+            {showNutriValues && isPer100g
+              ? `Cukry (100g): ${productData.sugar ?? "N/A"} g`
+              : `Cukry: ${productData.totalSugar ?? "N/A"} g`}
+          </Text>
+
+          <Text>
+            {showNutriValues && isPer100g
+              ? `Soľ (100g): ${productData.salt ?? "N/A"} g`
+              : `Soľ: ${productData.totalSalt ?? "N/A"} g`}
+          </Text>
+
+          <Text>
+            {showNutriValues && isPer100g
+              ? `Vláknina (100g): ${productData.fiber ?? "N/A"} g`
+              : `Vláknina: ${productData.totalFiber ?? "N/A"} g`}
+          </Text>
+
+          <Pressable
+            style={styles.primaryActionButton}
+            onPress={saveToDatabase}
+          >
+            <Text style={styles.primaryActionButtonText}>
+              Špajza
             </Text>
+          </Pressable>
 
-            <Text>
-              {showNutriValues && isPer100g
-                ? `Tuky (100g): ${productData.fat ?? "N/A"} g`
-                : `Tuky: ${productData.totalFat ?? "N/A"} g`}
+          <Pressable
+            style={[
+              styles.primaryActionButton,
+              { backgroundColor: "#2196F3" },
+            ]}
+            onPress={addDirectlyToEaten}
+          >
+            <Text style={styles.primaryActionButtonText}>
+              Zjedené
             </Text>
-
-            <Text>
-              {showNutriValues && isPer100g
-                ? `Bielkoviny (100g): ${productData.proteins ?? "N/A"} g`
-                : `Bielkoviny: ${productData.totalProteins ?? "N/A"} g`}
-            </Text>
-
-            <Text>
-              {showNutriValues && isPer100g
-                ? `Sacharidy (100g): ${productData.carbs ?? "N/A"} g`
-                : `Sacharidy: ${productData.totalCarbs ?? "N/A"} g`}
-            </Text>
-
-            <Text>
-              {showNutriValues && isPer100g
-                ? `Cukry (100g): ${productData.sugar ?? "N/A"} g`
-                : `Cukry: ${productData.totalSugar ?? "N/A"} g`}
-            </Text>
-
-            <Text>
-              {showNutriValues && isPer100g
-                ? `Soľ (100g): ${productData.salt ?? "N/A"} g`
-                : `Soľ: ${productData.totalSalt ?? "N/A"} g`}
-            </Text>
-
-            <Text>
-              {showNutriValues && isPer100g
-                ? `Vláknina (100g): ${productData.fiber ?? "N/A"} g`
-                : `Vláknina: ${productData.totalFiber ?? "N/A"} g`}
-            </Text>
-
-            <Pressable
-              style={styles.manual_add_container_button}
-              onPress={saveToDatabase}
-            >
-              <Text style={styles.manual_add_container_button_text}>
-                Špajza
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.manual_add_container_button,
-                { backgroundColor: "#2196F3" },
-              ]}
-              onPress={addDirectlyToEaten}
-            >
-              <Text style={styles.manual_add_container_button_text}>
-                Zjedené
-              </Text>
-            </Pressable>
-          </ScrollView>
-        )}
-      </View>
+          </Pressable>
+        </ScrollView>
+      )}
     </View>
+  </View>
   );
 }
-
-const styles = StyleSheet.create({
-  arrow_container: {
-    height: 60,
-    width: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    alignSelf: "center",
-  },
-  arrow: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: 50,
-    marginBottom: 40,
-  },
-  arrow_pressed: {
-    height: 58,
-    width: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginTop: 40,
-    opacity: 0.8,
-  },
-  manual_add_button: {
-    backgroundColor: "white",
-    padding: 5,
-    width: 160,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    alignSelf: "center",
-  },
-  manual_add_button_text: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  manual_add_container: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    width: 250,
-    height: 270,
-    alignSelf: "center",
-    marginBottom: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  manual_add_text: {
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  manual_add_input: {
-    backgroundColor: "white",
-    fontSize: 18,
-    width: 180,
-    height: 45,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 10,
-    textAlign: "center",
-  },
-  manual_add_container_button: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 180,
-    height: 35,
-    borderRadius: 5,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  manual_add_container_button_text: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "900",
-  },
-});

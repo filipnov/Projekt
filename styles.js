@@ -1060,4 +1060,299 @@ preferenceCloseButtonText: {
     fontSize: 28,
     fontWeight: "900",
   },
+  formContainer: {
+    marginTop: 50,
+    width: "85%",
+    alignSelf: "center",
+  },
+
+  screenTitle: {
+    fontSize: 25,
+    fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+
+  inputLabel: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+
+  textInput: {
+    backgroundColor: "white",
+    fontSize: 14,
+    fontWeight: "400",
+    width: 160,
+    height: 40,
+    borderRadius: 5,
+    borderColor: "black",
+    borderWidth: 1,
+    marginTop: 5,
+    textAlign: "center",
+    elevation: 6,
+  },
+
+  primaryButton: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+
+  primaryButtonText: {
+    color: "#fff",
+    fontWeight: "600",
+    textAlign: "center",
+    fontSize: 16,
+  },
+
+  backButton: {
+    height: 60,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 15,
+  },
+
+  backButtonPressed: {
+    height: 58,
+    width: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: 0.8,
+    marginBottom: 15,
+  },
+
+  backIcon: {
+    height: "100%",
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: 50,
+  },
+
+  optionRow: {
+    flexDirection: "row",
+    width: "90%",
+    marginTop: 5,
+    alignSelf: "center",
+  },
+
+  optionButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    marginRight: 10,
+    alignItems: "center",
+  },
+
+  optionText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 15,
+  },
+
+  selectButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
+    fontSize: 14,
+    fontWeight: "400",
+    width: 160,
+    height: 40,
+    borderRadius: 5,
+    borderColor: "black",
+    borderWidth: 1,
+    marginTop: 5,
+    elevation: 6,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalCard: {
+    width: "90%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+  },
+
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 15,
+  },
+
+  activityOption: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 15,
+  },
+
+  radioCircleOuter: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: "#333",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    marginTop: 3,
+  },
+
+  radioCircleInner: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: "#333",
+  },
+
+  modalLabel: {
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+
+  modalDescription: {
+    color: "#555",
+    fontSize: 13,
+  },
+  backArrowContainer: {
+    height: 60,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
+    alignSelf: "center",
+  },
+  backArrowImage: {
+    height: "100%",
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: 50,
+    marginBottom: 40,
+  },
+  backArrowPressed: {
+    height: 58,
+    width: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: 40,
+    opacity: 0.8,
+  },
+  manualAddButton: {
+    backgroundColor: "white",
+    padding: 5,
+    width: 160,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    alignSelf: "center",
+  },
+  manualAddButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  manualAddContainer: {
+    backgroundColor: "white",
+    borderRadius: 15,
+    width: 250,
+    height: 270,
+    alignSelf: "center",
+    marginBottom: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  manualAddText: {
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  manualAddInput: {
+    backgroundColor: "white",
+    fontSize: 18,
+    width: 180,
+    height: 45,
+    borderRadius: 5,
+    borderColor: "black",
+    borderWidth: 1,
+    marginTop: 10,
+    textAlign: "center",
+  },
+  primaryActionButton: {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    width: 180,
+    height: 35,
+    borderRadius: 5,
+    marginTop: 15,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryActionButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  window: {
+    width: "90%",
+    maxHeight: "80%",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    elevation: 10,
+  },
+  windowTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  nutritionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#ddd",
+  },
+  nutritionLabel: {
+    fontWeight: "600",
+    color: "#333",
+  },
+  nutritionValue: {
+    fontWeight: "700",
+    color: "#111",
+  },
+  closeButton: {
+    marginTop: 18,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "white",
+    fontWeight: "700",
+  },
+  title: {
+    fontSize: 18,
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: 10,
+  },
 });
