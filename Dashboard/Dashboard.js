@@ -18,7 +18,7 @@
   import RecipesTab from "./tabs/RecipesTab";
   import PantryTab from "./tabs/PantryTab";
   import SettingsTab from "./tabs/SettingsTab";
-  import styles from "./styles";
+  import styles from "../styles";
   import logo from "../assets/logo.png";
   import plus from "../assets/plus.png";
   import recipes from "../assets/recipe-book.png";
@@ -28,6 +28,7 @@
   import account from "../assets/avatar.png";
 
   export default function Dashboard({ setIsLoggedIn }) {
+    const SERVER_URL = "https://app.bitewise.it.com"
     const navigation = useNavigation();
     const route = useRoute();
 
@@ -160,7 +161,7 @@
 
     const pushConsumedToDB = async () => {
       try {
-        await fetch("http://10.0.2.2:3000/api/updateDailyConsumption", {
+        await fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -235,7 +236,7 @@
     if (!email) return [];
     try {
       const response = await fetch(
-        `http://10.0.2.2:3000/api/getProducts?email=${email}`,
+        `${SERVER_URL}/api/getProducts?email=${email}`,
       );
       const data = await response.json();
       if (!data.success) return [];
@@ -302,7 +303,7 @@
               if (!hasWaterInAsyncForToday) {
                 try {
                   const response = await fetch(
-                    `http://10.0.2.2:3000/api/getDailyConsumption?email=${email}&date=${new Date().toISOString().slice(0, 10)}`,
+                    `${SERVER_URL}/api/getDailyConsumption?email=${email}&date=${new Date().toISOString().slice(0, 10)}`,
                   );
                   if (response.ok) {
                     const data = await response.json();
@@ -370,7 +371,7 @@
   // Remove product from server
   const removeProduct = async (productId) => {
     try {
-      await fetch("http://10.0.2.2:3000/api/removeProduct", {
+      await fetch(`${SERVER_URL}/api/removeProduct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, productId }),

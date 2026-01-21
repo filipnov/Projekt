@@ -1,7 +1,7 @@
 // MealBoxItem.js
 import React from "react";
 import { View, Text, Pressable, Image, ImageBackground } from "react-native";
-import styles from "./styles";
+import styles from "../styles";
 
 export default function MealBoxItem({
   box,

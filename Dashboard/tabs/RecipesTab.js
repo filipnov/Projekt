@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage"; 
 import Slider from '@react-native-community/slider'; 
-import styles from "../styles";
+import styles from "../../styles";
 
 export default function RecipesTab() {
 

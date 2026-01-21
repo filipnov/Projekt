@@ -4,7 +4,7 @@ import { Text, View, Image, TextInput, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import styles from "./Dashboard/styles";
+import styles from "./styles";
 
 
 export default function HomeScreen({ setIsLoggedIn }) {
@@ -50,6 +50,7 @@ const SERVER_URL = "https://app.bitewise.it.com"
         console.log("AsyncStorage prázdne, fetchujem z DB...");
         try {
           const isoDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+
           const url = `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(
             data.user.email,
           )}&date=${encodeURIComponent(isoDate)}`;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Pressable, Text, View, Switch } from "react-native";
-import styles from "../styles";
+import styles from "../../styles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
