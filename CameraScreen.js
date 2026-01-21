@@ -15,6 +15,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import arrow from "./assets/left-arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+  import styles from "../styles";
 
 export default function CameraScreen() {
   const navigation = useNavigation();
@@ -450,84 +451,3 @@ const SERVER_URL = "https://app.bitewise.it.com"
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  arrow_container: {
-    height: 60,
-    width: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    alignSelf: "center",
-  },
-  arrow: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: 50,
-    marginBottom: 40,
-  },
-  arrow_pressed: {
-    height: 58,
-    width: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginTop: 40,
-    opacity: 0.8,
-  },
-  manual_add_button: {
-    backgroundColor: "white",
-    padding: 5,
-    width: 160,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    alignSelf: "center",
-  },
-  manual_add_button_text: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  manual_add_container: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    width: 250,
-    height: 270,
-    alignSelf: "center",
-    marginBottom: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  manual_add_text: {
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  manual_add_input: {
-    backgroundColor: "white",
-    fontSize: 18,
-    width: 180,
-    height: 45,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 10,
-    textAlign: "center",
-  },
-  manual_add_container_button: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 180,
-    height: 35,
-    borderRadius: 5,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  manual_add_container_button_text: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "900",
-  },
-});
