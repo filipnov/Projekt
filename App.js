@@ -11,6 +11,7 @@ import ProfileCompletition from './ProfileCompletition';
 import CameraScreen from './CameraScreen';
 
 
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {

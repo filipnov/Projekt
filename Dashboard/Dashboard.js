@@ -27,138 +27,225 @@
   import speedometer from "../assets/speedometer.png";
   import account from "../assets/avatar.png";
 
-  export default function Dashboard({ setIsLoggedIn }) {
-    const SERVER_URL = "https://app.bitewise.it.com"
-    const navigation = useNavigation();
-    const route = useRoute();
+export default function Dashboard({ setIsLoggedIn }) {
+  const SERVER_URL = "https://app.bitewise.it.com";
+  const navigation = useNavigation();
+  const route = useRoute();
 
-    const [activeTab, setActiveTab] = useState(1);
-    const isActive = (tabIndex) => activeTab === tabIndex;
-    const [modalVisible, setModalVisible] = useState(false);
-    const [selectedOption, setSelectedOption] = useState(null);
-    const [drunkWater, setDrunkWater] = useState(0);
-    //const [weightOverview, setWeightOverview] = useState();
+  // --- STATES ---
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [weight, setWeight] = useState(null);
+  const [height, setHeight] = useState(null);
+  const [age, setAge] = useState(null);
+  const [gender, setGender] = useState(null);
+  const [goal, setGoal] = useState(null);
+  const [activityLevel, setActivityLevel] = useState(null);
 
-    // Funkcia na výpočet medicínsky/logicky korektného cieľa pitného režimu.
-    // Vracia cieľ v ml (aby sedel s UI, ktoré zobrazuje ml).
-    function calculateWaterGoal(weightKg, heightCm, genderValue) {
-      const w = Number(weightKg);
-      const h = Number(heightCm);
-      if (!Number.isFinite(w) || !Number.isFinite(h) || h <= 0) {
-        return genderValue === "male" ? 2500 : 2000;
-      }
+  const [nick, setNick] = useState("User");
+  const [email, setEmail] = useState(null);
 
-      // BMI musí byť tá istá hodnota ako v UI (toFixed(1)).
-      const bmiFromUi = Number(((w / (h * h)) * 10000).toFixed(1));
-      const bmi = Number.isFinite(bmiFromUi) ? bmiFromUi : w / ((h / 100) * (h / 100));
+  const [activeTab, setActiveTab] = useState(1);
+  const isActive = (tabIndex) => activeTab === tabIndex;
 
-      const heightM = h / 100;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [drunkWater, setDrunkWater] = useState(0);
 
-      // Ideálna hmotnosť (BMI = 22)
-      const idealWeight = 22 * heightM * heightM;
+  const [mealBox, setMealBox] = useState([]);
+  const [eatenTotals, setEatenTotals] = useState({
+    calories: 0,
+    proteins: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+    sugar: 0,
+    salt: 0,
+  });
+  const [eatenLoaded, setEatenLoaded] = useState(false);
 
-      // Upravená hmotnosť (ABW) pri nadváhe/obezite, aby cieľ nebol zbytočne prestrelený.
-      // - nadváha (BMI 25–29.9): 25% rozdielu
-      // - obezita (BMI >= 30): 40% rozdielu
-      let usedWeight = w;
-      if (bmi >= 30) {
-        usedWeight = idealWeight + 0.4 * (w - idealWeight);
-      } else if (bmi >= 25) {
-        usedWeight = idealWeight + 0.25 * (w - idealWeight);
-      }
+  const [overviewData, setOverviewData] = useState({});
+  const [currentDate] = useState(() => {
+    const d = new Date();
+    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+  });
 
-      // Základ: 30–35 ml/kg/deň. Konzervatívne držíme 35 pri normále/podváhe,
-      // a 30 pri nadváhe/obezite (keď už aj tak používame upravenú hmotnosť).
-      const mlPerKg = bmi < 25 ? 35 : 30;
-      let waterMl = usedWeight * mlPerKg;
-
-      // Minimálne odporúčanie (prakticky použiteľný spodný limit)
-      const minWater = genderValue === "male" ? 2500 : 2000;
-      if (waterMl < minWater) waterMl = minWater;
-
-      // Zaokrúhlenie na 50 ml, aby to dávalo zmysel v UI.
-      return Math.round(waterMl / 50) * 50;
+  // --- PROFILE FUNCTIONS ---
+  const calculateWaterGoal = (w, h, g) => {
+    if (!Number.isFinite(w) || !Number.isFinite(h) || h <= 0) {
+      return g === "male" ? 2500 : 2000;
     }
 
-    const options = [
-      { label: "Malý pohár / šálka ", description: "150 ml" },
-      { label: "Stredný pohár / šálka", description: "250 ml" },
-      { label: "Veľký pohár / hrnček", description: "350 ml" },
-      { label: "Fľaša", description: "500 ml" },
-    ];
+    const bmiFromUi = Number(((w / (h * h)) * 10000).toFixed(1));
+    const bmi = Number.isFinite(bmiFromUi) ? bmiFromUi : w / ((h / 100) * (h / 100));
+    const heightM = h / 100;
+    const idealWeight = 22 * heightM * heightM;
+    let usedWeight = w;
 
-    let water;
+    if (bmi >= 30) usedWeight = idealWeight + 0.4 * (w - idealWeight);
+    else if (bmi >= 25) usedWeight = idealWeight + 0.25 * (w - idealWeight);
 
-    const addWater = () => {
-      switch (selectedOption) {
-        case "Malý pohár / šálka ":
-          water = 150;
-          break;
-        case "Stredný pohár / šálka":
-          water = 250;
-          break;
-        case "Veľký pohár / hrnček":
-          water = 350;
-          break;
-        case "Fľaša":
-          water = 500;
-          break;
-        default:
-          water = 0;
-      }
-      setDrunkWater((prev) => prev + water);
-      setModalVisible(false);
-    };
+    const mlPerKg = bmi < 25 ? 35 : 30;
+    let waterMl = usedWeight * mlPerKg;
+    const minWater = g === "male" ? 2500 : 2000;
+    if (waterMl < minWater) waterMl = minWater;
 
-    const renderNutriItem = (label, valueConsumed, valueGoal, barPercent) => (
-      <View style={styles.nutriDisplay}>
-        <Text style={styles.nutriDisplay_text}>{label}</Text>
-        <View style={styles.caloriesBarContainer}>
-          <View
-            style={[
-              styles.caloriesBar,
-              {
-                width: `${barPercent}%`,
-                backgroundColor: barPercent >= 100 ? "#FF3B30" : "#4CAF50",
-              },
-            ]}
-          />
-        </View>
-        <Text style={{ color: "white", marginBottom: 5 }}>
-          {valueConsumed} / {valueGoal} g
-        </Text>
+    return Math.round(waterMl / 50) * 50;
+  };
+
+  const options = [
+    { label: "Malý pohár / šálka ", description: "150 ml" },
+    { label: "Stredný pohár / šálka", description: "250 ml" },
+    { label: "Veľký pohár / hrnček", description: "350 ml" },
+    { label: "Fľaša", description: "500 ml" },
+  ];
+
+  let water;
+  const addWater = () => {
+    switch (selectedOption) {
+      case "Malý pohár / šálka ": water = 150; break;
+      case "Stredný pohár / šálka": water = 250; break;
+      case "Veľký pohár / hrnček": water = 350; break;
+      case "Fľaša": water = 500; break;
+      default: water = 0;
+    }
+    setDrunkWater((prev) => prev + water);
+    setModalVisible(false);
+  };
+
+  const renderNutriItem = (label, valueConsumed, valueGoal, barPercent) => (
+    <View style={styles.nutriDisplay}>
+      <Text style={styles.nutriDisplay_text}>{label}</Text>
+      <View style={styles.caloriesBarContainer}>
+        <View
+          style={[
+            styles.caloriesBar,
+            {
+              width: `${barPercent}%`,
+              backgroundColor: barPercent >= 100 ? "#FF3B30" : "#4CAF50",
+            },
+          ]}
+        />
       </View>
-    );
+      <Text style={{ color: "white", marginBottom: 5 }}>
+        {valueConsumed} / {valueGoal} g
+      </Text>
+    </View>
+  );
 
-    const [nick, setNick] = useState("User");
-    const [email, setEmail] = useState(null);
-    const [age, setAge] = useState(null);
-    const [weight, setWeight] = useState(null);
-    const [height, setHeight] = useState(null);
-    const [gender, setGender] = useState(null);
-    const [goal, setGoal] = useState(null);
-    const [activityLevel, setActivityLevel] = useState(null);
+  // --- LOAD EMAIL/NICK FROM ASYNC ---
+  useEffect(() => {
+    async function loadEmailAndNick() {
+      try {
+        const savedNick = await AsyncStorage.getItem("userNick");
+        if (savedNick) setNick(savedNick);
 
-    const waterGoal = calculateWaterGoal(weight, height, gender);
-    const waterBar = waterGoal > 0 ? Math.min((drunkWater / waterGoal) * 100, 100) : 0;
+        const savedEmail = await AsyncStorage.getItem("userEmail");
+        if (savedEmail) setEmail(savedEmail);
+      } catch (error) {
+        console.error("Error loading nick/email: ", error);
+      }
+    }
+    loadEmailAndNick();
+  }, []);
 
-    const [mealBox, setMealBox] = useState([]);
-    const [eatenTotals, setEatenTotals] = useState({
-      calories: 0,
-      proteins: 0,
-      carbs: 0,
-      fat: 0,
-      fiber: 0,
-      sugar: 0,
-      salt: 0,
-    });
+  // --- LOAD PROFILE ---
+  useFocusEffect(
+    useCallback(() => {
+      async function reloadProfileFromStorage() {
+        try {
+          const storedProfile = await AsyncStorage.getItem("userProfile");
+          if (storedProfile) {
+            const profile = JSON.parse(storedProfile);
+            setWeight(profile.weight);
+            setHeight(profile.height);
+            setAge(profile.age);
+            setGender(profile.gender);
+            setGoal(profile.goal);
+            setActivityLevel(profile.activityLevel);
+          }
+        } catch (err) {
+          console.error("Error loading profile from storage:", err);
+        } finally {
+          setProfileLoaded(true);
+        }
+      }
+      reloadProfileFromStorage();
+    }, [])
+  );
 
-    const [eatenLoaded, setEatenLoaded] = useState(false);
+  // --- FETCH PRODUCTS WITH FALLBACK ---
+  const fetchUserProducts = async () => {
+    if (!email) return [];
+    try {
+      const storedProducts = await AsyncStorage.getItem("mealBox");
+      if (storedProducts) return JSON.parse(storedProducts);
 
-    useEffect(() => {
-      if (!eatenLoaded) return;
-      if (!email) return;
+      const response = await fetch(`${SERVER_URL}/api/getProducts?email=${email}`);
+      const data = await response.json();
+      if (!data.success) return [];
+      return data.products || [];
+    } catch (err) {
+      console.error("Fetch products error:", err);
+      return [];
+    }
+  };
 
+  // --- LOAD MEALBOX & EATEN TOTALS ---
+  useFocusEffect(
+    useCallback(() => {
+      async function loadStoredData() {
+        try {
+          const storedMealBox = await AsyncStorage.getItem("mealBox");
+          const storedTotals = await AsyncStorage.getItem("eatenTotals");
+          const storedWater = await AsyncStorage.getItem("drunkWater");
+          const today = currentDate;
+
+          if (storedMealBox) setMealBox(JSON.parse(storedMealBox));
+          if (storedTotals) setEatenTotals(JSON.parse(storedTotals));
+          if (storedWater) setDrunkWater(Number(storedWater) || 0);
+
+          setEatenLoaded(true);
+
+          // Fetch server fallback if AsyncStorage missing
+          if (email) {
+            const response = await fetch(
+              `${SERVER_URL}/api/getDailyConsumption?email=${email}&date=${new Date().toISOString().slice(0, 10)}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              if (!storedTotals && data?.totals) setEatenTotals(data.totals);
+              if (!storedWater && data?.totals?.drunkWater) setDrunkWater(Number(data.totals.drunkWater));
+            }
+
+            const products = await fetchUserProducts();
+            if (products.length > 0) setMealBox(products);
+          }
+        } catch (err) {
+          console.error("Error loading stored data:", err);
+        }
+      }
+      loadStoredData();
+    }, [email])
+  );
+
+  // --- SAVE TO ASYNC ---
+  useEffect(() => {
+    AsyncStorage.setItem("mealBox", JSON.stringify(mealBox));
+  }, [mealBox]);
+
+  useEffect(() => {
+    if (!eatenLoaded) return;
+    AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
+  }, [eatenTotals, eatenLoaded]);
+
+  useEffect(() => {
+    if (!eatenLoaded) return;
+    AsyncStorage.setItem("drunkWater", String(drunkWater));
+  }, [drunkWater, eatenLoaded]);
+
+  // --- PUSH DAILY CONSUMPTION TO SERVER ---
+  useEffect(() => {
+    if (!eatenLoaded || !email) return;
     const pushConsumedToDB = async () => {
       try {
         await fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
@@ -174,201 +261,103 @@
         console.error("Error pushing consumed totals:", err);
       }
     };
+    pushConsumedToDB();
+  }, [eatenTotals, drunkWater, eatenLoaded, email]);
 
-      pushConsumedToDB();
-    }, [eatenTotals, drunkWater, eatenLoaded, email]);
+  // --- WATER & OVERVIEW CALCULATIONS ---
+  const [waterGoal, setWaterGoal] = useState(0);
+  const [waterBar, setWaterBar] = useState(0);
 
-    const [overviewData, setOverviewData] = useState({});
-
-    const formatDateSK = () => {
-      const d = new Date();
-      return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
-    };
-
-    const [currentDate] = useState(formatDateSK());
-
-    // Load initial tab from route
-    useEffect(() => {
-      if (route.params?.startTab) setActiveTab(route.params.startTab);
-    }, [route.params?.startTab]);
-
-    // Load nick and email from AsyncStorage
-    useEffect(() => {
-      async function loadEmailAndNick() {
-        try {
-          const savedNick = await AsyncStorage.getItem("userNick");
-          if (savedNick) setNick(savedNick);
-
-          const savedEmail = await AsyncStorage.getItem("userEmail");
-          if (savedEmail) setEmail(savedEmail);
-        } catch (error) {
-          console.error("Error loading nick/email: ", error);
-        }
-      }
-      loadEmailAndNick();
-    }, []);
-
-    // Load user profile
-    useFocusEffect(
-      useCallback(() => {
-        async function reloadProfileFromStorage() {
-          try {
-            const storedProfile = await AsyncStorage.getItem("userProfile");
-            if (storedProfile) {
-              const profile = JSON.parse(storedProfile);
-              setWeight(profile.weight);
-              setHeight(profile.height);
-              setAge(profile.age);
-              setGender(profile.gender);
-              setGoal(profile.goal);
-              setActivityLevel(profile.activityLevel);
-            }
-          } catch (err) {
-            console.error("Error loading profile from storage:", err);
-          }
-        }
-
-        reloadProfileFromStorage();
-      }, []),
-    );
-
-  const fetchUserProducts = async () => {
-    if (!email) return [];
-    try {
-      const response = await fetch(
-        `${SERVER_URL}/api/getProducts?email=${email}`,
-      );
-      const data = await response.json();
-      if (!data.success) return [];
-      return data.products || [];
-    } catch (err) {
-      console.error("Fetch products error:", err);
-      return [];
+  useEffect(() => {
+    if (!profileLoaded) return;
+    if (weight && height && gender) {
+      const goal = calculateWaterGoal(weight, height, gender);
+      setWaterGoal(goal);
+      setWaterBar(goal > 0 ? Math.min((drunkWater / goal) * 100, 100) : 0);
     }
-  };
+  }, [weight, height, gender, drunkWater, profileLoaded]);
 
-    // Load mealBox and eatenTotals from AsyncStorage and merge with server data
-    useFocusEffect(
-      useCallback(() => {
-        async function loadStoredData() {
-          try {
-            const storedMealBox = await AsyncStorage.getItem("mealBox");
-            const storedTotals = await AsyncStorage.getItem("eatenTotals");
-            const storedLastDate = await AsyncStorage.getItem("lastEatenDate");
-            const storedWater = await AsyncStorage.getItem("drunkWater");
-            const storedLastWaterDate =
-              await AsyncStorage.getItem("lastWaterDate");
-            const today = formatDateSK();
+  useEffect(() => {
+    if (!profileLoaded || !weight || !height || !age || !activityLevel || !gender) return;
 
-            const hasWaterInAsyncForToday =
-              storedLastWaterDate === today && storedWater !== null;
+    const { calories, proteins, carbs, fat, fiber, sugar, salt } = eatenTotals;
 
-            if (storedMealBox) setMealBox(JSON.parse(storedMealBox));
-            if (storedLastDate !== today) {
-              const initialTotals = {
-                calories: 0,
-                proteins: 0,
-                carbs: 0,
-                fat: 0,
-                fiber: 0,
-                sugar: 0,
-                salt: 0,
-              };
-              setEatenTotals(initialTotals);
-              await AsyncStorage.setItem(
-                "eatenTotals",
-                JSON.stringify(initialTotals),
-              );
-              await AsyncStorage.setItem("lastEatenDate", today);
-            } else if (storedTotals) {
-              setEatenTotals(JSON.parse(storedTotals));
-            }
+    let cal;
+    if (gender === "male")
+      cal = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
+    else cal = (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
 
-            if (storedLastWaterDate !== today) {
-              setDrunkWater(0);
-              await AsyncStorage.setItem("drunkWater", "0");
-              await AsyncStorage.setItem("lastWaterDate", today);
-            } else if (storedLastWaterDate === null && storedWater !== null) {
-              setDrunkWater(Number(storedWater) || 0);
-              await AsyncStorage.setItem("lastWaterDate", today);
-            } else if (storedWater !== null) {
-              setDrunkWater(Number(storedWater) || 0);
-            }
+    if (goal === "lose") cal -= 500;
+    else if (goal === "gain") cal += 500;
 
-            // mark that we finished loading eatenTotals from storage
-            setEatenLoaded(true);
+    const progressBar = Math.min((calories / cal) * 100, 100);
+    const barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
 
-            // Fetch server products and merge without overwriting local
-            if (email) {
-              if (!hasWaterInAsyncForToday) {
-                try {
-                  const response = await fetch(
-                    `${SERVER_URL}/api/getDailyConsumption?email=${email}&date=${new Date().toISOString().slice(0, 10)}`,
-                  );
-                  if (response.ok) {
-                    const data = await response.json();
-                    const dbWater = Number(data?.totals?.drunkWater);
-                    if (!Number.isNaN(dbWater)) {
-                      setDrunkWater((prev) => Math.max(prev || 0, dbWater || 0));
-                    }
-                  }
-                } catch (err) {
-                  console.error("Fetch daily consumption error:", err);
-                }
-              }
+    let eatOutput;
+    if (calories < cal) eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
+    else if (calories === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
+    else eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
 
-              const products = await fetchUserProducts();
-              if (products && products.length > 0) {
-                setMealBox((prev) => {
-                  const newProducts = products.filter(
-                    (p) => !prev.some((b) => b.name === p.name),
-                  );
-                  return [
-                    ...prev,
-                    ...newProducts.map((p) => ({
-                      id: Date.now() + Math.random(),
-                      name: p.name,
-                      calories: p.calories || 0,
-                      proteins: p.proteins || 0,
-                      carbs: p.carbs || 0,
-                      fat: p.fat || 0,
-                      fiber: p.fiber || 0,
-                      sugar: p.sugar || 0,
-                      salt: p.salt || 0,
-                      image: p.image || null,
-                    })),
-                  ];
-                });
-              }
-            }
-          } catch (err) {
-            console.error("Error loading stored data:", err);
-          }
-        }
+    const proteinGoal = ((cal * 0.13) / 4).toFixed(0);
+    const carbGoal = ((cal * 0.65) / 4).toFixed(0);
+    const fatGoal = ((cal * 0.23) / 9).toFixed(0);
+    const fiberGoal = ((cal / 1000) * 14).toFixed(0);
+    const sugarGoal = ((cal * 0.075) / 4).toFixed(0);
+    const saltGoal = 5;
 
-        loadStoredData();
-      }, [email]),
-    );
+    const proteinBar = (proteins / proteinGoal) * 100;
+    const carbBar = (carbs / carbGoal) * 100;
+    const fatBar = (fat / fatGoal) * 100;
+    const fiberBar = (fiber / fiberGoal) * 100;
+    const sugarBar = (sugar / sugarGoal) * 100;
+    const saltBar = (salt / saltGoal) * 100;
 
-    // Save mealBox and eatenTotals to AsyncStorage
-    useEffect(() => {
-      AsyncStorage.setItem("mealBox", JSON.stringify(mealBox));
-    }, [mealBox]);
+    const bmiValue = ((weight / (height * height)) * 10000).toFixed(1);
+    let bmiOutput = "", bmiBarColor = "#4CAF50";
+    if (bmiValue < 18.5) { bmiOutput = `BMI: ${bmiValue}\nPodváha`; bmiBarColor = "#2196F3"; }
+    else if (bmiValue < 25) bmiOutput = `BMI: ${bmiValue}\nNormálna váha`;
+    else if (bmiValue < 30) { bmiOutput = `BMI: ${bmiValue}\nNadváha`; bmiBarColor = "#FF9800"; }
+    else { bmiOutput = `BMI: ${bmiValue}\nObezita`; bmiBarColor = "#FF3B30"; }
 
-    useEffect(() => {
-      if (!eatenLoaded) return;
-      AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
-    }, [eatenTotals, eatenLoaded]);
+    const bmiBar = (bmiValue / 40) * 100;
 
-    useEffect(() => {
-      if (!eatenLoaded) return;
-      const d = new Date();
-      const today = `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
-      AsyncStorage.setItem("drunkWater", String(drunkWater));
-      AsyncStorage.setItem("lastWaterDate", today);
-    }, [drunkWater, eatenLoaded]);
+    setOverviewData({
+      caloriesGoal: cal,
+      caloriesConsumed: calories,
+      progressBar,
+      barColor,
+      eatOutput,
+      eatenOutput: `${Math.round(calories)} / ${Math.round(cal)} kcal`,
+      proteinGoal,
+      proteinConsumed: Number(proteins).toFixed(0),
+      proteinBar,
+      carbGoal,
+      carbConsumed: Number(carbs).toFixed(0),
+      carbBar,
+      fatGoal,
+      fatConsumed: Number(fat).toFixed(0),
+      fatBar,
+      fiberGoal,
+      fiberConsumed: Number(fiber).toFixed(0),
+      fiberBar,
+      sugarGoal,
+      sugarConsumed: Number(sugar).toFixed(0),
+      sugarBar,
+      saltGoal,
+      saltConsumed: Number(salt).toFixed(0),
+      saltBar,
+      bmiOutput,
+      bmiBar,
+      bmiBarColor,
+    });
+  }, [weight, height, age, activityLevel, gender, goal, eatenTotals, profileLoaded]);
 
-  // Remove product from server
+  // --- TAB HANDLING ---
+  useEffect(() => {
+    if (route.params?.startTab) setActiveTab(route.params.startTab);
+  }, [route.params?.startTab]);
+
+  // --- REMOVE PRODUCT ---
   const removeProduct = async (productId) => {
     try {
       await fetch(`${SERVER_URL}/api/removeProduct`, {
@@ -376,118 +365,27 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, productId }),
       });
-    } catch (err) {
-      console.error("Error removing product:", err);
-    }
+    } catch (err) { console.error("Error removing product:", err); }
   };
 
-    // Remove from mealBox and update eatenTotals
-    const removeMealBox = (id, productId, box) => {
-      setMealBox((prev) => prev.filter((b) => b.id !== id));
-      removeProduct(productId);
-      addEatenValues(box);
-    };
+  const removeMealBox = (id, productId, box) => {
+    setMealBox((prev) => prev.filter((b) => b.id !== id));
+    removeProduct(productId);
+    addEatenValues(box);
+  };
 
-    const addEatenValues = (box) => {
-      setEatenTotals((prev) => {
-        const updated = {
-          calories: prev.calories + (box.totalCalories || 0),
-          proteins: prev.proteins + (box.totalProteins || 0),
-          carbs: prev.carbs + (box.totalCarbs || 0),
-          fat: prev.fat + (box.totalFat || 0),
-          fiber: prev.fiber + (box.totalFiber || 0),
-          sugar: prev.sugar + (box.totalSugar || 0),
-          salt: prev.salt + (box.totalSalt || 0),
-        };
-        return updated;
-      });
-    };
+  const addEatenValues = (box) => {
+    setEatenTotals((prev) => ({
+      calories: prev.calories + (box.totalCalories || 0),
+      proteins: prev.proteins + (box.totalProteins || 0),
+      carbs: prev.carbs + (box.totalCarbs || 0),
+      fat: prev.fat + (box.totalFat || 0),
+      fiber: prev.fiber + (box.totalFiber || 0),
+      sugar: prev.sugar + (box.totalSugar || 0),
+      salt: prev.salt + (box.totalSalt || 0),
+    }));
+  };
 
-    // Calculate overview data
-    useEffect(() => {
-      if (!weight || !height || !age || !activityLevel || !gender) return;
-
-      const { calories, proteins, carbs, fat, fiber, sugar, salt } = eatenTotals;
-
-      let cal;
-      if (gender === "male")
-        cal = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
-      else cal = (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
-
-      if (goal === "lose") cal -= 500;
-      else if (goal === "gain") cal += 500;
-
-      const progressBar = Math.min((calories / cal) * 100, 100);
-      const barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
-
-      let eatOutput;
-      if (calories < cal)
-        eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
-      else if (calories === cal)
-        eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
-      else eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
-
-      const proteinGoal = ((cal * 0.13) / 4).toFixed(0);
-      const carbGoal = ((cal * 0.65) / 4).toFixed(0);
-      const fatGoal = ((cal * 0.23) / 9).toFixed(0);
-      const fiberGoal = ((cal / 1000) * 14).toFixed(0);
-      const sugarGoal = ((cal * 0.075) / 4).toFixed(0);
-      const saltGoal = 5;
-
-      const proteinBar = (proteins / proteinGoal) * 100;
-      const carbBar = (carbs / carbGoal) * 100;
-      const fatBar = (fat / fatGoal) * 100;
-      const fiberBar = (fiber / fiberGoal) * 100;
-      const sugarBar = (sugar / sugarGoal) * 100;
-      const saltBar = (salt / saltGoal) * 100;
-
-      const bmiValue = ((weight / (height * height)) * 10000).toFixed(1);
-      let bmiOutput = "",
-        bmiBarColor = "#4CAF50";
-      if (bmiValue < 18.5) {
-        bmiOutput = `BMI: ${bmiValue}\nPodváha`;
-        bmiBarColor = "#2196F3";
-      } else if (bmiValue < 25) bmiOutput = `BMI: ${bmiValue}\nNormálna váha`;
-      else if (bmiValue < 30) {
-        bmiOutput = `BMI: ${bmiValue}\nNadváha`;
-        bmiBarColor = "#FF9800";
-      } else {
-        bmiOutput = `BMI: ${bmiValue}\nObezita`;
-        bmiBarColor = "#FF3B30";
-      }
-
-      const bmiBar = (bmiValue / 40) * 100;
-
-      setOverviewData({
-        caloriesGoal: cal,
-        caloriesConsumed: calories,
-        progressBar,
-        barColor,
-        eatOutput,
-        eatenOutput: `${Math.round(calories)} / ${Math.round(cal)} kcal`,
-        proteinGoal,
-        proteinConsumed: Number(proteins).toFixed(0),
-        proteinBar,
-        carbGoal,
-        carbConsumed: Number(carbs).toFixed(0),
-        carbBar,
-        fatGoal,
-        fatConsumed: Number(fat).toFixed(0),
-        fatBar,
-        fiberGoal,
-        fiberConsumed: Number(fiber).toFixed(0),
-        fiberBar,
-        sugarGoal,
-        sugarConsumed: Number(sugar).toFixed(0),
-        sugarBar,
-        saltGoal,
-        saltConsumed: Number(salt).toFixed(0),
-        saltBar,
-        bmiOutput,
-        bmiBar,
-        bmiBarColor,
-      });
-    }, [weight, height, age, activityLevel, gender, goal, eatenTotals]);
 
     const renderContent = () => {
       if (!weight || !height || !age) {

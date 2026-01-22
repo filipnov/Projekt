@@ -106,7 +106,16 @@ const SERVER_URL = "https://app.bitewise.it.com"
       });
 
       const data = await response.json();
-      console.log("📥 Server response:", data);
+console.log("📥 Server response:", data);
+
+if (data.success && Array.isArray(data.products)) {
+  // 🔁 ulož celý nový stav produktov
+  await AsyncStorage.setItem(
+    "products",
+    JSON.stringify(data.products)
+  );
+  console.log("✅ AsyncStorage(products) updated");
+}
     } catch (err) {
       console.error("❌ Error sending product:", err);
     }

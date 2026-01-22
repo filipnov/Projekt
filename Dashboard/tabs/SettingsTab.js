@@ -62,14 +62,32 @@ export default function SettingsTab({
         </View>
 
         <Pressable
-          onPress={() => {
-            setIsLoggedIn(false);
-            navigation.navigate("HomeScreen");
-            /* navigation.reset({
-              index: 0,
-              routes: [{ name: "HomeScreen" }],
-            });*/
-          }}
+           onPress={async () => {
+    try {
+      // 1️⃣ Vymazať všetky údaje používateľa z AsyncStorage
+      const keysToRemove = [
+        "userProfile",
+        "products",
+        "recipes",
+        "dailyConsumption",
+        "userEmail",
+        "isPer100g",
+        "userNick" // ak chceš resetovať aj toto nastavenie
+      ];
+      await AsyncStorage.multiRemove(keysToRemove);
+
+      // 2️⃣ Odhlásiť používateľa v stave appky
+      setIsLoggedIn(false);
+
+      // 3️⃣ Navigovať na HomeScreen a resetovať stack
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "HomeScreen" }],
+      });
+    } catch (err) {
+      console.error("Chyba pri odhlasovaní:", err);
+    }
+  }}
           style={({ pressed }) =>
             pressed ? styles.logout_button_pressed : styles.logout_button
           }

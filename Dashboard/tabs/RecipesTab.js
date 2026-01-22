@@ -118,49 +118,85 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
         recipe: generatedRecipeModal,
       }),
     });
+
     const data = await res.json();
-    if (data.success) {
+
+    // ⬇️ ZMENA JE LEN TU
+    if (data.success && Array.isArray(data.recipes)) {
+      setSavedRecipes(data.recipes);
+      await AsyncStorage.setItem("recipes", JSON.stringify(data.recipes));
+
       setGeneratedRecipeModal(null);
-      fetchSavedRecipes();
+      setSelectedRecept(null);
+      console.log("✅ Recipe saved + Async updated");
     }
   } catch (err) {
-    console.error(err);
+    console.error("❌ Save recipe failed:", err);
   }
 };
 
 // Načítanie receptov
 const fetchSavedRecipes = async () => {
+  if (!userEmail) return;
+
   try {
+    // 1️⃣ AsyncStorage first
+    const stored = await AsyncStorage.getItem("recipes");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setSavedRecipes(parsed);
+        console.log("✅ Recipes loaded from AsyncStorage");
+        return;
+      }
+    }
+
+    // 2️⃣ Server fallback
+    console.log("⚠️ Async empty → fetching recipes from server");
     const res = await fetch(`${SERVER_URL}/api/getRecipes?email=${userEmail}`);
     const data = await res.json();
+
     if (data.success) {
-      setSavedRecipes(data.recipes); // každý recept má teraz aj nutrition
+      setSavedRecipes(data.recipes);
+      await AsyncStorage.setItem("recipes", JSON.stringify(data.recipes));
+      console.log("✅ Recipes saved to AsyncStorage");
     }
   } catch (err) {
-    console.error(err);
+    console.error("❌ Failed to load recipes:", err);
   }
 };
 
   const deleteRecipe = async () => {
   if (!selectedRecept?.recipeId) return;
+
   try {
-    const { success } = await (await fetch(`${SERVER_URL}/api/deleteRecipe`, {
+    const res = await fetch(`${SERVER_URL}/api/deleteRecipe`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: userEmail,
         recipeId: selectedRecept.recipeId,
       }),
-    })).json();
+    });
 
-    if (success) {
+    const data = await res.json();
+
+    if (data.success) {
+      const updatedRecipes = savedRecipes.filter(
+        r => r.recipeId !== selectedRecept.recipeId
+      );
+
+      setSavedRecipes(updatedRecipes);
+      await AsyncStorage.setItem("recipes", JSON.stringify(updatedRecipes));
+
       setSelectedRecept(null);
-      fetchSavedRecipes();
+      console.log("✅ Recipe deleted + Async updated");
     }
   } catch (err) {
     console.error("❌ Failed to delete recipe:", err);
   }
 };
+
 
   const recipeImagesByCategory = {
     mäsité: require("./../../assets/meat.png"),

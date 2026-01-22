@@ -41,14 +41,31 @@ export default function ProfileCompletition() {
     });
   }, []);
 
-  useEffect(() => {
-    if (!email) return;
+useEffect(() => {
+  if (!email) return;
 
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch(
-          `${SERVER}/api/userProfile?email=${email}`
-        );
+  const loadUserProfile = async () => {
+    try {
+      // 1️⃣ Najprv AsyncStorage
+      const storedProfile = await AsyncStorage.getItem("userProfile");
+      if (storedProfile) {
+        const data = JSON.parse(storedProfile);
+        setWeight(String(data.weight || ""));
+        setHeight(String(data.height || ""));
+        setAge(String(data.age || ""));
+        setGender(data.gender || "male");
+        setGoal(data.goal || "maintain");
+        if (data.activityLevel) {
+          setSelectedActivity({
+            label: data.activityLabel || "Ľahko aktívny",
+            value: data.activityLevel,
+          });
+        }
+      }
+
+      // 2️⃣ Fallback – API fetch, len ak AsyncStorage nemal hodnoty
+      if (!storedProfile) {
+        const response = await fetch(`${SERVER}/api/userProfile?email=${email}`);
         const data = await response.json();
 
         if (response.ok) {
@@ -58,22 +75,26 @@ export default function ProfileCompletition() {
           setGender(data.gender || "male");
           setGoal(data.goal || "maintain");
           if (data.activityLevel) {
-            const activityOption = {
+            setSelectedActivity({
               label: data.activityLabel || "Ľahko aktívny",
               value: data.activityLevel,
-            };
-            setSelectedActivity(activityOption);
+            });
           }
+
+          // uložiť do AsyncStorage pre budúce použitie
+          await AsyncStorage.setItem("userProfile", JSON.stringify(data));
         } else {
           console.warn("Nepodarilo sa načítať profil:", data.error);
         }
-      } catch (err) {
-        console.error("Chyba pri načítaní profilu:", err);
       }
-    };
+    } catch (err) {
+      console.error("Chyba pri načítaní profilu:", err);
+    }
+  };
 
-    fetchUserProfile();
-  }, [email]);
+  loadUserProfile();
+}, [email]);
+
 
   async function handleCompletion() {
     if (!weight.trim() || !height.trim() || !age.trim()) {
@@ -104,6 +125,7 @@ export default function ProfileCompletition() {
       });
 
       const data = await resp.json().catch(() => ({}));
+
 
       if (resp.ok) {
         try {
