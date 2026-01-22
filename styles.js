@@ -9,20 +9,6 @@ mainLayout: {
     height: "100%",
     alignItems: "center",
   },
-  bgImage: {
-    resizeMode: "cover",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  profileAvatar: {
-    height: 200,
-    width: 200,
-    marginBottom: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-  },
    cardContainer: {
     backgroundColor: "hsla(0, 0%, 100%, 0.65)",
     padding: 10,
@@ -965,14 +951,14 @@ preferenceCloseButtonText: {
   },
   bgImage: {
     resizeMode: "cover",
-    width: "100%",
+    width: 200,
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },
   profileAvatar: {
-    height: 200,
-    width: 200,
+    height: 250,
+    width: 250,
     marginBottom: 20,
     backgroundColor: "white",
     borderRadius: 20,
