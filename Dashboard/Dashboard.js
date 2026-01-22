@@ -19,7 +19,7 @@
   import PantryTab from "./tabs/PantryTab";
   import SettingsTab from "./tabs/SettingsTab";
   import styles from "../styles";
-  import logo from "../assets/logo.png";
+  import logo from "../assets/logo-icon.png";
   import plus from "../assets/plus.png";
   import recipes from "../assets/recipe-book.png";
   import setting from "../assets/settings.png";
