@@ -15,6 +15,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import arrow from "./assets/left-arrow.png";
 import { useNavigation } from "@react-navigation/native";
 import styles from "./styles"
+import KeyboardWrapper from "./KeyboardWrapper";
 
 export default function ProfileCompletition() {
   const navigation = useNavigation();
@@ -144,7 +145,7 @@ useEffect(() => {
   }
 
   return (
-    <>
+    <KeyboardWrapper style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
       <View style={styles.formContainer}>
   <Pressable
     style={({ pressed }) =>
@@ -324,6 +325,6 @@ useEffect(() => {
     </View>
   </View>
 </Modal>
-</>
+    </KeyboardWrapper>
   );
 }

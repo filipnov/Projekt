@@ -16,6 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import arrow from "./assets/left-arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles"
+import KeyboardWrapper from "./KeyboardWrapper";
 
 export default function CameraScreen() {
   const navigation = useNavigation();
@@ -195,28 +196,24 @@ if (data.success && Array.isArray(data.products)) {
     if (!showContent || productData) return null;
 
     return (
-      <View style={styles.manualAddContainer}>
-  <Text style={styles.manualAddText}>
-    Zadajte EAN pre pridanie produktu.
-  </Text>
+      <KeyboardWrapper scroll={false} style={styles.manualAddContainer}>
+        <Text style={styles.manualAddText}>Zadajte EAN pre pridanie produktu.</Text>
 
-  <TextInput
-    style={styles.manualAddInput}
-    value={code}
-    onChangeText={setCode}
-  />
+        <TextInput
+          style={styles.manualAddInput}
+          value={code}
+          onChangeText={setCode}
+        />
 
-  <Pressable
-    onPress={() => {
-      fetchProductData(code);
-    }}
-    style={styles.primaryActionButton}
-  >
-    <Text style={styles.primaryActionButtonText}>
-      Pridať
-    </Text>
-  </Pressable>
-</View>
+        <Pressable
+          onPress={() => {
+            fetchProductData(code);
+          }}
+          style={styles.primaryActionButton}
+        >
+          <Text style={styles.primaryActionButtonText}>Pridať</Text>
+        </Pressable>
+      </KeyboardWrapper>
     );
   };
 
@@ -370,7 +367,7 @@ if (data.success && Array.isArray(data.products)) {
           )}
 
           {awaitingQuantity ? (
-            <View style={{ marginTop: 10 }}>
+            <KeyboardWrapper scroll={false} style={{ marginTop: 10 }}>
               <Text>Zadajte hmotnosť produktu (g) :</Text>
 
               <TextInput
@@ -402,7 +399,7 @@ if (data.success && Array.isArray(data.products)) {
                   Uložiť hmotnosť
                 </Text>
               </Pressable>
-            </View>
+            </KeyboardWrapper>
           ) : (
             <Text>Hmotnosť: {productData.quantity} g</Text>
           )}

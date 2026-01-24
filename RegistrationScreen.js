@@ -16,6 +16,7 @@ import logo from "./assets/logo-name.png";
 import arrow from "./assets/left-arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
+import KeyboardWrapper from "./KeyboardWrapper";
 
 export default function RegistrationScreen() {
   const navigation = useNavigation();
@@ -86,9 +87,9 @@ export default function RegistrationScreen() {
   }
 
   return (
-  <View style={styles.mainLayout}>
-    <View style={styles.bgImage}>
-      <Image style={styles.profileAvatar} source={logo} />
+    <KeyboardWrapper style={styles.mainLayout}>
+      <View style={styles.bgImage}>
+        <Image style={styles.profileAvatar} source={logo} />
 
       <View style={styles.cardContainer}>
         <Text style={styles.titleText}>Registruj sa!</Text>
@@ -156,6 +157,7 @@ export default function RegistrationScreen() {
       >
         <Image source={arrow} style={styles.backArrow} />
       </Pressable>
-    </View>
-  </View>
-);}
+      </View>
+    </KeyboardWrapper>
+  );
+}

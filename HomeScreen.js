@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo-name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
+import KeyboardWrapper from "./KeyboardWrapper";
 
 
 export default function HomeScreen({ setIsLoggedIn }) {
@@ -196,7 +197,7 @@ useEffect(() => {
   }
 
   return (
-    <View style={styles.mainLayout}>
+    <KeyboardWrapper style={styles.mainLayout}>
       <View style={styles.bgImage}>
         <Image style={styles.profileAvatar} source={logo} />
         <View style={styles.cardContainer}>
@@ -251,6 +252,6 @@ useEffect(() => {
           </Pressable>
         </View>
       </View>
-    </View>
+    </KeyboardWrapper>
   );
 }

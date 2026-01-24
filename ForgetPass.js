@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
 import styles from "./styles"
+import KeyboardWrapper from "./KeyboardWrapper";
 
 export default function PasswordForgetScreen() {
 
@@ -47,9 +48,9 @@ export default function PasswordForgetScreen() {
    
 
   return (
-    <View style={styles.screenWrapper}>
-  <View style={styles.backgroundImage}>
-    <Image style={styles.logoImage} source={logo} />
+    <KeyboardWrapper style={styles.screenWrapper}>
+      <View style={styles.backgroundImage}>
+        <Image style={styles.logoImage} source={logo} />
 
     <View style={styles.cardBox}>
       <Text style={styles.headingText}>Zabudli ste heslo?</Text>
@@ -84,8 +85,8 @@ export default function PasswordForgetScreen() {
     >
       <Image source={arrow} style={styles.backIcon} />
     </Pressable>
-  </View>
-</View>
+      </View>
+    </KeyboardWrapper>
 
   );
 }

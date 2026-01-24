@@ -13,6 +13,8 @@ import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
 import arrow from "./assets/left-arrow.png";
 import * as Linking from "expo-linking";
+import styles from "./styles";
+import KeyboardWrapper from "./KeyboardWrapper";
 
 export default function ResetPasswordScreen({ route }) {
   const SERVER_URL = "https://app.bitewise.it.com"
@@ -68,7 +70,7 @@ export default function ResetPasswordScreen({ route }) {
     }}
 
   return (
-  <View style={styles.mainLayout}>
+  <KeyboardWrapper style={styles.mainLayout}>
     <View style={styles.bgImage}>
 
       <View style={styles.cardContainer}>
@@ -93,5 +95,6 @@ export default function ResetPasswordScreen({ route }) {
         <Image source={arrow} style={styles.backArrow} />
       </Pressable>
     </View>
-  </View>
-);}
+  </KeyboardWrapper>
+);
+}
