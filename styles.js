@@ -230,7 +230,7 @@ mainLayout: {
     color: "black",
   },
   contentContainer: {
-    height: 791.5,
+    flex: 1,
     justifyContent: "space-between",
   },
   caloriesDisplay: {

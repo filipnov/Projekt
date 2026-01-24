@@ -7,6 +7,7 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function KeyboardWrapper({
   children,
@@ -29,16 +30,21 @@ export default function KeyboardWrapper({
       onPress={enabled ? Keyboard.dismiss : undefined}
       accessible={false}
     >
-      <KeyboardAvoidingView
-        style={[{ flex: 1 }, style]}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={keyboardVerticalOffset}
-        enabled={enabled}
-      >
-        <Container style={!scroll ? [{ flex: 1 }, contentContainerStyle] : undefined} {...containerProps}>
-          {children}
-        </Container>
-      </KeyboardAvoidingView>
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          style={[{ flex: 1 }, style]}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={keyboardVerticalOffset}
+          enabled={enabled}
+        >
+          <Container
+            style={!scroll ? [{ flex: 1 }, contentContainerStyle] : undefined}
+            {...containerProps}
+          >
+            {children}
+          </Container>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </TouchableWithoutFeedback>
   );
 }
