@@ -262,17 +262,26 @@ if (data.success && Array.isArray(data.products)) {
 
     try {
       const storedTotals = await AsyncStorage.getItem("eatenTotals");
-      let currentTotals = storedTotals
-        ? JSON.parse(storedTotals)
-        : {
-            calories: 0,
-            proteins: 0,
-            carbs: 0,
-            fat: 0,
-            fiber: 0,
-            sugar: 0,
-            salt: 0,
-          };
+      const baseTotals = {
+        calories: 0,
+        proteins: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        salt: 0,
+        drunkWater: 0,
+      };
+
+      let currentTotals = baseTotals;
+      if (storedTotals) {
+        try {
+          currentTotals = { ...baseTotals, ...JSON.parse(storedTotals) };
+        } catch (e) {
+          console.error("❌ Chyba pri parsovaní eatenTotals:", e);
+          currentTotals = baseTotals;
+        }
+      }
 
       const updatedTotals = {
         calories: currentTotals.calories + (productData.totalCalories || 0),
@@ -282,6 +291,7 @@ if (data.success && Array.isArray(data.products)) {
         fiber: currentTotals.fiber + (productData.totalFiber || 0),
         sugar: currentTotals.sugar + (productData.totalSugar || 0),
         salt: currentTotals.salt + (productData.totalSalt || 0),
+        drunkWater: currentTotals.drunkWater || 0,
       };
 
       await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));

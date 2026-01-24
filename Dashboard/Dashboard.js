@@ -1,4 +1,4 @@
-//Dashboard.js
+// Dashboard.js
 import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
@@ -32,6 +32,27 @@ export default function Dashboard({ setIsLoggedIn }) {
   const navigation = useNavigation();
   const route = useRoute(); //Treba
 
+  const mergeTotalsPreferLocal = (localTotals, remoteTotals) => {
+    if (!remoteTotals) return localTotals;
+    const merged = { ...localTotals };
+    for (const key of Object.keys(merged)) {
+      const localVal = merged[key];
+      const remoteVal = remoteTotals[key];
+      const localHasValue =
+        localVal !== null && localVal !== undefined && Number(localVal) !== 0;
+
+      if (!localHasValue && remoteVal !== null && remoteVal !== undefined) {
+        merged[key] = remoteVal;
+      }
+    }
+    return merged;
+  };
+
+  const isTotalsEmptyOrAllZero = (totals) => {
+    if (!totals) return true;
+    return Object.values(totals).every((v) => Number(v) === 0);
+  };
+
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [weight, setWeight] = useState(null);
   const [height, setHeight] = useState(null);
@@ -45,7 +66,6 @@ export default function Dashboard({ setIsLoggedIn }) {
   const isActive = (tabIndex) => activeTab === tabIndex;
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [drunkWater, setDrunkWater] = useState(0);
   const [mealBox, setMealBox] = useState([]);
   const [eatenLoaded, setEatenLoaded] = useState(false);
   const [overviewData, setOverviewData] = useState({});
@@ -61,6 +81,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     fiber: 0,
     sugar: 0,
     salt: 0,
+    drunkWater: 0,
   });
 
   const renderNutriItem = (label, valueConsumed, valueGoal, barPercent) => (
@@ -150,58 +171,64 @@ export default function Dashboard({ setIsLoggedIn }) {
     { label: "Fľaša", description: "500 ml" },
   ];
 
-  const addWater = () => {
-    let water;
-    switch (selectedOption) {
-      case "Malý pohár / šálka ":
-        water = 150;
-        break;
-      case "Stredný pohár / šálka":
-        water = 250;
-        break;
-      case "Veľký pohár / hrnček":
-        water = 350;
-        break;
-      case "Fľaša":
-        water = 500;
-        break;
-      default:
-        water = 0;
-    }
-    setDrunkWater((prev) => prev + water);
-    setModalVisible(false);
-  };
-
+  // --- LOAD STORED DATA (now loads eatenTotals including drunkWater) ---
   useFocusEffect(
     useCallback(() => {
       async function loadStoredData() {
         try {
           const storedMealBox = await AsyncStorage.getItem("mealBox");
-          const storedTotals = await AsyncStorage.getItem("eatenTotals");
-          const storedWater = await AsyncStorage.getItem("drunkWater");
-          const today = currentDate;
+          const storedTotalsRaw = await AsyncStorage.getItem("eatenTotals");
+
+          let totals = {
+            calories: 0,
+            proteins: 0,
+            carbs: 0,
+            fat: 0,
+            fiber: 0,
+            sugar: 0,
+            salt: 0,
+            drunkWater: 0,
+          };
+
+          let hasLocalTotals = false;
+
+          if (storedTotalsRaw) {
+            try {
+              const parsed = JSON.parse(storedTotalsRaw);
+              totals = { ...totals, ...parsed };
+              hasLocalTotals = !isTotalsEmptyOrAllZero(parsed);
+            } catch (e) {
+              console.error("Error parsing stored eatenTotals:", e);
+            }
+          }
 
           if (storedMealBox) setMealBox(JSON.parse(storedMealBox));
-          if (storedTotals) setEatenTotals(JSON.parse(storedTotals));
-          if (storedWater) setDrunkWater(Number(storedWater) || 0);
 
-          setEatenLoaded(true);
-
-          // Fetch server fallback if AsyncStorage missing
-          if (email) {
-            const response = await fetch(
-              `${SERVER_URL}/api/getDailyConsumption?email=${email}&date=${new Date().toISOString().slice(0, 10)}`,
-            );
-            if (response.ok) {
-              const data = await response.json();
-              if (!storedTotals && data?.totals) setEatenTotals(data.totals);
-              if (!storedWater && data?.totals?.drunkWater)
-                setDrunkWater(Number(data.totals.drunkWater));
+          // server fallback: only if AsyncStorage doesn't have usable totals
+          if (email && !hasLocalTotals) {
+            try {
+              const response = await fetch(
+                `${SERVER_URL}/api/getDailyConsumption?email=${email}&date=${new Date().toISOString().slice(0, 10)}`,
+              );
+              if (response.ok) {
+                const data = await response.json();
+                if (data?.totals) {
+                  totals = mergeTotalsPreferLocal(totals, data.totals);
+                }
+              }
+            } catch (err) {
+              console.error("Error fetching daily consumption from server:", err);
             }
 
+            // fetch products fallback
             const products = await fetchUserProducts();
-            if (products.length > 0) setMealBox(products);
+            if (products.length > 0 && (!storedMealBox || storedMealBox === "[]")) {
+              setMealBox(products);
+            }
           }
+
+          setEatenTotals(totals);
+          setEatenLoaded(true);
         } catch (err) {
           console.error("Error loading stored data:", err);
         }
@@ -210,22 +237,18 @@ export default function Dashboard({ setIsLoggedIn }) {
     }, [email]),
   );
 
-  // --- SAVE TO ASYNC ---
+  // --- SAVE mealBox ---
   useEffect(() => {
     AsyncStorage.setItem("mealBox", JSON.stringify(mealBox));
   }, [mealBox]);
 
+  // --- SAVE eatenTotals (single effect) ---
   useEffect(() => {
     if (!eatenLoaded) return;
     AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
   }, [eatenTotals, eatenLoaded]);
 
-  useEffect(() => {
-    if (!eatenLoaded) return;
-    AsyncStorage.setItem("drunkWater", String(drunkWater));
-  }, [drunkWater, eatenLoaded]);
-
-  // --- PUSH DAILY CONSUMPTION TO SERVER ---
+  // --- PUSH DAILY CONSUMPTION TO SERVER (single payload) ---
   useEffect(() => {
     if (!eatenLoaded || !email) return;
     const pushConsumedToDB = async () => {
@@ -236,7 +259,7 @@ export default function Dashboard({ setIsLoggedIn }) {
           body: JSON.stringify({
             email,
             date: new Date().toISOString().slice(0, 10),
-            totals: { ...eatenTotals, drunkWater },
+            totals: eatenTotals,
           }),
         });
       } catch (err) {
@@ -244,8 +267,9 @@ export default function Dashboard({ setIsLoggedIn }) {
       }
     };
     pushConsumedToDB();
-  }, [eatenTotals, drunkWater, eatenLoaded, email]);
+  }, [eatenTotals, eatenLoaded, email]);
 
+  // --- OVERVIEW CALCULATIONS (uses eatenTotals including drunkWater) ---
   useEffect(() => {
     if (
       !profileLoaded ||
@@ -256,7 +280,17 @@ export default function Dashboard({ setIsLoggedIn }) {
       !gender
     )
       return;
-    const { calories, proteins, carbs, fat, fiber, sugar, salt } = eatenTotals;
+
+    const {
+      calories,
+      proteins,
+      carbs,
+      fat,
+      fiber,
+      sugar,
+      salt,
+      drunkWater,
+    } = eatenTotals;
 
     let cal;
     if (gender === "male")
@@ -349,7 +383,6 @@ export default function Dashboard({ setIsLoggedIn }) {
     gender,
     goal,
     eatenTotals,
-    drunkWater,
     profileLoaded,
   ]);
 
@@ -377,8 +410,10 @@ export default function Dashboard({ setIsLoggedIn }) {
     addEatenValues(box);
   };
 
+  // --- ADD EATEN VALUES (updates eatenTotals object) ---
   const addEatenValues = (box) => {
     setEatenTotals((prev) => ({
+      ...prev,
       calories: prev.calories + (box.totalCalories || 0),
       proteins: prev.proteins + (box.totalProteins || 0),
       carbs: prev.carbs + (box.totalCarbs || 0),
@@ -387,6 +422,34 @@ export default function Dashboard({ setIsLoggedIn }) {
       sugar: prev.sugar + (box.totalSugar || 0),
       salt: prev.salt + (box.totalSalt || 0),
     }));
+  };
+
+  // --- ADD WATER (updates eatenTotals.drunkWater) ---
+  const addWater = () => {
+    let water = 0;
+    switch (selectedOption) {
+      case "Malý pohár / šálka ":
+        water = 150;
+        break;
+      case "Stredný pohár / šálka":
+        water = 250;
+        break;
+      case "Veľký pohár / hrnček":
+        water = 350;
+        break;
+      case "Fľaša":
+        water = 500;
+        break;
+      default:
+        water = 0;
+    }
+
+    setEatenTotals((prev) => ({
+      ...prev,
+      drunkWater: (prev.drunkWater || 0) + water,
+    }));
+
+    setModalVisible(false);
   };
 
   const renderContent = () => {
@@ -569,12 +632,8 @@ export default function Dashboard({ setIsLoggedIn }) {
                           )}
                         </View>
                         <View>
-                          <Text style={{ fontWeight: "bold" }}>
-                            {opt.label}
-                          </Text>
-                          <Text style={{ color: "#555" }}>
-                            {opt.description}
-                          </Text>
+                          <Text style={{ fontWeight: "bold" }}>{opt.label}</Text>
+                          <Text style={{ color: "#555" }}>{opt.description}</Text>
                         </View>
                       </TouchableOpacity>
                     ))}
