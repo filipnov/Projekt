@@ -76,6 +76,7 @@ export default function SettingsTab({
                 "eatenTotals",
                 "drunkWater",
                 "mealBox",
+                "onboardingSeen"
               ];
               await AsyncStorage.multiRemove(keysToRemove);
 
