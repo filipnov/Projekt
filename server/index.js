@@ -40,30 +40,39 @@ async function start() {
 
   // ------------------- REGISTER -------------------
   app.post("/api/register", async (req, res) => {
-    try {
-      const { email, password, nick } = req.body;
+  try {
+    const { email, password, nick, gdprConsent, gdprConsentAt, gdprPolicyVersion } = req.body;
 
-      if (!email || !password || !nick) {
-        return res.status(400).json({ error: "Missing fields" });
-      }
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      const result = await users.insertOne({
-        email,
-        password: hashedPassword,
-        nick,
-        createdAt: new Date(),
-      });
-
-      return res.status(201).json({ ok: true, id: result.insertedId });
-    } catch (err) {
-      if (err.code === 11000) {
-        return res.status(409).json({ error: "Email already exists" });
-      }
-      console.error("Register error:", err);
-      return res.status(500).json({ error: "Server error" });
+    if (!email || !password || !nick) {
+      return res.status(400).json({ error: "Missing fields" });
     }
-  });
+
+    // GDPR kontrola
+    if (!gdprConsent) {
+      return res.status(400).json({ error: "GDPR súhlas je povinný." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await users.insertOne({
+      email,
+      password: hashedPassword,
+      nick,
+      createdAt: new Date(),
+      gdprConsent: Boolean(gdprConsent),
+      gdprConsentAt: new Date(gdprConsentAt),
+      gdprPolicyVersion: gdprPolicyVersion || "1.0",
+    });
+
+    return res.status(201).json({ ok: true, id: result.insertedId });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(409).json({ error: "Email already exists" });
+    }
+    console.error("Register error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
 
   // ------------------- LOGIN -------------------
   app.post("/api/login", async (req, res) => {

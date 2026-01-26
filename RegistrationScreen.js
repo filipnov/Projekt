@@ -1,15 +1,14 @@
 // RegistrationScreen.js
 import { useState } from "react";
 import {
-  StyleSheet,
   Text,
   View,
-  ImageBackground,
   Image,
   TextInput,
   Pressable,
   Alert,
   ActivityIndicator,
+  Switch
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo-name.png";
@@ -27,6 +26,8 @@ export default function RegistrationScreen() {
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [gdprConsent, setGdprConsent] = useState(false);
+
 
   const SERVER = "https://app.bitewise.it.com";
 
@@ -34,6 +35,13 @@ export default function RegistrationScreen() {
 
   // Handle registration
   async function handleRegistration() {
+    if (!gdprConsent) {
+  Alert.alert(
+    "Súhlas je povinný",
+    "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov."
+  );
+  return;
+}
     const trimmedEmail = email.trim();
     const trimmedNick = nick.trim();
 
@@ -47,7 +55,14 @@ export default function RegistrationScreen() {
       return;
     }
 
-    const body = { email: trimmedEmail, password, nick: trimmedNick };
+    const body = {
+  email: trimmedEmail,
+  password,
+  nick: trimmedNick,
+  gdprConsent, // boolean
+  gdprConsentAt: new Date().toISOString(), // ISO timestamp
+  gdprPolicyVersion: "1.0", // alebo dátum verzie GDPR
+};
     await AsyncStorage.setItem("userNick", trimmedNick);
     setLoading(true);
 
@@ -132,7 +147,17 @@ export default function RegistrationScreen() {
           secureTextEntry
           autoCapitalize="none"
         />
-
+  <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 10 }}>
+  <Switch
+    value={gdprConsent}
+    onValueChange={setGdprConsent}
+    trackColor={{ false: "#ccc", true: "#4CAF50" }}
+  thumbColor={gdprConsent ? "#2E7D32" : "#f4f3f4"}
+  />
+  <Text style={{ marginLeft: 10, flex: 1 }}>
+    Súhlasím so spracovaním svojho emailu a prezývky na účely registrácie a zasielania notifikácií o účte podľa zásad ochrany osobných údajov.
+  </Text>
+</View>
         <Pressable
           style={({ pressed }) =>
             pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
