@@ -87,12 +87,12 @@ export default function Dashboard({ setIsLoggedIn }) {
   });
 
   const renderNutriItem = (label, valueConsumed, valueGoal, barPercent) => (
-    <View style={styles.nutriDisplay}>
-      <Text style={styles.nutriDisplay_text}>{label}</Text>
-      <View style={styles.caloriesBarContainer}>
+    <View style={styles.dashNutriDisplay}>
+      <Text style={styles.dashNutriDisplay_text}>{label}</Text>
+      <View style={styles.dashCaloriesBarContainer}>
         <View
           style={[
-            styles.caloriesBar,
+            styles.dashCaloriesBar,
             {
               width: `${barPercent}%`,
               backgroundColor: barPercent >= 100 ? "#FF3B30" : "#4CAF50",
@@ -481,16 +481,16 @@ export default function Dashboard({ setIsLoggedIn }) {
       case 1:
         return (
           <>
-            <View style={styles.caloriesDisplay}>
-              <Text style={styles.dateText}>{currentDate}</Text>
+            <View style={styles.dashCaloriesDisplay}>
+              <Text style={styles.dashDateText}>{currentDate}</Text>
               <Text style={{ color: "white", marginTop: 20 }}>
                 {overviewData.eatOutput}
               </Text>
 
-              <View style={styles.caloriesBarContainer}>
+              <View style={styles.dashCaloriesBarContainer}>
                 <View
                   style={[
-                    styles.caloriesBar,
+                    styles.dashCaloriesBar,
                     {
                       width: `${overviewData.progressBar}%`,
                       backgroundColor: overviewData.barColor,
@@ -503,7 +503,7 @@ export default function Dashboard({ setIsLoggedIn }) {
               </Text>
             </View>
 
-            <View style={styles.nutriDisplay_container}>
+            <View style={styles.dashNutriDisplay_container}>
               <View style={{ flexDirection: "row" }}>
                 {renderNutriItem(
                   "Bielkoviny",
@@ -546,14 +546,14 @@ export default function Dashboard({ setIsLoggedIn }) {
               </View>
             </View>
 
-            <View style={styles.bmiContainer}>
+            <View style={styles.dashBmiContainer}>
               <Text style={{ color: "white" }}>
                 {overviewData.drunkWater} / {overviewData.waterGoal} ml
               </Text>
-              <View style={styles.caloriesBarContainer}>
+              <View style={styles.dashCaloriesBarContainer}>
                 <View
                   style={[
-                    styles.caloriesBar,
+                    styles.dashCaloriesBar,
                     {
                       width: `${overviewData.waterBar}%`,
                       backgroundColor: "#2cdba1",
@@ -664,14 +664,14 @@ export default function Dashboard({ setIsLoggedIn }) {
             </View>
 
             {/* BMI zobrazenie */}
-            <View style={styles.bmiContainer}>
+            <View style={styles.dashBmiContainer}>
               <Text style={{ color: "white", textAlign: "center" }}>
                 {overviewData.bmiOutput}
               </Text>
-              <View style={styles.caloriesBarContainer}>
+              <View style={styles.dashCaloriesBarContainer}>
                 <View
                   style={[
-                    styles.caloriesBar,
+                    styles.dashCaloriesBar,
                     {
                       width: `${overviewData.bmiBar}%`,
                       backgroundColor: overviewData.bmiBarColor,
@@ -720,13 +720,13 @@ export default function Dashboard({ setIsLoggedIn }) {
 
   return (
     <>
-      <View style={styles.topBar}>
-        <Image source={logo} style={styles.topBar_img} />
-        <Text style={styles.topBar_text}>Ahoj {nick}</Text>
-        <Image source={account} style={styles.topBar_img} />
+      <View style={styles.dashTopBar}>
+        <Image source={logo} style={styles.dashTopBar_img} />
+        <Text style={styles.dashTopBar_text}>Ahoj {nick}</Text>
+        <Image source={account} style={styles.dashTopBar_img} />
       </View>
 
-      <View style={styles.contentContainer}>
+      <View style={styles.dashContentContainer}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 8 }}
@@ -734,19 +734,19 @@ export default function Dashboard({ setIsLoggedIn }) {
           {renderContent()}
         </ScrollView>
 
-        <View style={styles.navBar}>
+        <View style={styles.dashNavBar}>
           <Pressable
             onPress={() => setActiveTab(1)}
             style={[
-              styles.navBar_tabs,
-              isActive(1) && styles.navBar_tabs_pressed,
+              styles.dashNavBar_tabs,
+              isActive(1) && styles.dashNavBar_tabs_pressed,
             ]}
           >
-            <Image source={speedometer} style={styles.navBar_img} />
+            <Image source={speedometer} style={styles.dashNavBar_img} />
             <Text
               style={[
-                styles.navBar_text,
-                isActive(1) && styles.navBar_text_pressed,
+                styles.dashNavBar_text,
+                isActive(1) && styles.dashNavBar_text_pressed,
               ]}
             >
               Prehľad
@@ -755,41 +755,41 @@ export default function Dashboard({ setIsLoggedIn }) {
           <Pressable
             onPress={() => setActiveTab(2)}
             style={[
-              styles.navBar_tabs,
-              isActive(2) && styles.navBar_tabs_pressed,
+              styles.dashNavBar_tabs,
+              isActive(2) && styles.dashNavBar_tabs_pressed,
             ]}
           >
-            <Image source={recipes} style={styles.navBar_img} />
+            <Image source={recipes} style={styles.dashNavBar_img} />
             <Text
               style={[
-                styles.navBar_text,
-                isActive(2) && styles.navBar_text_pressed,
+                styles.dashNavBar_text,
+                isActive(2) && styles.dashNavBar_text_pressed,
               ]}
             >
               Recepty
             </Text>
           </Pressable>
           <Pressable
-            style={styles.navBar_tab_Add}
+            style={styles.dashNavBar_tab_Add}
             onPress={() => navigation.navigate("CameraScreen")}
           >
-            <View style={styles.navBar_Add_container}>
-              <Image source={plus} style={styles.navBar_Add} />
+            <View style={styles.dashNavBar_Add_container}>
+              <Image source={plus} style={styles.dashNavBar_Add} />
             </View>
-            <Text style={styles.navBar_text_Add}>Pridať</Text>
+            <Text style={styles.dashNavBar_text_Add}>Pridať</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTab(3)}
             style={[
-              styles.navBar_tabs,
-              isActive(3) && styles.navBar_tabs_pressed,
+              styles.dashNavBar_tabs,
+              isActive(3) && styles.dashNavBar_tabs_pressed,
             ]}
           >
-            <Image source={storage} style={styles.navBar_img} />
+            <Image source={storage} style={styles.dashNavBar_img} />
             <Text
               style={[
-                styles.navBar_text,
-                isActive(3) && styles.navBar_text_pressed,
+                styles.dashNavBar_text,
+                isActive(3) && styles.dashNavBar_text_pressed,
               ]}
             >
               Špajza
@@ -798,15 +798,15 @@ export default function Dashboard({ setIsLoggedIn }) {
           <Pressable
             onPress={() => setActiveTab(4)}
             style={[
-              styles.navBar_tabs,
-              isActive(4) && styles.navBar_tabs_pressed,
+              styles.dashNavBar_tabs,
+              isActive(4) && styles.dashNavBar_tabs_pressed,
             ]}
           >
-            <Image source={setting} style={styles.navBar_img} />
+            <Image source={setting} style={styles.dashNavBar_img} />
             <Text
               style={[
-                styles.navBar_text,
-                isActive(4) && styles.navBar_text_pressed,
+                styles.dashNavBar_text,
+                isActive(4) && styles.dashNavBar_text_pressed,
               ]}
             >
               Nastavenia
