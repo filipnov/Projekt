@@ -880,14 +880,14 @@ export default StyleSheet.create({
     borderRadius: 15,
     borderColor: "black",
     borderWidth: 1,
-    margin: 2,
+    margin: 7,
     textAlign: "center",
     elevation: 6,
   },
   infoLabel: {
     fontWeight: "800",
     fontSize: 15,
-    marginTop: 1,
+    marginTop: 5,
     alignSelf: "flex-start",
     marginLeft: 40,
     color: "hsla(0, 0%, 15%, 1.00)",
@@ -1234,8 +1234,8 @@ export default StyleSheet.create({
   authProfileAvatarReg: {
     height: Math.round(clamp(ms(110), 80, 150)),
     width: Math.round(clamp(ms(110), 80, 150)),
-    marginBottom: Math.round(clamp(vs(20), 12, 26)),
-    marginTop: Math.round(clamp(vs(65), 40, 90)),
+    marginBottom: Math.round(clamp(vs(10), 2, 16)),
+    marginTop: Math.round(clamp(vs(55), 30, 80)),
     backgroundColor: "white",
     borderRadius: Math.round(clamp(ms(20), 16, 24)),
     alignSelf: "center",
@@ -1251,7 +1251,7 @@ export default StyleSheet.create({
     justifyContent: "center",
   },
   authTitleText: {
-    fontSize: Math.round(clamp(ms(35), 30, 40)),
+    fontSize: Math.round(clamp(ms(30), 25, 35)),
     fontWeight: "900",
     color: "hsla(0, 0%, 15%, 1.00)",
     marginBottom: Math.round(clamp(vs(15), 10, 18)),
@@ -1318,6 +1318,12 @@ export default StyleSheet.create({
     marginTop: Math.round(clamp(vs(10), 8, 14)),
     color: "hsla(0, 0%, 15%, 1.00)",
   },
+  authText: {
+    fontSize: Math.round(clamp(ms(18), 16, 20)),
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+    color: "hsla(0, 0%, 15%, 1.00)",
+    textAlign: "center",
+  },
   authBackArrow: {
     height: "100%",
     width: "100%",
@@ -1325,12 +1331,16 @@ export default StyleSheet.create({
     borderRadius: Math.round(clamp(ms(50), 44, 56)),
     marginTop: Math.round(clamp(vs(10), 8, 14)),
   },
+  buttonLayout: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 20,
+  },
   authBackArrowContainer: {
     height: Math.round(clamp(ms(60), 52, 68)),
     width: Math.round(clamp(ms(60), 52, 68)),
     alignItems: "center",
     justifyContent: "center",
-    marginTop: Math.round(clamp(vs(10), 8, 14)),
     alignSelf: "center",
   },
   authBackArrowPressed: {
@@ -1339,7 +1349,6 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
-    marginTop: Math.round(clamp(vs(12), 10, 16)),
     opacity: 0.8,
   },
 });
