@@ -28,7 +28,7 @@ export default function RegistrationScreen() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const SERVER = "https://app.bitewise.it.com"; 
+  const SERVER = "https://app.bitewise.it.com";
 
   const REGISTER_URL = `${SERVER}/api/register`;
 
@@ -69,9 +69,9 @@ export default function RegistrationScreen() {
 
         Alert.alert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
         navigation.reset({
-                  index: 0,
-                  routes: [{ name: "HomeScreen" }],
-                });
+          index: 0,
+          routes: [{ name: "HomeScreen" }],
+        });
       } else {
         const msg = data.error || data.message || "Server vrátil chybu.";
         Alert.alert("Registrácia zlyhala", msg);
@@ -79,7 +79,7 @@ export default function RegistrationScreen() {
     } catch (err) {
       Alert.alert(
         "Network error",
-        err.message || "Nepodarilo sa spojiť so serverom."
+        err.message || "Nepodarilo sa spojiť so serverom.",
       );
     } finally {
       setLoading(false);
@@ -88,11 +88,10 @@ export default function RegistrationScreen() {
 
   return (
     <KeyboardWrapper style={styles.mainLayout}>
-
-        <Image style={styles.profileAvatar} source={logo} />
+      <Image style={styles.profileAvatar} source={logo} />
 
       <View style={styles.cardContainer}>
-        <Text style={styles.titleText}>Registruj sa!</Text>
+        <Text style={styles.titleText}>Registrácia!</Text>
 
         <Text style={styles.infoLabel}>Zadaj email:</Text>
         <TextInput
@@ -136,7 +135,7 @@ export default function RegistrationScreen() {
 
         <Pressable
           style={({ pressed }) =>
-            pressed ? styles.actionButtonPressed : styles.actionButton
+            pressed ? styles.regLogBtnPressed : styles.regLogBtn
           }
           onPress={() => !loading && handleRegistration()}
           disabled={loading}
@@ -144,19 +143,18 @@ export default function RegistrationScreen() {
           {loading ? (
             <ActivityIndicator size="small" />
           ) : (
-            <Text style={styles.actionButtonText}>Registrovať sa!</Text>
+            <Text style={styles.regLogBtnText}>Registrovať sa!</Text>
           )}
         </Pressable>
+        <Pressable
+          style={({ pressed }) =>
+            pressed ? styles.backArrowPressed : styles.backArrowContainer
+          }
+          onPress={() => navigation.navigate("HomeScreen")}
+        >
+          <Image source={arrow} style={styles.backArrow} />
+        </Pressable>
       </View>
-
-      <Pressable
-        style={({ pressed }) =>
-          pressed ? styles.backArrowPressed : styles.backArrowContainer
-        }
-        onPress={() => navigation.navigate("HomeScreen")}
-      >
-        <Image source={arrow} style={styles.backArrow} />
-      </Pressable>
     </KeyboardWrapper>
   );
 }

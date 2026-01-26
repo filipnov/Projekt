@@ -1,51 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export default StyleSheet.create({
-//HOMESCREEN
-mainLayout: {
-    //flex: 1,
-    backgroundColor: "#618a335d",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-  },
-   cardContainer: {
-    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "white",
-    height: 500,
-    width: 340,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-    emailInput: {
-    backgroundColor: "white",
-    fontSize: 20,
-    fontWeight: "200",
-    width: 240,
-    height: 55,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 5,
-    textAlign: "center",
-    elevation: 6
-  },
-   passwordInput: {
-    backgroundColor: "white",
-    fontSize: 20,
-    fontWeight: "200",
-    width: 240,
-    height: 55,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 20,
-    textAlign: "center",
-    elevation: 6,
-  },
-    forgotText: {
+  forgotText: {
     fontWeight: "900",
     fontStyle: "italic",
     fontSize: 18,
@@ -53,29 +9,9 @@ mainLayout: {
     alignSelf: "flex-start",
     marginLeft: 40,
     textDecorationLine: "underline",
-    color: "hsla(0, 0%, 15%, 1.00)"
+    color: "hsla(0, 0%, 15%, 1.00)",
   },
-  loginBtn: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 200,
-    height: 50,
-    borderRadius: 10,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  loginBtnPressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: 200,
-    height: 50,
-    borderRadius: 10,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  registerBtn: {
+  regLogBtn: {
     backgroundColor: "hsla(129, 56%, 43%, 1)",
     width: 225,
     height: 55,
@@ -85,7 +21,7 @@ mainLayout: {
     justifyContent: "center",
     elevation: 6,
   },
-  registerBtnPressed: {
+  regLogBtnPressed: {
     backgroundColor: "hsla(129, 56%, 43%, 0.8)",
     width: 225,
     height: 55,
@@ -95,12 +31,7 @@ mainLayout: {
     justifyContent: "center",
     elevation: 6,
   },
-  loginBtnText: {
-    color: "white",
-    fontSize: 25,
-    fontWeight: "900",
-  },
-  registerBtnText: {
+  regLogBtnText: {
     color: "white",
     fontSize: 25,
     fontWeight: "900",
@@ -109,9 +40,9 @@ mainLayout: {
     fontSize: 18,
     fontWeight: "900",
     marginTop: 10,
-    color: "hsla(0, 0%, 15%, 1.00)"
+    color: "hsla(0, 0%, 15%, 1.00)",
   },
-//HOMESCREEN
+  //HOMESCREEN
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -361,27 +292,6 @@ mainLayout: {
     padding: 20,
     elevation: 10,
   },
-
-  windowTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-
-  nutritionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 4,
-  },
-
-  closeButton: {
-    marginTop: 20,
-    backgroundColor: "#ff4444",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
   //Recipe
   recipesContainer: {
     margin: "auto",
@@ -422,7 +332,7 @@ mainLayout: {
     marginBottom: 13,
     borderRadius: 10,
     overflow: "hidden",
-    elevation: 3
+    elevation: 3,
   },
   cardText: {
     color: "white",
@@ -438,12 +348,6 @@ mainLayout: {
   image: {
     resizeMode: "cover",
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
   modalContainer: {
     width: "95%",
     maxHeight: "95%",
@@ -451,500 +355,474 @@ mainLayout: {
     borderRadius: 10,
     padding: 16,
   },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
   modalContent: {
     marginBottom: 16,
   },
   unitInfoCloseButton: {
-  marginTop: 20,
-  backgroundColor: "hsla(129, 56%, 43%, 1)", 
-  padding: 12,
-  borderRadius: 8,
-  alignItems: "center",
-},
-unitInfoCloseButtonText: {
-  color: "white",
-  fontWeight: "bold",
-  fontSize: 18,
-},
-createRecipeText: {
-  color: "#fff",
-  fontSize: 18,
-  fontWeight: "bold",
-},generateModalContainer: {
-  flex: 1,
-  maxHeight: "90%",
-  padding: 16,
-},
+    marginTop: 20,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  unitInfoCloseButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+  createRecipeText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  generateModalContainer: {
+    flex: 1,
+    maxHeight: "90%",
+    padding: 16,
+  },
 
-scrollPaddingBottom: {
-  paddingBottom: 20,
-},
+  scrollPaddingBottom: {
+    paddingBottom: 20,
+  },
 
-generateTitle: {
-  fontSize: 22,
-  fontWeight: "bold",
-  textAlign: "center",
-  marginBottom: 10,
-},
+  generateTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 10,
+  },
 
-selectedPreferencesBox: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 10,
-  padding: 10,
-  backgroundColor: "#f5f5f5",
-  marginBottom: 15,
-  minHeight: 50,
-},
+  selectedPreferencesBox: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: "#f5f5f5",
+    marginBottom: 15,
+    minHeight: 50,
+  },
 
-preferencesHeader: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: 6,
-},
+  preferencesHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
 
-preferencesTitle: {
-  fontSize: 16,
-  fontWeight: "bold",
-  marginRight: 6,
-},
+  preferencesTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginRight: 6,
+  },
 
-infoCircleSmall: {
-  width: 22,
-  height: 22,
-  borderRadius: 11,
-  backgroundColor: "#4ade80",
-  alignItems: "center",
-  justifyContent: "center",
-},
+  infoCircleSmall: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#4ade80",
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-infoCircleSmallText: {
-  color: "#fff",
-  fontWeight: "bold",
-  fontSize: 12,
-},
+  infoCircleSmallText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
 
-emptyPreferencesText: {
-  color: "#999",
-},
+  emptyPreferencesText: {
+    color: "#999",
+  },
 
-preferencesWrap: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-},
+  preferencesWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
 
-selectedPreferenceChip: {
-  flexDirection: "row",
-  alignItems: "center",
-  backgroundColor: "#e0e0e0",
-  paddingHorizontal: 10,
-  paddingVertical: 6,
-  borderRadius: 20,
-  margin: 4,
-},
+  selectedPreferenceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#e0e0e0",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    margin: 4,
+  },
 
-selectedPreferenceText: {
-  marginRight: 6,
-},
+  selectedPreferenceText: {
+    marginRight: 6,
+  },
 
-removePreferenceText: {
-  fontWeight: "bold",
-},availablePreferencesContainer: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  marginBottom: 20,
-},
+  removePreferenceText: {
+    fontWeight: "bold",
+  },
+  availablePreferencesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
 
-availablePreferenceChip: {
-  backgroundColor: "#d1fae5",
-  paddingHorizontal: 12,
-  paddingVertical: 8,
-  borderRadius: 20,
-  margin: 4,
-},additionalPreferencesButton: {
-  backgroundColor: "#a5f3fc",
-  paddingHorizontal: 12,
-  paddingVertical: 8,
-  borderRadius: 20,
-  marginBottom: 10,
-  alignSelf: "flex-start",
-},
+  availablePreferenceChip: {
+    backgroundColor: "#d1fae5",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    margin: 4,
+  },
+  additionalPreferencesButton: {
+    backgroundColor: "#a5f3fc",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 10,
+    alignSelf: "flex-start",
+  },
 
-additionalPreferencesButtonText: {
-  fontWeight: "bold",
-},additionalPreferencesSection: {
-  marginBottom: 12,
-},
+  additionalPreferencesButtonText: {
+    fontWeight: "bold",
+  },
+  additionalPreferencesSection: {
+    marginBottom: 12,
+  },
 
-additionalPreferencesCategory: {
-  fontWeight: "bold",
-  marginBottom: 6,
-},
+  additionalPreferencesCategory: {
+    fontWeight: "bold",
+    marginBottom: 6,
+  },
 
-additionalPreferencesWrap: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-},
-switchRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: 10,
-},
+  additionalPreferencesWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
 
-switchLabel: {
-  marginLeft: 8,
-  fontSize: 14,
-  fontWeight: "500",
-  color: "#333",
-},
-pantryListContainer: {
-  paddingLeft: 5,
-},
+  switchLabel: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#333",
+  },
+  pantryListContainer: {
+    paddingLeft: 5,
+  },
 
-pantryItemRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: 4,
-  backgroundColor: "#f5f5f5",
-  paddingVertical: 6,
-  paddingHorizontal: 8,
-  borderRadius: 8,
-},
+  pantryItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+    backgroundColor: "#f5f5f5",
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
 
-pantrySwitch: {
-  transform: [{ scale: 0.8 }],
-},
+  pantrySwitch: {
+    transform: [{ scale: 0.8 }],
+  },
 
-pantryItemText: {
-  marginLeft: 8,
-  fontSize: 14,
-  color: "#333",
-},
-pantryToggleRow: {
-  flexDirection: "row",
-  alignItems: "center",
-},
+  pantryItemText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#333",
+  },
+  pantryToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
 
-pantryToggleText: {
-  fontSize: 14,
-  color: "#333",
-  marginRight: 8,
-},
-cookingTimeContainer: {
-  marginBottom: 20,
-},
+  pantryToggleText: {
+    fontSize: 14,
+    color: "#333",
+    marginRight: 8,
+  },
+  cookingTimeContainer: {
+    marginBottom: 20,
+  },
 
-cookingTimeLabel: {
-  marginBottom: 10,
-  fontWeight: "bold",
-  fontSize: 16,
-},
-resetButton: {
-  backgroundColor: "#f87171", // červené tlačidlo
-  paddingVertical: 10,
-  paddingHorizontal: 15,
-  borderRadius: 10,
-  alignSelf: "center",
-  marginBottom: 15,
-},
+  cookingTimeLabel: {
+    marginBottom: 10,
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  resetButton: {
+    backgroundColor: "#f87171", // červené tlačidlo
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 10,
+    alignSelf: "center",
+    marginBottom: 15,
+  },
 
-resetButtonText: {
-  color: "#fff",
-  fontWeight: "bold",
-  fontSize: 16,
-},
-infoText: {
-  textAlign: "center",
-  marginBottom: 20,
-  fontSize: 20,
-},
+  resetButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  infoText: {
+    textAlign: "center",
+    marginBottom: 20,
+    fontSize: 20,
+  },
 
-modalButtonRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-},
+  modalButtonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
 
-cancelButton: {
-  flex: 1,
-  marginRight: 5,
-  backgroundColor: "grey",
-  paddingVertical: 10,
-  borderRadius: 10,
-},
+  cancelButton: {
+    flex: 1,
+    marginRight: 5,
+    backgroundColor: "grey",
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
 
-cancelButtonText: {
-  color: "#fff",
-  textAlign: "center",
-  fontWeight: "bold",
-},
+  cancelButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
 
-generateButton: {
-  flex: 1,
-  marginLeft: 5,
-  backgroundColor: "hsla(129, 56%, 43%, 1)",
-  paddingVertical: 10,
-  borderRadius: 10,
-},
+  generateButton: {
+    flex: 1,
+    marginLeft: 5,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
 
-generateButtonText: {
-  color: "#fff",
-  textAlign: "center",
-  fontWeight: "bold",
-},
-sectionTitle: {
-  fontSize: 22,
-  fontWeight: "bold",
-  marginVertical: 10,
-  marginLeft: 15,
-},
-sectionTitle: {
-  fontSize: 22,
-  fontWeight: "bold",
-  marginVertical: 10,
-  marginLeft: 15,
-},
-recipeModalImage: {
-  width: "100%",
-  height: 220,
-  borderRadius: 16,
-  marginBottom: 15,
-},
+  generateButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginVertical: 10,
+    marginLeft: 15,
+  },
+  recipeModalImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: 16,
+    marginBottom: 15,
+  },
 
-recipeModalTitle: {
-  fontSize: 26,
-  fontWeight: "bold",
-  textAlign: "center",
-  marginBottom: 15,
-},
-staticText: {
-  fontSize: 18,
-  marginBottom: 8,
-},
-aiSectionTitle: {
-  fontSize: 20,
-  fontWeight: "bold",
-  marginTop: 10,
-},
+  recipeModalTitle: {
+    fontSize: 26,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  staticText: {
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  aiSectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 10,
+  },
 
-aiSectionText: {
-  fontSize: 18,
-  marginBottom: 8,
-},
-nutritionTitle: {
-  fontSize: 20,
-  fontWeight: "bold",
-  marginBottom: 8,
-},
+  aiSectionText: {
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  nutritionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
 
-nutritionContainer: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 12,
-  padding: 12,
-  backgroundColor: "#f0fdf4",
-  marginBottom: 15,
-},
+  nutritionContainer: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#f0fdf4",
+    marginBottom: 15,
+  },
+  ingredientsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
 
-nutritionRow: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  paddingVertical: 4,
-  paddingHorizontal: 8,
-  borderRadius: 8,
-  marginVertical: 2,
-},
+  ingredientsTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
 
-nutritionLabel: {
-  fontSize: 18,
-},
+  ingredientsInfoButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#4ade80",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
 
-nutritionValue: {
-  fontSize: 18,
-  fontWeight: "bold",
-},
-ingredientsHeader: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: 6,
-},
+  ingredientsInfoButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  unitInfoModal: {
+    maxHeight: 300,
+  },
 
-ingredientsTitle: {
-  fontSize: 20,
-  fontWeight: "bold",
-},
+  unitInfoTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
 
-ingredientsInfoButton: {
-  width: 24,
-  height: 24,
-  borderRadius: 12,
-  backgroundColor: "#4ade80",
-  alignItems: "center",
-  justifyContent: "center",
-  marginLeft: 8,
-},
+  unitInfoText: {
+    fontSize: 16,
+    marginBottom: 4, // pre medzeru medzi riadkami
+  },
+  stepsTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 10,
+    marginBottom: 6,
+  },
 
-ingredientsInfoButtonText: {
-  color: "#fff",
-  fontWeight: "bold",
-},
-unitInfoModal: {
-  maxHeight: 300,
-},
+  stepContainer: {
+    backgroundColor: "#d1fae5",
+    padding: 8,
+    borderRadius: 10,
+    marginBottom: 6,
+  },
 
-unitInfoTitle: {
-  fontSize: 20,
-  fontWeight: "bold",
-  marginBottom: 10,
-},
+  stepText: {
+    fontSize: 18,
+  },
+  modalButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 15,
+  },
 
-unitInfoText: {
-  fontSize: 16,
-  marginBottom: 4, // pre medzeru medzi riadkami
-},
-stepsTitle: {
-  fontSize: 20,
-  fontWeight: "bold",
-  marginTop: 10,
-  marginBottom: 6,
-},
+  modalButtonClose: {
+    flex: 1,
+    marginRight: 5,
+    backgroundColor: "grey",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
 
-stepContainer: {
-  backgroundColor: "#d1fae5",
-  padding: 8,
-  borderRadius: 10,
-  marginBottom: 6,
-},
+  modalButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 18,
+  },
+  modalButtonSave: {
+    flex: 1,
+    marginLeft: 5,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
 
-stepText: {
-  fontSize: 18,
-},
-modalButtonsContainer: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  marginTop: 15,
-},
+  modalButtonDelete: {
+    flex: 1,
+    marginLeft: 5,
+    backgroundColor: "#ff4d4d",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  generatingModalContainer: {
+    backgroundColor: "#fff",
+    padding: 30,
+    borderRadius: 20,
+    alignItems: "center",
+    width: "80%",
+  },
 
-modalButtonClose: {
-  flex: 1,
-  marginRight: 5,
-  backgroundColor: "grey",
-  paddingVertical: 12,
-  borderRadius: 12,
-},
+  generatingModalTitle: {
+    marginTop: 15,
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
 
-modalButtonText: {
-  color: "#fff",
-  textAlign: "center",
-  fontWeight: "bold",
-  fontSize: 18,
-},
-modalButtonSave: {
-  flex: 1,
-  marginLeft: 5,
-  backgroundColor: "hsla(129, 56%, 43%, 1)",
-  paddingVertical: 12,
-  borderRadius: 12,
-},
+  generatingModalSubtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+  preferenceInfoModalContainer: {
+    maxHeight: "85%",
+  },
 
-modalButtonDelete: {
-  flex: 1,
-  marginLeft: 5,
-  backgroundColor: "#ff4d4d",
-  paddingVertical: 12,
-  borderRadius: 12,
-},
-generatingModalContainer: {
-  backgroundColor: "#fff",
-  padding: 30,
-  borderRadius: 20,
-  alignItems: "center",
-  width: "80%",
-},
+  preferenceInfoTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
 
-generatingModalTitle: {
-  marginTop: 15,
-  fontSize: 18,
-  fontWeight: "600",
-  textAlign: "center",
-},
+  preferenceCategoryTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
 
-generatingModalSubtitle: {
-  marginTop: 6,
-  fontSize: 14,
-  color: "#666",
-  textAlign: "center",
-},
-preferenceInfoModalContainer: {
-  maxHeight: "85%",
-},
+  preferenceItem: {
+    backgroundColor: "#f0fdf4",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 6,
+  },
 
-preferenceInfoTitle: {
-  fontSize: 22,
-  fontWeight: "bold",
-  marginBottom: 10,
-},
+  preferenceItemLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
 
-preferenceCategoryTitle: {
-  fontSize: 18,
-  fontWeight: "600",
-  marginBottom: 6,
-},
+  preferenceItemDescription: {
+    fontSize: 14,
+    color: "#555",
+    marginTop: 2,
+  },
+  preferenceSection: {
+    marginTop: 14,
+  },
 
-preferenceItem: {
-  backgroundColor: "#f0fdf4",
-  padding: 10,
-  borderRadius: 10,
-  marginBottom: 6,
-},
+  preferenceCloseButton: {
+    marginTop: 16,
+    backgroundColor: "#4ade80",
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
 
-preferenceItemLabel: {
-  fontSize: 16,
-  fontWeight: "600",
-},
+  preferenceCloseButtonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
 
-preferenceItemDescription: {
-  fontSize: 14,
-  color: "#555",
-  marginTop: 2,
-},
-preferenceSection: {
-  marginTop: 14,
-},
-
-preferenceCloseButton: {
-  marginTop: 16,
-  backgroundColor: "#4ade80",
-  paddingVertical: 10,
-  borderRadius: 10,
-},
-
-preferenceCloseButtonText: {
-  color: "#fff",
-  textAlign: "center",
-  fontWeight: "bold",
-},
-
-   mainLayout: {
+  mainLayout: {
     flex: 1,
     backgroundColor: "#618a335d",
     width: "100%",
     height: "100%",
     alignItems: "center",
   },
-
   profileAvatar: {
     height: 180,
     width: 180,
     marginBottom: 20,
-    marginTop: 90,
+    marginTop: 65,
     backgroundColor: "white",
     borderRadius: 20,
-    alignSelf: "center"
+    alignSelf: "center",
   },
   logo_slogan: {
     height: 250,
@@ -960,12 +838,13 @@ preferenceCloseButtonText: {
     width: "100%",
     backgroundColor: "white",
     borderRadius: 50,
-    marginTop: 45
+    marginTop: 10,
   },
   titleText: {
-    fontSize: 45,
+    fontSize: 35,
     fontWeight: "900",
     color: "hsla(0, 0%, 15%, 1.00)",
+    marginBottom: 15,
   },
    welcomeTitle: {
     fontSize: 45,
@@ -979,7 +858,6 @@ preferenceCloseButtonText: {
     borderRadius: 20,
     borderWidth: 2,
     borderColor: "white",
-    height: 500,
     width: 340,
     alignItems: "center",
     justifyContent: "center",
@@ -988,12 +866,12 @@ preferenceCloseButtonText: {
     backgroundColor: "white",
     fontSize: 20,
     fontWeight: "200",
-    width: 240,
-    height: 55,
-    borderRadius: 5,
+    width: 260,
+    height: 50,
+    borderRadius: 15,
     borderColor: "black",
     borderWidth: 1,
-    marginTop: 5,
+    margin: 7,
     textAlign: "center",
     elevation: 6,
   },
@@ -1203,7 +1081,7 @@ preferenceCloseButtonText: {
     marginBottom: 40,
   },
   backArrowPressed: {
-     height: 55,
+    height: 55,
     width: 55,
     alignItems: "center",
     justifyContent: "center",
@@ -1220,7 +1098,7 @@ preferenceCloseButtonText: {
     justifyContent: "center",
     borderRadius: 10,
     alignSelf: "center",
-    marginBottom: 50
+    marginBottom: 50,
   },
   manualAddButtonText: {
     fontSize: 18,
