@@ -87,16 +87,16 @@ export default function RegistrationScreen() {
   }
 
   return (
-    <KeyboardWrapper style={styles.mainLayout}>
-      <Image style={styles.profileAvatar} source={logo} />
+    <KeyboardWrapper style={styles.authMainLayout}>
+      <Image style={styles.authProfileAvatarReg} source={logo} />
 
-      <View style={styles.cardContainer}>
-        <Text style={styles.titleText}>Registrácia!</Text>
+      <View style={styles.authCardContainer}>
+        <Text style={styles.authTitleText}>Registrácia!</Text>
 
-        <Text style={styles.infoLabel}>Zadaj email:</Text>
+        <Text style={styles.authInfoLabel}>Zadaj email:</Text>
         <TextInput
           placeholder="e-mail"
-          style={styles.textInput}
+          style={styles.authTextInput}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -104,29 +104,29 @@ export default function RegistrationScreen() {
           autoComplete="email"
         />
 
-        <Text style={styles.infoLabel}>Zadaj ako ťa máme volať:</Text>
+        <Text style={styles.authInfoLabel}>Zadaj ako ťa máme volať:</Text>
         <TextInput
           placeholder="prezývka"
-          style={styles.textInput}
+          style={styles.authTextInput}
           value={nick}
           onChangeText={setNick}
           autoCapitalize="words"
         />
 
-        <Text style={styles.infoLabel}>Zadaj svoje heslo:</Text>
+        <Text style={styles.authInfoLabel}>Zadaj svoje heslo:</Text>
         <TextInput
           placeholder="heslo"
-          style={styles.textInput}
+          style={styles.authTextInput}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           autoCapitalize="none"
         />
 
-        <Text style={styles.infoLabel}>Zopakuj heslo:</Text>
+        <Text style={styles.authInfoLabel}>Zopakuj heslo:</Text>
         <TextInput
           placeholder="heslo znova"
-          style={styles.textInput}
+          style={styles.authTextInput}
           value={passwordConfirm}
           onChangeText={setPasswordConfirm}
           secureTextEntry
@@ -135,7 +135,7 @@ export default function RegistrationScreen() {
 
         <Pressable
           style={({ pressed }) =>
-            pressed ? styles.regLogBtnPressed : styles.regLogBtn
+            pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
           }
           onPress={() => !loading && handleRegistration()}
           disabled={loading}
@@ -143,16 +143,16 @@ export default function RegistrationScreen() {
           {loading ? (
             <ActivityIndicator size="small" />
           ) : (
-            <Text style={styles.regLogBtnText}>Registrovať sa!</Text>
+            <Text style={styles.authRegLogBtnText}>Registrovať sa!</Text>
           )}
         </Pressable>
         <Pressable
           style={({ pressed }) =>
-            pressed ? styles.backArrowPressed : styles.backArrowContainer
+            pressed ? styles.authBackArrowPressed : styles.authBackArrowContainer
           }
           onPress={() => navigation.navigate("HomeScreen")}
         >
-          <Image source={arrow} style={styles.backArrow} />
+          <Image source={arrow} style={styles.authBackArrow} />
         </Pressable>
       </View>
     </KeyboardWrapper>

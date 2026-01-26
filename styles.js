@@ -1,4 +1,15 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Dimensions } from "react-native";
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Reference size used when the auth screens were styled originally.
+const AUTH_BASE_WIDTH = 360;
+const AUTH_BASE_HEIGHT = 800;
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const s = (size) => (SCREEN_WIDTH / AUTH_BASE_WIDTH) * size;
+const vs = (size) => (SCREEN_HEIGHT / AUTH_BASE_HEIGHT) * size;
+const ms = (size, factor = 0.5) => size + (s(size) - size) * factor;
 
 export default StyleSheet.create({
   forgotText: {
@@ -205,7 +216,7 @@ export default StyleSheet.create({
   bmiContainer: {
     backgroundColor: "#1E1E1E",
     width: "90%",
-    height: 120,
+    height: 100,
     borderRadius: 15,
     alignSelf: "center",
     alignItems: "center",
@@ -1199,5 +1210,136 @@ export default StyleSheet.create({
     color: "red",
     textAlign: "center",
     marginBottom: 10,
+  },
+
+  // --- AUTH (HomeScreen + RegistrationScreen) responsive variants ---
+  // These are screen-specific clones so we don't affect other screens that
+  // still use the original shared style keys.
+  authMainLayout: {
+    flex: 1,
+    backgroundColor: "#618a335d",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+  },
+  authProfileAvatar: {
+    height: Math.round(clamp(ms(180), 150, 220)),
+    width: Math.round(clamp(ms(180), 150, 220)),
+    marginBottom: Math.round(clamp(vs(20), 12, 26)),
+    marginTop: Math.round(clamp(vs(65), 40, 90)),
+    backgroundColor: "white",
+    borderRadius: Math.round(clamp(ms(20), 16, 24)),
+    alignSelf: "center",
+  },
+  authProfileAvatarReg: {
+    height: Math.round(clamp(ms(110), 80, 150)),
+    width: Math.round(clamp(ms(110), 80, 150)),
+    marginBottom: Math.round(clamp(vs(20), 12, 26)),
+    marginTop: Math.round(clamp(vs(65), 40, 90)),
+    backgroundColor: "white",
+    borderRadius: Math.round(clamp(ms(20), 16, 24)),
+    alignSelf: "center",
+  },
+  authCardContainer: {
+    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
+    padding: Math.round(clamp(ms(10), 8, 14)),
+    borderRadius: Math.round(clamp(ms(20), 16, 24)),
+    borderWidth: 2,
+    borderColor: "white",
+    width: Math.round(clamp(ms(340), 280, 380)),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  authTitleText: {
+    fontSize: Math.round(clamp(ms(35), 30, 40)),
+    fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)",
+    marginBottom: Math.round(clamp(vs(15), 10, 18)),
+  },
+  authInfoLabel: {
+    fontWeight: "800",
+    fontSize: Math.round(clamp(ms(15), 13, 17)),
+    marginTop: Math.round(clamp(vs(5), 3, 8)),
+    alignSelf: "flex-start",
+    marginLeft: Math.round(clamp(ms(40), 28, 48)),
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  authTextInput: {
+    backgroundColor: "white",
+    fontSize: Math.round(clamp(ms(20), 17, 22)),
+    fontWeight: "200",
+    width: Math.round(clamp(ms(260), 220, 300)),
+    height: Math.round(clamp(vs(50), 44, 56)),
+    borderRadius: Math.round(clamp(ms(15), 12, 18)),
+    borderColor: "black",
+    borderWidth: 1,
+    margin: Math.round(clamp(ms(7), 5, 9)),
+    textAlign: "center",
+    elevation: 6,
+  },
+  authForgotText: {
+    fontWeight: "900",
+    fontStyle: "italic",
+    fontSize: Math.round(clamp(ms(18), 16, 20)),
+    marginTop: Math.round(clamp(vs(5), 3, 8)),
+    alignSelf: "flex-start",
+    marginLeft: Math.round(clamp(ms(40), 28, 48)),
+    textDecorationLine: "underline",
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  authRegLogBtn: {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    width: Math.round(clamp(ms(225), 190, 250)),
+    height: Math.round(clamp(vs(55), 48, 60)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  authRegLogBtnPressed: {
+    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
+    width: Math.round(clamp(ms(225), 190, 250)),
+    height: Math.round(clamp(vs(55), 48, 60)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  authRegLogBtnText: {
+    color: "white",
+    fontSize: Math.round(clamp(ms(25), 22, 28)),
+    fontWeight: "900",
+  },
+  authOrText: {
+    fontSize: Math.round(clamp(ms(18), 16, 20)),
+    fontWeight: "900",
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  authBackArrow: {
+    height: "100%",
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: Math.round(clamp(ms(50), 44, 56)),
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+  },
+  authBackArrowContainer: {
+    height: Math.round(clamp(ms(60), 52, 68)),
+    width: Math.round(clamp(ms(60), 52, 68)),
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+    alignSelf: "center",
+  },
+  authBackArrowPressed: {
+    height: Math.round(clamp(ms(55), 48, 64)),
+    width: Math.round(clamp(ms(55), 48, 64)),
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: Math.round(clamp(vs(12), 10, 16)),
+    opacity: 0.8,
   },
 });

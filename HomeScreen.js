@@ -218,17 +218,17 @@ export default function HomeScreen({ setIsLoggedIn }) {
   }
 
   return (
-    <KeyboardWrapper style={styles.mainLayout}>
+    <KeyboardWrapper style={styles.authMainLayout}>
   
-        <Image style={styles.profileAvatar} source={logo} />
-        <View style={styles.cardContainer}>
-          <Text style={styles.titleText}>Prihlásenie!</Text>
-          <Text style={styles.infoLabel}>Tu vyplň svoje údaje:</Text>
+        <Image style={styles.authProfileAvatar} source={logo} />
+        <View style={styles.authCardContainer}>
+          <Text style={styles.authTitleText}>Prihlásenie!</Text>
+          <Text style={styles.authInfoLabel}>Tu vyplň svoje údaje:</Text>
 
         {/* Email input */}
         <TextInput
           placeholder="e-mail"
-          style={styles.textInput}
+          style={styles.authTextInput}
           value={email}
           onChangeText={setEmail}
         />
@@ -236,7 +236,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
         {/* Password input */}
         <TextInput
           placeholder="heslo"
-          style={styles.textInput}
+          style={styles.authTextInput}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -245,7 +245,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
         {/* Forgot password link */}
         <Text
           onPress={() => navigation.navigate("ForgetPass")}
-          style={styles.forgotText}
+          style={styles.authForgotText}
         >
           Zabudnuté heslo?
         </Text>
@@ -253,23 +253,23 @@ export default function HomeScreen({ setIsLoggedIn }) {
         {/* Login button */}
         <Pressable
           style={({ pressed }) =>
-            pressed ? styles.regLogBtnPressed : styles.regLogBtn
+            pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
           }
           onPress={handleLogin}
         >
-          <Text style={styles.regLogBtnText}>Prihlásiť sa!</Text>
+          <Text style={styles.authRegLogBtnText}>Prihlásiť sa!</Text>
         </Pressable>
 
-        <Text style={styles.orText}>ALEBO</Text>
+        <Text style={styles.authOrText}>ALEBO</Text>
 
         {/* Registration button */}
         <Pressable
           style={({ pressed }) =>
-            pressed ? styles.regLogBtnPressed : styles.regLogBtn
+            pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
           }
           onPress={() => navigation.navigate("RegistrationScreen")}
         >
-          <Text style={styles.regLogBtnText}>Registrovať sa!</Text>
+          <Text style={styles.authRegLogBtnText}>Registrovať sa!</Text>
         </Pressable>
       </View>
     </KeyboardWrapper>

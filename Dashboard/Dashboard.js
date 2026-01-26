@@ -566,7 +566,6 @@ export default function Dashboard({ setIsLoggedIn }) {
                 backgroundColor="green"
                 padding={5}
                 borderRadius={20}
-                marginTop={5}
                 onPress={() => setModalVisible(true)}
               >
                 <Image source={plus} style={{ width: 20, height: 20 }} />
