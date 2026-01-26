@@ -201,7 +201,7 @@ useEffect(() => {
   
         <Image style={styles.profileAvatar} source={logo} />
         <View style={styles.cardContainer}>
-          <Text style={styles.titleText}>Vitaj!</Text>
+          <Text style={styles.titleText}>Prihlásenie!</Text>
           <Text style={styles.infoLabel}>Tu vyplň svoje údaje:</Text>
 
           {/* Email input */}

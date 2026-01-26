@@ -946,6 +946,15 @@ preferenceCloseButtonText: {
     borderRadius: 20,
     alignSelf: "center"
   },
+  logo_slogan: {
+    height: 250,
+    width: 250,
+    marginBottom: 20,
+    marginTop: 90,
+    backgroundColor: "white",
+    borderRadius: 20,
+    alignSelf: "center"
+  },
   backArrow: {
     height: "100%",
     width: "100%",
@@ -957,6 +966,12 @@ preferenceCloseButtonText: {
     fontSize: 45,
     fontWeight: "900",
     color: "hsla(0, 0%, 15%, 1.00)",
+  },
+   welcomeTitle: {
+    fontSize: 45,
+    fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)",
+    marginBottom: 20
   },
   cardContainer: {
     backgroundColor: "hsla(0, 0%, 100%, 0.65)",
@@ -988,6 +1003,15 @@ preferenceCloseButtonText: {
     marginTop: 5,
     alignSelf: "flex-start",
     marginLeft: 40,
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  welcomeText: {
+    fontWeight: "600",
+    fontSize: 18,
+    marginTop: 5,
+    paddingLeft: 35,
+    paddingRight: 35,
+    textAlign: "center",
     color: "hsla(0, 0%, 15%, 1.00)",
   },
   actionButton: {
