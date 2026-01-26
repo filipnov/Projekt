@@ -49,8 +49,8 @@ export default function PasswordForgetScreen() {
 
   return (
     <KeyboardWrapper style={styles.screenWrapper}>
-      <View style={styles.backgroundImage}>
-        <Image style={styles.logoImage} source={logo} />
+      <View style={styles}>
+        <Image style={styles} />
 
     <View style={styles.cardBox}>
       <Text style={styles.headingText}>Zabudli ste heslo?</Text>

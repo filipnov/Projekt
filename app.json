@@ -3,6 +3,7 @@
     "name": "MyApp",
     "slug": "MyApp",
     "version": "1.0.0",
+    "scheme": "bitewise",
     "orientation": "portrait",
     "icon": "./assets/logo-icon.png",
     "userInterfaceStyle": "light",
@@ -20,13 +21,20 @@
         "foregroundImage": "./assets/logo-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.MyApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "aa53fb3b-02b6-49aa-80a5-f6615c6b3df0"
+      }
+    }
   }
 }

@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "expo-linking": "~8.0.11",
     "expo-router": "~6.0.22",
     "expo-status-bar": "~3.0.9",
+    "expo-system-ui": "^6.0.9",
     "mongodb": "^6.20.0",
     "nodemailer": "^7.0.10",
     "openai": "^6.16.0",
@@ -45,5 +46,9 @@
   "bugs": {
     "url": "https://github.com/filipnov/Projekt/issues"
   },
-  "homepage": "https://github.com/filipnov/Projekt#readme"
+  "homepage": "https://github.com/filipnov/Projekt#readme",
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "~5.9.2"
+  }
 }
