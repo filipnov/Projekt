@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   Switch,
+  Modal
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo-name.png";
@@ -20,7 +21,6 @@ import KeyboardWrapper from "./KeyboardWrapper";
 export default function RegistrationScreen() {
   const navigation = useNavigation();
 
-  // State for user input
   const [email, setEmail] = useState("");
   const [nick, setNick] = useState("");
   const [password, setPassword] = useState("");
@@ -29,22 +29,20 @@ export default function RegistrationScreen() {
   const [gdprConsent, setGdprConsent] = useState(false);
 
   const SERVER = "https://app.bitewise.it.com";
-
   const REGISTER_URL = `${SERVER}/api/register`;
 
-  // Handle registration
   async function handleRegistration() {
     if (!gdprConsent) {
       Alert.alert(
         "Súhlas je povinný",
-        "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov.",
+        "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov."
       );
       return;
     }
+
     const trimmedEmail = email.trim();
     const trimmedNick = nick.trim();
 
-    // Basic validation
     if (!trimmedEmail || !trimmedNick || !password || !passwordConfirm) {
       Alert.alert("Registrácia nebola úspešná!", "Prosím vyplň všetky polia!");
       return;
@@ -58,10 +56,11 @@ export default function RegistrationScreen() {
       email: trimmedEmail,
       password,
       nick: trimmedNick,
-      gdprConsent, // boolean
-      gdprConsentAt: new Date().toISOString(), // ISO timestamp
-      gdprPolicyVersion: "1.0", // alebo dátum verzie GDPR
+      gdprConsent,
+      gdprConsentAt: new Date().toISOString(),
+      gdprPolicyVersion: "1.0",
     };
+
     await AsyncStorage.setItem("userNick", trimmedNick);
     setLoading(true);
 
@@ -75,7 +74,6 @@ export default function RegistrationScreen() {
       const data = await resp.json().catch(() => ({}));
 
       if (resp.ok) {
-        // Clear inputs
         setEmail("");
         setNick("");
         setPassword("");
@@ -102,6 +100,17 @@ export default function RegistrationScreen() {
 
   return (
     <KeyboardWrapper style={styles.authMainLayout}>
+      {/* Spinner Modal */}
+      <Modal visible={loading} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.generatingModalContainer}>
+            <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
+            <Text style={styles.generatingModalTitle}>Spracovávam údaje...</Text>
+            <Text style={styles.generatingModalSubtitle}>Môže to trvať niekoľko sekúnd</Text>
+          </View>
+        </View>
+      </Modal>
+
       <Image style={styles.authProfileAvatarReg} source={logo} />
 
       <View style={styles.authCardContainer}>
@@ -146,51 +155,37 @@ export default function RegistrationScreen() {
           secureTextEntry
           autoCapitalize="none"
         />
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: 10,
-          }}
-        >
+
+        <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 10 }}>
           <Switch
             value={gdprConsent}
             onValueChange={setGdprConsent}
             trackColor={{ false: "#ccc", true: "#4CAF50" }}
             thumbColor={gdprConsent ? "#2E7D32" : "#f4f3f4"}
-            style={{ alignSelf: "center" }}
           />
           <Text style={{ marginLeft: 10, flex: 1 }}>
-            Súhlasím so spracovaním svojho emailu a prezývky na účely
-            registrácie a zasielania notifikácií o účte podľa zásad ochrany
-            osobných údajov.
+            Súhlasím so spracovaním svojho emailu a prezývky na účely registrácie a zasielania notifikácií o účte podľa zásad ochrany osobných údajov.
           </Text>
         </View>
-        <View style={styles.buttonLayout}>
-          <Pressable
-            style={({ pressed }) =>
-              pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
-            }
-            onPress={() => !loading && handleRegistration()}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <Text style={styles.authRegLogBtnText}>Registrovať sa!</Text>
-            )}
-          </Pressable>
-          <Pressable
-            style={({ pressed }) =>
-              pressed
-                ? styles.authBackArrowPressed
-                : styles.authBackArrowContainer
-            }
-            onPress={() => navigation.navigate("HomeScreen")}
-          >
-            <Image source={arrow} style={styles.authBackArrow} />
-          </Pressable>
-        </View>
+
+        <Pressable
+          style={({ pressed }) =>
+            pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
+          }
+          onPress={() => !loading && handleRegistration()}
+          disabled={loading}
+        >
+          <Text style={styles.authRegLogBtnText}>Registrovať sa!</Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) =>
+            pressed ? styles.authBackArrowPressed : styles.authBackArrowContainer
+          }
+          onPress={() => navigation.navigate("HomeScreen")}
+        >
+          <Image source={arrow} style={styles.authBackArrow} />
+        </Pressable>
       </View>
     </KeyboardWrapper>
   );
