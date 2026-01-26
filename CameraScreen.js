@@ -5,12 +5,13 @@ import {
   View,
   Text,
   Button,
-  StyleSheet,
   Pressable,
   Image,
   TextInput,
   Alert,
   ScrollView,
+  Modal,
+  ActivityIndicator
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import arrow from "./assets/left-arrow.png";
@@ -28,6 +29,7 @@ export default function CameraScreen() {
   const [quantityInput, setQuantityInput] = useState("");
   const [awaitingQuantity, setAwaitingQuantity] = useState(false);
   const [showNutriValues] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const [isPer100g, setIsPer100g] = useState();
   useEffect(() => {
@@ -136,59 +138,68 @@ if (data.success && Array.isArray(data.products)) {
     };
   }
 
-  async function fetchProductData(barcode) {
-    setProductData(null);
-    setAwaitingQuantity(false);
-    setQuantityInput("");
+  // Upravený fetchProductData
+async function fetchProductData(barcode) {
+  setProductData(null);
+  setAwaitingQuantity(false);
+  setQuantityInput("");
+  setLoading(true); // spinner ON
 
-    try {
-      const response = await debugFetch(`${API_URL}/${barcode}.json`);
-      const data = await response.json();
+  try {
+    const response = await debugFetch(`${API_URL}/${barcode}.json`);
+    const data = await response.json();
 
-      if (data.status === 1) {
-        const product = data.product;
-        const n = product.nutriments;
+    if (data.status === 1) {
+      const product = data.product;
+      const n = product.nutriments;
+      const weight = Number(product.product_quantity);
 
-        const weight = Number(product.product_quantity);
+      const productInfo = {
+        name: product.product_name || "Neznámy produkt",
+        image: product.image_url,
+        calories: n?.["energy-kcal_100g"] || 0,
+        fat: n?.fat_100g || 0,
+        saturatedFat: n?.["saturated-fat_100g"] || 0,
+        carbs: n?.carbohydrates_100g || 0,
+        sugar: n?.sugars_100g || 0,
+        proteins: n?.proteins_100g || 0,
+        salt: n?.salt_100g || 0,
+        fiber: n?.fiber_100g || 0,
+        quantity: weight,
+      };
 
-        const productInfo = {
-          name: product.product_name || "Neznámy produkt",
-          image: product.image_url,
-          calories: n?.["energy-kcal_100g"] || 0,
-          fat: n?.fat_100g || 0,
-          saturatedFat: n?.["saturated-fat_100g"] || 0,
-          carbs: n?.carbohydrates_100g || 0,
-          sugar: n?.sugars_100g || 0,
-          proteins: n?.proteins_100g || 0,
-          salt: n?.salt_100g || 0,
-          fiber: n?.fiber_100g || 0,
-          quantity: weight,
-        };
+      let finalProduct = productInfo;
 
-        let finalProduct = productInfo;
-
-        if (weight && !isNaN(weight) && weight > 0) {
-          finalProduct = calculateTotals(productInfo, weight);
-        } else {
-          setAwaitingQuantity(true);
-        }
-
-        setProductData(finalProduct);
+      if (weight && !isNaN(weight) && weight > 0) {
+        finalProduct = calculateTotals(productInfo, weight);
       } else {
-        Alert.alert("❌ Produkt sa nenašiel", `Kód: ${barcode}`);
+        setAwaitingQuantity(true);
       }
-    } catch (err) {
-      console.error("❌ Chyba pri načítaní produktu:", err);
-      Alert.alert("Chyba", "Nepodarilo sa načítať dáta.");
-    }
-  }
 
-  async function handleBarCodeScanned({ data }) {
-    if (scanned) return;
-    setScanned(true);
-    await fetchProductData(data);
-    setTimeout(() => setScanned(false), 900000);
+      setProductData(finalProduct);
+
+      // 🔒 produkt nájdený → blok 10 sekúnd
+      setTimeout(() => setScanned(false), 5000);
+
+    } else {
+      console.warn(`Produkt sa nenašiel pre kód: ${barcode}`);
+      Alert.alert("❌ Produkt sa nenašiel", `Kód: ${barcode}`);
+      // 🔓 produkt nenájdený → blok len 5 sekúnd
+      setTimeout(() => setScanned(false), 5000);
+    }
+  } catch (err) {
+    console.error("❌ Chyba pri načítaní produktu:", err);
+    setScanned(false);
+  } finally {
+    setLoading(false); // spinner OFF
   }
+}
+
+async function handleBarCodeScanned({ data }) {
+  if (scanned) return;
+  setScanned(true);
+  await fetchProductData(data);
+}
 
   const handleShowContent = () => setShowContent(!showContent);
 
@@ -205,14 +216,31 @@ if (data.success && Array.isArray(data.products)) {
           onChangeText={setCode}
         />
 
-        <Pressable
-          onPress={() => {
-            fetchProductData(code);
-          }}
-          style={styles.primaryActionButton}
-        >
-          <Text style={styles.primaryActionButtonText}>Pridať</Text>
-        </Pressable>
+  <Pressable
+  onPress={() => {
+    fetchProductData(code);
+  }}
+  style={styles.primaryActionButton}
+>
+  {loading ? (
+    <ActivityIndicator size="small" color="hsla(129, 56%, 43%, 1)" />
+  ) : (
+    <Text style={styles.primaryActionButtonText}>Pridať</Text>
+  )}
+</Pressable>
+
+
+<Modal visible={loading} transparent animationType="fade">
+  <View style={styles.modalOverlay}>
+    <View style={styles.generatingModalContainer}>
+      <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
+      <Text style={styles.generatingModalTitle}>Načítavam produkt...</Text>
+      <Text style={styles.generatingModalSubtitle}>
+        Môže to trvať niekoľko sekúnd
+      </Text>
+    </View>
+  </View>
+</Modal>
       </KeyboardWrapper>
     );
   };
