@@ -198,7 +198,7 @@ useEffect(() => {
 
   return (
     <KeyboardWrapper style={styles.mainLayout}>
-      <View style={styles.bgImage}>
+  
         <Image style={styles.profileAvatar} source={logo} />
         <View style={styles.cardContainer}>
           <Text style={styles.titleText}>Vitaj!</Text>
@@ -251,7 +251,6 @@ useEffect(() => {
             <Text style={styles.registerBtnText}>Registrovať sa!</Text>
           </Pressable>
         </View>
-      </View>
     </KeyboardWrapper>
   );
 }

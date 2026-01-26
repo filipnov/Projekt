@@ -304,8 +304,8 @@ if (data.success && Array.isArray(data.products)) {
   if (!permission) return <Text>Načítavam oprávnenia...</Text>;
   if (!permission.granted)
     return (
-      <View>
-        <Text>Táto aplikácia potrebuje prístup ku kamere.</Text>
+      <View style={{marginTop: 500, width: "80%", alignSelf: "center"}}>
+        <Text style={{textAlign: "center"}}>Táto aplikácia potrebuje prístup ku kamere.</Text>
         <Button title="Povoliť kameru" onPress={requestPermission} />
       </View>
     );

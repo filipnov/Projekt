@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export default StyleSheet.create({
 //HOMESCREEN
 mainLayout: {
-    flex: 1,
+    //flex: 1,
     backgroundColor: "#618a335d",
     width: "100%",
     height: "100%",
@@ -11,7 +11,6 @@ mainLayout: {
   },
    cardContainer: {
     backgroundColor: "hsla(0, 0%, 100%, 0.65)",
-    padding: 10,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: "white",
@@ -19,19 +18,6 @@ mainLayout: {
     width: 340,
     alignItems: "center",
     justifyContent: "center",
-  },
-   titleText: {
-    fontSize: 50,
-    fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)"
-  },
-    infoLabel: {
-    fontWeight: "800",
-    fontSize: 16,
-    marginTop: 20,
-    alignSelf: "flex-start",
-    marginLeft: 40,
-    color: "hsla(0, 0%, 15%, 1.00)"
   },
     emailInput: {
     backgroundColor: "white",
@@ -155,7 +141,8 @@ mainLayout: {
     borderRadius: 10,
   },
   navBar: {
-    width: "100%",
+    alignSelf: "center",
+    verticalAlign: "bottom",
     height: "auto",
     flexDirection: "row",
     justifyContent: "space-between",
@@ -216,11 +203,11 @@ mainLayout: {
     justifyContent: "center",
   },
   navBar_text: {
-    fontSize: 11,
+    fontSize: 10,
     color: "black",
   },
   navBar_text_pressed: {
-    fontSize: 11.5,
+    fontSize: 10,
     fontWeight: "700",
     color: "black",
   },
@@ -949,43 +936,25 @@ preferenceCloseButtonText: {
     height: "100%",
     alignItems: "center",
   },
-  bgImage: {
-    resizeMode: "cover",
-    width: 200,
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   profileAvatar: {
-    height: 250,
-    width: 250,
+    height: 180,
+    width: 180,
     marginBottom: 20,
+    marginTop: 90,
     backgroundColor: "white",
     borderRadius: 20,
-  },
-  backArrowContainer: {
-    height: 60,
-    width: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
+    alignSelf: "center"
   },
   backArrow: {
     height: "100%",
     width: "100%",
     backgroundColor: "white",
     borderRadius: 50,
-  },
-  backArrowPressed: {
-    height: 58,
-    width: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    opacity: 0.8,
+    marginTop: 45
   },
   titleText: {
-    fontSize: 50,
+    fontSize: 45,
     fontWeight: "900",
     color: "hsla(0, 0%, 15%, 1.00)",
   },
@@ -1015,7 +984,7 @@ preferenceCloseButtonText: {
   },
   infoLabel: {
     fontWeight: "800",
-    fontSize: 14,
+    fontSize: 15,
     marginTop: 5,
     alignSelf: "flex-start",
     marginLeft: 40,
@@ -1027,6 +996,7 @@ preferenceCloseButtonText: {
     height: 55,
     borderRadius: 10,
     marginTop: 15,
+    marginBottom: 20,
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
@@ -1036,6 +1006,7 @@ preferenceCloseButtonText: {
     width: 225,
     height: 55,
     borderRadius: 10,
+    marginBottom: 20,
     marginTop: 15,
     alignItems: "center",
     justifyContent: "center",
@@ -1064,21 +1035,6 @@ preferenceCloseButtonText: {
     fontWeight: "700",
     color: "hsla(0, 0%, 15%, 1.00)",
   },
-
-  textInput: {
-    backgroundColor: "white",
-    fontSize: 14,
-    fontWeight: "400",
-    width: 160,
-    height: 40,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 5,
-    textAlign: "center",
-    elevation: 6,
-  },
-
   primaryButton: {
     backgroundColor: "#4CAF50",
     paddingVertical: 12,
@@ -1212,7 +1168,7 @@ preferenceCloseButtonText: {
     width: 60,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 40,
+    marginTop: 10,
     alignSelf: "center",
   },
   backArrowImage: {
@@ -1223,12 +1179,12 @@ preferenceCloseButtonText: {
     marginBottom: 40,
   },
   backArrowPressed: {
-    height: 58,
-    width: 58,
+     height: 55,
+    width: 55,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
-    marginTop: 40,
+    marginTop: 12,
     opacity: 0.8,
   },
   manualAddButton: {
@@ -1240,6 +1196,7 @@ preferenceCloseButtonText: {
     justifyContent: "center",
     borderRadius: 10,
     alignSelf: "center",
+    marginBottom: 50
   },
   manualAddButtonText: {
     fontSize: 18,
@@ -1251,7 +1208,7 @@ preferenceCloseButtonText: {
     width: 250,
     height: 270,
     alignSelf: "center",
-    marginBottom: 20,
+    marginBottom: 120,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1269,6 +1226,7 @@ preferenceCloseButtonText: {
     borderColor: "black",
     borderWidth: 1,
     marginTop: 10,
+    alignSelf: "center",
     textAlign: "center",
   },
   primaryActionButton: {
@@ -1277,6 +1235,7 @@ preferenceCloseButtonText: {
     height: 35,
     borderRadius: 5,
     marginTop: 15,
+    alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
   },

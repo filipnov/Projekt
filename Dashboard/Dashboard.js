@@ -27,6 +27,7 @@ import storage from "../assets/storage.png";
 import speedometer from "../assets/speedometer.png";
 import account from "../assets/avatar.png";
 import { SafeAreaView } from "react-native-safe-area-context";
+import KeyboardWrapper from "../KeyboardWrapper";
 
 export default function Dashboard({ setIsLoggedIn }) {
   const SERVER_URL = "https://app.bitewise.it.com";
@@ -715,8 +716,7 @@ export default function Dashboard({ setIsLoggedIn }) {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
+  return (<>
       <View style={styles.topBar}>
         <Image source={logo} style={styles.topBar_img} />
         <Text style={styles.topBar_text}>Ahoj {nick}</Text>
@@ -808,6 +808,6 @@ export default function Dashboard({ setIsLoggedIn }) {
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+    </>
   );
 }

@@ -88,7 +88,7 @@ export default function RegistrationScreen() {
 
   return (
     <KeyboardWrapper style={styles.mainLayout}>
-      <View style={styles.bgImage}>
+
         <Image style={styles.profileAvatar} source={logo} />
 
       <View style={styles.cardContainer}>
@@ -157,7 +157,6 @@ export default function RegistrationScreen() {
       >
         <Image source={arrow} style={styles.backArrow} />
       </Pressable>
-      </View>
     </KeyboardWrapper>
   );
 }
