@@ -64,7 +64,7 @@ export default function PasswordForgetScreen() {
         placeholder="e-mail"
         value={email}
         onChangeText={setEmail}
-        style={styles.emailInput}
+        style={styles.textInput}
       />
 
       <Pressable
@@ -79,7 +79,7 @@ export default function PasswordForgetScreen() {
 
     <Pressable
       style={({ pressed }) =>
-        pressed ? styles.backArrowContainer : styles.backArrowPressed
+        pressed ? styles.backArrowPressed : styles.backArrowContainer
       }
       onPress={() => navigation.navigate("HomeScreen")}
     >
