@@ -156,7 +156,7 @@ export default StyleSheet.create({
     color: "white",
     alignSelf: "flex-start",
     marginLeft: 20,
-    marginBottom: 27,
+    // marginTop: 27,
   },
   caloriesBarContainer: {
     backgroundColor: "white",
@@ -176,28 +176,26 @@ export default StyleSheet.create({
     marginTop: 5,
     backgroundColor: "#1E1E1E",
     width: "90%",
-    height: 170,
+    paddingTop: 15,
+    paddingBottom: 15,
     borderRadius: 15,
     alignSelf: "center",
     alignItems: "center",
-    flexDirection: "column-reverse",
   },
   nutriDisplay_container: {
     width: "90%",
     alignSelf: "center",
     alignItems: "center",
-    borderRadius: 15,
-    flexDirection: "column",
-    paddingVertical: 8,
+    marginTop: 2.5,
   },
   nutriDisplay: {
     backgroundColor: "#1E1E1E",
     height: 100,
-    width: 115,
-    borderRadius: 105,
+    width: "32.5%",
+    borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
-    margin: 5,
+    margin: 2.5,
   },
   nutriDisplay_text: {
     color: "white",
@@ -205,7 +203,6 @@ export default StyleSheet.create({
     marginTop: 10,
   },
   bmiContainer: {
-    marginTop: 5,
     backgroundColor: "#1E1E1E",
     width: "90%",
     height: 120,
@@ -213,6 +210,7 @@ export default StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 2.5,
   },
   logout_button: {
     backgroundColor: "hsla(129, 56%, 43%, 1)",
@@ -831,7 +829,7 @@ export default StyleSheet.create({
     marginTop: 90,
     backgroundColor: "white",
     borderRadius: 20,
-    alignSelf: "center"
+    alignSelf: "center",
   },
   backArrow: {
     height: "100%",
@@ -846,11 +844,11 @@ export default StyleSheet.create({
     color: "hsla(0, 0%, 15%, 1.00)",
     marginBottom: 15,
   },
-   welcomeTitle: {
+  welcomeTitle: {
     fontSize: 45,
     fontWeight: "900",
     color: "hsla(0, 0%, 15%, 1.00)",
-    marginBottom: 20
+    marginBottom: 20,
   },
   cardContainer: {
     backgroundColor: "hsla(0, 0%, 100%, 0.65)",

@@ -219,12 +219,18 @@ export default function Dashboard({ setIsLoggedIn }) {
                 }
               }
             } catch (err) {
-              console.error("Error fetching daily consumption from server:", err);
+              console.error(
+                "Error fetching daily consumption from server:",
+                err,
+              );
             }
 
             // fetch products fallback
             const products = await fetchUserProducts();
-            if (products.length > 0 && (!storedMealBox || storedMealBox === "[]")) {
+            if (
+              products.length > 0 &&
+              (!storedMealBox || storedMealBox === "[]")
+            ) {
               setMealBox(products);
             }
           }
@@ -283,16 +289,8 @@ export default function Dashboard({ setIsLoggedIn }) {
     )
       return;
 
-    const {
-      calories,
-      proteins,
-      carbs,
-      fat,
-      fiber,
-      sugar,
-      salt,
-      drunkWater,
-    } = eatenTotals;
+    const { calories, proteins, carbs, fat, fiber, sugar, salt, drunkWater } =
+      eatenTotals;
 
     let cal;
     if (gender === "male")
@@ -484,9 +482,11 @@ export default function Dashboard({ setIsLoggedIn }) {
         return (
           <>
             <View style={styles.caloriesDisplay}>
-              <Text style={{ color: "white", marginBottom: 14 }}>
-                {overviewData.eatenOutput}
+              <Text style={styles.dateText}>{currentDate}</Text>
+              <Text style={{ color: "white", marginTop: 20 }}>
+                {overviewData.eatOutput}
               </Text>
+
               <View style={styles.caloriesBarContainer}>
                 <View
                   style={[
@@ -498,10 +498,9 @@ export default function Dashboard({ setIsLoggedIn }) {
                   ]}
                 />
               </View>
-              <Text style={{ color: "white", marginBottom: 20 }}>
-                {overviewData.eatOutput}
+              <Text style={{ color: "white", marginTop: 14 }}>
+                {overviewData.eatenOutput}
               </Text>
-              <Text style={styles.dateText}>{currentDate}</Text>
             </View>
 
             <View style={styles.nutriDisplay_container}>
@@ -634,8 +633,12 @@ export default function Dashboard({ setIsLoggedIn }) {
                           )}
                         </View>
                         <View>
-                          <Text style={{ fontWeight: "bold" }}>{opt.label}</Text>
-                          <Text style={{ color: "#555" }}>{opt.description}</Text>
+                          <Text style={{ fontWeight: "bold" }}>
+                            {opt.label}
+                          </Text>
+                          <Text style={{ color: "#555" }}>
+                            {opt.description}
+                          </Text>
                         </View>
                       </TouchableOpacity>
                     ))}
@@ -716,7 +719,8 @@ export default function Dashboard({ setIsLoggedIn }) {
     }
   };
 
-  return (<>
+  return (
+    <>
       <View style={styles.topBar}>
         <Image source={logo} style={styles.topBar_img} />
         <Text style={styles.topBar_text}>Ahoj {nick}</Text>
@@ -724,7 +728,10 @@ export default function Dashboard({ setIsLoggedIn }) {
       </View>
 
       <View style={styles.contentContainer}>
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 8 }}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 8 }}
+        >
           {renderContent()}
         </ScrollView>
 
