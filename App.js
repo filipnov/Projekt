@@ -24,7 +24,12 @@ export default function App() {
           {(props) => <HomeScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
         </Stack.Screen>
         <Stack.Screen name="RegistrationScreen" component={RegistrationScreen} />
-        <Stack.Screen name="Dashboard">
+        <Stack.Screen
+          name="Dashboard"
+          options={{
+            gestureEnabled: false,
+          }}
+        >
           {(props) => <Dashboard {...props} setIsLoggedIn={setIsLoggedIn} />}
         </Stack.Screen>
         <Stack.Screen name="CameraScreen" component={CameraScreen}></Stack.Screen>
