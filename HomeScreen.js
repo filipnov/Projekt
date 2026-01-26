@@ -61,12 +61,13 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
   useEffect(() => {
     const tryAutoLogin = async () => {
-      setIsLoading(true); // show spinner during autologin
+       // show sp
       try {
         const storedEmail = await AsyncStorage.getItem("userEmail");
         const storedPass = await AsyncStorage.getItem("userPass");
 
         if (storedEmail && storedPass) {
+          setIsLoading(true);
           const response = await fetch(`${SERVER_URL}/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
