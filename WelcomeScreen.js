@@ -1,22 +1,19 @@
 // ForgetPass.js
 import { useState } from "react";
 import {
-  StyleSheet,
   Text,
   View,
   Image,
   TextInput,
   Pressable,
-  ActivityIndicator,
   Alert
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import logo from "./assets/logo-name.png";
-import arrow from "./assets/left-arrow.png";
+import logo from "./assets/logo-slogan.png";
 import styles from "./styles"
 import KeyboardWrapper from "./KeyboardWrapper";
 
-export default function PasswordForgetScreen() {
+export default function WelcomeScreen() {
 
   const SERVER_URL = "https://app.bitewise.it.com"
   const navigation = useNavigation();
@@ -50,41 +47,34 @@ export default function PasswordForgetScreen() {
   return (
     <KeyboardWrapper style={styles.mainLayout}>
 
-        <Image style={styles.profileAvatar} source={logo} />
+        <Image style={styles.logo_slogan} source={logo} />
 
     <View style={styles.cardContainer}>
-      <Text style={styles.unitInfoTitle}>Zabudli ste heslo?</Text>
+      <Text style={styles.welcomeTitle}>Vitaj u nás!</Text>
 
-      <Text style={styles.infoLabel}>
-        Zadajte do polia nižšie e-mail použitý na registráciu
-        a my Vám pošleme odkaz na zresetovanie vásho hesla.
+      <Text style={styles.welcomeText}>
+       Míňaj menej jedla, jedz múdrejšie.
+Naskenuj svoje potraviny, objav recepty z toho, čo máš doma, a sleduj svoje výživové ciele, jednoducho a prehľadne.
+Zníž plýtvanie potravín, sleduj kalórie, živiny aj pitný režim, všetko na jednom mieste.
       </Text>
-
-      <TextInput
-        placeholder="e-mail"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.emailInput}
-      />
 
       <Pressable
         style={({ pressed }) =>
-          pressed ? styles.logout_button : styles.logout_button_pressed
+          pressed ? styles.loginBtnPressed : styles.loginBtn
         }
-        onPress={handleForgot}
+        onPress={() => {navigation.navigate("HomeScreen")}}
       >
-        <Text style={styles.logout_button_text}>Poslať link</Text>
+        <Text style={styles.loginBtnText}>Už mám účet</Text>
       </Pressable>
-    </View>
-
-    <Pressable
-      style={({ pressed }) =>
-        pressed ? styles.backArrowContainer : styles.backArrowPressed
-      }
-      onPress={() => navigation.navigate("HomeScreen")}
-    >
-      <Image source={arrow} style={styles.backArrow} />
-    </Pressable>  
+       <Pressable
+        style={({ pressed }) =>
+          pressed ? styles.registerBtnPressed : styles.registerBtn
+        }
+        onPress={() => {navigation.navigate("RegistrationScreen")}}
+      >
+        <Text style={styles.registerBtnText}>Zaregistrovať sa</Text>
+      </Pressable>
+    </View>  
     </KeyboardWrapper>
 
   );

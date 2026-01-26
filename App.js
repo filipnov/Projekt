@@ -9,7 +9,7 @@ import ForgetPass from "./ForgetPass";
 import ResetPass from "./ResetPass";
 import ProfileCompletition from './ProfileCompletition';    
 import CameraScreen from './CameraScreen';
-
+import WelcomeScreen from "./WelcomeScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -20,6 +20,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="WelcomeScreen" component={WelcomeScreen}/>
         <Stack.Screen name="HomeScreen">
           {(props) => <HomeScreen {...props} setIsLoggedIn={setIsLoggedIn} />}
         </Stack.Screen>
