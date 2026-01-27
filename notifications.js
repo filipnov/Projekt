@@ -1,4 +1,4 @@
-// notifications.js
+/*// notifications.js
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -53,3 +53,4 @@ export async function updateNotificationTimes(times) {
   await cancelAllNotifications();
   await scheduleDailyNotifications(times);
 }
+*/
