@@ -200,7 +200,7 @@ export default function RegistrationScreen() {
                 ? styles.authBackArrowPressed
                 : styles.authBackArrowContainer
             }
-            onPress={() => navigation.navigate("HomeScreen")}
+            onPress={() => !loading && navigation.navigate("HomeScreen")}
           >
             <Image source={arrow} style={styles.authBackArrow} />
           </Pressable>

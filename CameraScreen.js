@@ -11,6 +11,8 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  Modal,
+  ActivityIndicator
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import arrow from "./assets/left-arrow.png";
@@ -28,6 +30,10 @@ export default function CameraScreen() {
   const [quantityInput, setQuantityInput] = useState("");
   const [awaitingQuantity, setAwaitingQuantity] = useState(false);
   const [showNutriValues] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+
+
 
   const [isPer100g, setIsPer100g] = useState();
   useEffect(() => {
@@ -137,58 +143,73 @@ if (data.success && Array.isArray(data.products)) {
   }
 
   async function fetchProductData(barcode) {
-    setProductData(null);
-    setAwaitingQuantity(false);
-    setQuantityInput("");
+  setLoading(true);
+  setAwaitingQuantity(false);
+  setQuantityInput("");
+  setProductData(null);
 
-    try {
-      const response = await debugFetch(`${API_URL}/${barcode}.json`);
-      const data = await response.json();
+  try {
+    const response = await debugFetch(`${API_URL}/${barcode}.json`);
+    const data = await response.json();
 
-      if (data.status === 1) {
-        const product = data.product;
-        const n = product.nutriments;
+    if (data.status === 1) {
+      const product = data.product;
+      const n = product.nutriments;
+      const weight = Number(product.product_quantity);
 
-        const weight = Number(product.product_quantity);
+      const productInfo = {
+        name: product.product_name || "Neznámy produkt",
+        image: product.image_url,
+        calories: n?.["energy-kcal_100g"] || 0,
+        fat: n?.fat_100g || 0,
+        carbs: n?.carbohydrates_100g || 0,
+        sugar: n?.sugars_100g || 0,
+        proteins: n?.proteins_100g || 0,
+        salt: n?.salt_100g || 0,
+        fiber: n?.fiber_100g || 0,
+        quantity: weight,
+      };
 
-        const productInfo = {
-          name: product.product_name || "Neznámy produkt",
-          image: product.image_url,
-          calories: n?.["energy-kcal_100g"] || 0,
-          fat: n?.fat_100g || 0,
-          saturatedFat: n?.["saturated-fat_100g"] || 0,
-          carbs: n?.carbohydrates_100g || 0,
-          sugar: n?.sugars_100g || 0,
-          proteins: n?.proteins_100g || 0,
-          salt: n?.salt_100g || 0,
-          fiber: n?.fiber_100g || 0,
-          quantity: weight,
-        };
+      let finalProduct = productInfo;
 
-        let finalProduct = productInfo;
-
-        if (weight && !isNaN(weight) && weight > 0) {
-          finalProduct = calculateTotals(productInfo, weight);
-        } else {
-          setAwaitingQuantity(true);
-        }
-
-        setProductData(finalProduct);
+      if (weight && !isNaN(weight) && weight > 0) {
+        finalProduct = calculateTotals(productInfo, weight);
       } else {
-        Alert.alert("❌ Produkt sa nenašiel", `Kód: ${barcode}`);
+        setAwaitingQuantity(true);
       }
-    } catch (err) {
-      console.error("❌ Chyba pri načítaní produktu:", err);
-      Alert.alert("Chyba", "Nepodarilo sa načítať dáta.");
-    }
+
+      setProductData(finalProduct);
+      // ❗ kamera ostáva STOP, lebo productData != null
+    } else {
+  setNotFound(true);
+
+  setTimeout(() => {
+    setNotFound(false);
+    setScanned(false);
+  }, 2000);
+}
+ } catch (err) {
+  console.error("❌ Chyba pri načítaní produktu:", err);
+
+  setNotFound(true);
+
+  setTimeout(() => {
+    setNotFound(false);
+    setScanned(false);
+  }, 2000);
+}finally {
+    setLoading(false);
   }
+}
+
 
   async function handleBarCodeScanned({ data }) {
-    if (scanned) return;
-    setScanned(true);
-    await fetchProductData(data);
-    setTimeout(() => setScanned(false), 900000);
-  }
+  if (scanned || loading || productData) return;
+
+  setScanned(true);
+  fetchProductData(data);
+}
+
 
   const handleShowContent = () => setShowContent(!showContent);
 
@@ -218,92 +239,82 @@ if (data.success && Array.isArray(data.products)) {
   };
 
   const saveToDatabase = async () => {
-    if (!productData) {
-      Alert.alert("Chyba", "Nie je načítaný žiaden produkt.");
-      return;
-    }
+  if (!productData) return;
 
-    try {
-      await handleAddProduct(
-        productData.name,
-        productData.totalCalories,
-        productData.totalProteins,
-        productData.totalCarbs,
-        productData.totalFat,
-        productData.totalFiber,
-        productData.totalSalt,
-        productData.totalSugar,
-        productData.calories, 
-        productData.proteins,
-        productData.carbs,
-        productData.fat,
-        productData.fiber,
-        productData.salt,
-        productData.sugar,
-        productData.image, 
-      );
+  try {
+    await handleAddProduct(
+      productData.name,
+      productData.totalCalories,
+      productData.totalProteins,
+      productData.totalCarbs,
+      productData.totalFat,
+      productData.totalFiber,
+      productData.totalSalt,
+      productData.totalSugar,
+      productData.calories,
+      productData.proteins,
+      productData.carbs,
+      productData.fat,
+      productData.fiber,
+      productData.salt,
+      productData.sugar,
+      productData.image,
+    );
 
-      setCode();
-      setProductData(null);
-    } catch (err) {
-      console.error("❌ Chyba pri ukladaní:", err);
-      Alert.alert("Chyba", "Nepodarilo sa uložiť produkt.");
-    }
-  };
+    setProductData(null);
+    setScanned(false); // 🔁 znovu povolí skenovanie
+  } catch (err) {
+    Alert.alert("Chyba", "Nepodarilo sa uložiť produkt.");
+  }
+};
 
-  const addDirectlyToEaten = async () => {
-    if (!productData) {
-      Alert.alert("Chyba", "Nie je načítaný žiaden produkt.");
-      return;
-    }
 
-    try {
-      const storedTotals = await AsyncStorage.getItem("eatenTotals");
-      const baseTotals = {
-        calories: 0,
-        proteins: 0,
-        carbs: 0,
-        fat: 0,
-        fiber: 0,
-        sugar: 0,
-        salt: 0,
-        drunkWater: 0,
-      };
+ const addDirectlyToEaten = async () => {
+  if (!productData) return;
 
-      let currentTotals = baseTotals;
-      if (storedTotals) {
-        try {
-          currentTotals = { ...baseTotals, ...JSON.parse(storedTotals) };
-        } catch (e) {
-          console.error("❌ Chyba pri parsovaní eatenTotals:", e);
-          currentTotals = baseTotals;
-        }
-      }
+  try {
+    const storedTotals = await AsyncStorage.getItem("eatenTotals");
+    const baseTotals = {
+      calories: 0,
+      proteins: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      sugar: 0,
+      salt: 0,
+      drunkWater: 0,
+    };
 
-      const updatedTotals = {
-        calories: currentTotals.calories + (productData.totalCalories || 0),
-        proteins: currentTotals.proteins + (productData.totalProteins || 0),
-        carbs: currentTotals.carbs + (productData.totalCarbs || 0),
-        fat: currentTotals.fat + (productData.totalFat || 0),
-        fiber: currentTotals.fiber + (productData.totalFiber || 0),
-        sugar: currentTotals.sugar + (productData.totalSugar || 0),
-        salt: currentTotals.salt + (productData.totalSalt || 0),
-        drunkWater: currentTotals.drunkWater || 0,
-      };
+    const currentTotals = storedTotals
+      ? { ...baseTotals, ...JSON.parse(storedTotals) }
+      : baseTotals;
 
-      await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
+    const updatedTotals = {
+      calories: currentTotals.calories + (productData.totalCalories || 0),
+      proteins: currentTotals.proteins + (productData.totalProteins || 0),
+      carbs: currentTotals.carbs + (productData.totalCarbs || 0),
+      fat: currentTotals.fat + (productData.totalFat || 0),
+      fiber: currentTotals.fiber + (productData.totalFiber || 0),
+      sugar: currentTotals.sugar + (productData.totalSugar || 0),
+      salt: currentTotals.salt + (productData.totalSalt || 0),
+      drunkWater: currentTotals.drunkWater,
+    };
 
-      setCode("");
-      setProductData(null);
-    } catch (err) {
-      console.error("❌ Chyba pri pridávaní:", err);
-      Alert.alert("Chyba", "Nepodarilo sa pridať produkt do zjedených hodnôt.");
-    }
-  };
+    await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
+
+    setProductData(null);
+    setScanned(false); // 🔁 znovu skenovať
+  } catch (err) {
+    Alert.alert("Chyba", "Nepodarilo sa pridať produkt.");
+  }
+};
+
 
   if (!permission) return <Text>Načítavam oprávnenia...</Text>;
   if (!permission.granted)
     return (
+
+      
       <View style={{marginTop: 500, width: "80%", alignSelf: "center"}}>
         <Text style={{textAlign: "center"}}>Táto aplikácia potrebuje prístup ku kamere.</Text>
         <Button title="Povoliť kameru" onPress={requestPermission} />
@@ -311,7 +322,32 @@ if (data.success && Array.isArray(data.products)) {
     );
 
   return (
+
+
+    
     <View style={{ flex: 1 }}>
+
+        {/* 🔄 SPINNER – VŽDY NAD VŠETKÝM */}
+  <Modal visible={loading} transparent animationType="fade">
+    <View style={styles.modalOverlay}>
+      <View style={styles.generatingModalContainer}>
+        <ActivityIndicator size="large" color="hsla(129,56%,43%,1)" />
+        <Text style={styles.generatingModalTitle}>
+          Hľadám produkt…
+        </Text>
+      </View>
+    </View>
+  </Modal>
+  {/* ❌ PRODUKT NENÁJDENÝ */}
+<Modal visible={notFound} transparent animationType="fade">
+  <View style={styles.modalOverlay}>
+    <View style={styles.generatingModalContainer}>
+      <Text style={{ fontSize: 18, fontWeight: "bold", color: "#c62828" }}>
+        Produkt nenájdený
+      </Text>
+    </View>
+  </View>
+</Modal>
     <CameraView
       style={{ flex: 1 }}
       facing="back"
@@ -470,5 +506,6 @@ if (data.success && Array.isArray(data.products)) {
       )}
     </View>
   </View>
+  
   );
 }
