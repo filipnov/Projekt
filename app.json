@@ -5,11 +5,11 @@
     "version": "1.0.0",
     "scheme": "bitewise",
     "orientation": "portrait",
-    "icon": "./assets/logo-icon.png",
+    "icon": "./assets/logo_icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/logo-slogan.png",
+      "image": "./assets/logo_slogan.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo-icon.png",
+        "foregroundImage": "./assets/logo_icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

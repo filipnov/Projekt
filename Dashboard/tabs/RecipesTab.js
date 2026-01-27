@@ -200,7 +200,7 @@ const fetchSavedRecipes = async () => {
 
   const recipeImagesByCategory = {
     mäsité: require("./../../assets/meat.png"),
-    bezmäsité: require("./../../assets/no-meat.png"),
+    bezmäsité: require("./../../assets/no_meat.png"),
     vegánske: require("./../../assets/lettuce.png"),
     sladké: require("./../../assets/cake.png"),
     štipľavé: require("./../../assets/chili.png"),
@@ -226,7 +226,7 @@ const fetchSavedRecipes = async () => {
       nazov: "Bryndzové halušky",
       ingrediencie: "zemiaky, polohrubá múka, soľ, bryndza, slanina a pažitka",
       postup: "",
-      obrazok: require("../../assets/bryndzove-halusky.jpg"),
+      obrazok: require("../../assets/bryndzove_halusky.jpg"),
     },
     {
       id: 2,
