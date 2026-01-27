@@ -4,7 +4,7 @@ import { View, Pressable, Text, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import styles from "../styles";
 import speedometer from "../assets/speedometer.png";
-import recipes from "../assets/recipe-book.png";
+import recipes from "../assets/recipe_book.png";
 import plus from "../assets/plus.png";
 import storage from "../assets/storage.png";
 import setting from "../assets/settings.png";
