@@ -132,7 +132,7 @@
       const [product, setProduct] = useState(null);
       const [error, setError] = useState(null);
       const [loadingWindow, setLoadingWindow] = useState(true);
-      const [isPer100g, setIsPer100g] = useState(true);
+      const [isPer100g, setIsPer100g] = useState();
 
       useEffect(() => {
         (async () => {
