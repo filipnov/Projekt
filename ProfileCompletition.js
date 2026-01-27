@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import arrow from "./assets/left-arrow.png";
+import arrow from "./assets/left_arrow.png";
 import { useNavigation } from "@react-navigation/native";
 import styles from "./styles"
 import KeyboardWrapper from "./KeyboardWrapper";

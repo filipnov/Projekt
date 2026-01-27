@@ -11,7 +11,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import logo from "./assets/logo-slogan.png";
+import logo from "./assets/logo_slogan.png";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 

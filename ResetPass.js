@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo.png";
-import arrow from "./assets/left-arrow.png";
+import arrow from "./assets/left_arrow.png";
 import * as Linking from "expo-linking";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";

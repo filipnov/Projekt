@@ -11,8 +11,8 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import logo from "./assets/logo-name.png";
-import arrow from "./assets/left-arrow.png";
+import logo from "./assets/logo_name.png";
+import arrow from "./assets/left_arrow.png";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 

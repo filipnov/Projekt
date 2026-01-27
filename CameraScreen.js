@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import arrow from "./assets/left-arrow.png";
+import arrow from "./assets/left_arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";

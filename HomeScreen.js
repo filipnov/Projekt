@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Text, View, Image, TextInput, Pressable, Alert, Modal, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import logo from "./assets/logo-name.png";
+import logo from "./assets/logo_name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
