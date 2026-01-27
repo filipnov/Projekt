@@ -1,6 +1,6 @@
 // HomeScreen.js
 import { useState, useEffect } from "react";
-import { Text, View, Image, TextInput, Pressable, Alert } from "react-native";
+import { Text, View, Image, TextInput, Pressable, Alert, Modal, ActivityIndicator } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo-name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -10,9 +10,9 @@ import KeyboardWrapper from "./KeyboardWrapper";
 export default function HomeScreen({ setIsLoggedIn }) {
   const SERVER_URL = "https://app.bitewise.it.com";
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
+    const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   async function pullAllUserData(email) {
     try {
@@ -85,6 +85,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
         console.log("Stored credentials:", storedEmail, storedPass);
 
         if (storedEmail && storedPass) {
+          setIsLoading(true);
           const response = await fetch(`${SERVER_URL}/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -113,32 +114,19 @@ export default function HomeScreen({ setIsLoggedIn }) {
       } catch (err) {
         console.error("Error during autologin:", err);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     tryAutoLogin();
   }, []);
 
-  if (loading) {
-    return (
-      <View
-        style={[
-          styles.mainLayout,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <Text>Kontrola prihlásenia...</Text>
-      </View>
-    );
-  }
-
   async function handleLogin() {
     if (!email || !password) {
       Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
       return;
     }
-
+    setIsLoading(true);
     try {
       const response = await fetch(`${SERVER_URL}/api/login`, {
         method: "POST",
@@ -215,10 +203,23 @@ export default function HomeScreen({ setIsLoggedIn }) {
       console.error(error);
       Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
     }
+     finally {
+      setIsLoading(false); // hide spinner
+    }
   }
 
   return (
     <KeyboardWrapper style={styles.authMainLayout}>
+      {/* Spinner Modal */}
+      <Modal visible={isLoading} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.generatingModalContainer}>
+            <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
+            <Text style={styles.generatingModalTitle}>Kontrolujem údaje...</Text>
+            <Text style={styles.generatingModalSubtitle}>Môže to trvať niekoľko sekúnd</Text>
+          </View>
+        </View>
+      </Modal>
   
         <Image style={styles.authProfileAvatar} source={logo} />
         <View style={styles.authCardContainer}>

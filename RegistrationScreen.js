@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   Switch,
+  Modal
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo-name.png";
@@ -102,6 +103,19 @@ export default function RegistrationScreen() {
 
   return (
     <KeyboardWrapper style={styles.authMainLayout}>
+      <Modal visible={loading} transparent animationType="fade">
+  <View style={styles.modalOverlay}>
+    <View style={styles.generatingModalContainer}>
+      <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
+      <Text style={styles.generatingModalTitle}>
+        Registrujem účet...
+      </Text>
+      <Text style={styles.generatingModalSubtitle}>
+        Prosím počkaj chvíľu
+      </Text>
+    </View>
+  </View>
+</Modal>
       <Image style={styles.authProfileAvatarReg} source={logo} />
 
       <View style={styles.authCardContainer}>
