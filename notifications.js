@@ -1,4 +1,4 @@
-// notifications.js
+/*//notifications.js
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -12,7 +12,7 @@ export async function requestPermissions() {
 }
 
 // Naplánuje notifikácie na konkrétne časy (napr. 10:00 a 18:00)
-export async function scheduleDailyNotifications(times = ['10:00', '22:09']) {
+export async function scheduleDailyNotifications(times = ['11:55', '22:09']) {
   // Zruší staré notifikácie, aby sa neduplicovali
   await cancelAllNotifications();
 
@@ -52,4 +52,4 @@ export async function loadNotificationTimes() {
 export async function updateNotificationTimes(times) {
   await cancelAllNotifications();
   await scheduleDailyNotifications(times);
-}
+}*/

@@ -1,4 +1,4 @@
-  import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
   import {
     View,
     Text,
@@ -20,6 +20,25 @@
     const [mealBoxes, setMealBoxes] = useState([]);
     const [activeBox, setActiveBox] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    const groupedMealBoxes = useMemo(() => {
+      const map = new Map();
+      for (const box of mealBoxes) {
+        const normalizedName =
+          typeof box?.name === "string" ? box.name.trim().toLowerCase() : null;
+        const key = normalizedName
+          ? `name:${normalizedName}`
+          : String(box?.productId ?? box?.id ?? "unknown");
+        const existing = map.get(key);
+        if (existing) {
+          existing.count += 1;
+          existing.instances.push(box);
+        } else {
+          map.set(key, { key, box, count: 1, instances: [box] });
+        }
+      }
+      return Array.from(map.values());
+    }, [mealBoxes]);
 
     // --- Load email from AsyncStorage ---
     useEffect(() => {
@@ -80,7 +99,7 @@
       }, [email, fetchMealBoxes])
     );
 
-    const openWindow = (box) => setActiveBox(box);
+    const openWindow = (group) => setActiveBox(group);
     const closeWindow = () => setActiveBox(null);
 
   const handleRemoveMealBox = async (id, productId, box) => {
@@ -92,10 +111,13 @@
       const stored = await AsyncStorage.getItem("products");
       let allProducts = stored ? JSON.parse(stored) : [];
 
-      // 3️⃣ odfiltruj vymazaný produkt
-      allProducts = allProducts.filter(
-  (p) => p.productId !== productId
-);
+      // 3️⃣ odstráň iba 1 kus (ak je tam viac rovnakých)
+      const idx = allProducts.findIndex(
+        (p) =>
+          (productId && p.productId === productId) ||
+          (!productId && box?.name && p.name === box.name),
+      );
+      if (idx !== -1) allProducts.splice(idx, 1);
 
       // 4️⃣ ulož späť do AsyncStorage
       await AsyncStorage.setItem("products", JSON.stringify(allProducts));
@@ -111,15 +133,38 @@
   };
 
     // --- MealBoxItem ---
-    const MealBoxItem = ({ box }) => (
-      <Pressable onPress={() => openWindow(box)} style={styles.box}>
+    const MealBoxItem = ({ group }) => (
+      <Pressable onPress={() => openWindow(group)} style={styles.box}>
         <ImageBackground
-          source={{ uri: box.image }}
+          source={{ uri: group.box.image }}
           style={{ flex: 1, justifyContent: "space-between" }}
         >
-          <Text style={styles.mealBoxText}>{box.name}</Text>
+          <Text style={styles.mealBoxText}>{group.box.name}</Text>
+          {group.count > 1 && (
+            <View
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                backgroundColor: "rgba(0,0,0,0.6)",
+                borderRadius: 12,
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+              }}
+            >
+              <Text style={{ color: "white", fontWeight: "bold" }}>
+                x{group.count}
+              </Text>
+            </View>
+          )}
           <View>
-            <Pressable onPress={() => handleRemoveMealBox(box.id, box.productId, box)}>
+            <Pressable
+              onPress={() => {
+                const instance = group.instances[0];
+                if (!instance) return;
+                handleRemoveMealBox(instance.id, instance.productId, instance);
+              }}
+            >
               <Text style={styles.eatenButton}>Zjedené ✅</Text>
             </Pressable>
           </View>
@@ -128,11 +173,11 @@
     );
 
     // --- Modal window ---
-    const MealBoxWindow = ({ productName, close }) => {
+    const MealBoxWindow = ({ productName, count, email, close }) => {
       const [product, setProduct] = useState(null);
       const [error, setError] = useState(null);
       const [loadingWindow, setLoadingWindow] = useState(true);
-      const [isPer100g, setIsPer100g] = useState(true);
+      const [isPer100g, setIsPer100g] = useState();
 
       useEffect(() => {
         (async () => {
@@ -146,12 +191,13 @@
       }, []);
 
       useEffect(() => {
-        let mounted = true;
         if (!email || !productName) {
-          setError("Product or email not available");
+          setProduct(null);
           setLoadingWindow(false);
           return;
         }
+
+        let mounted = true;
 
         const fetchProduct = async () => {
           setLoadingWindow(true);
@@ -170,18 +216,25 @@
             }
 
             // 2️⃣ Server fallback
-            console.log("⚠️ Product not in AsyncStorage, fetching from server...");
-            const res = await fetch(`${SERVER_URL}/api/getProductByName?email=${encodeURIComponent(email)}&name=${encodeURIComponent(productName)}`);
-            if (!res.ok) throw new Error(`Server returned ${res.status}`);
-            const body = await res.json();
+            const url = `${SERVER_URL}/api/getProductByName?email=${encodeURIComponent(
+              email,
+            )}&name=${encodeURIComponent(productName)}`;
+            const res = await fetch(url);
+            const body = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+              throw new Error(body.error || `Server returned ${res.status}`);
+            }
+
             if (mounted) setProduct(body.product || null);
 
             // Save to AsyncStorage if found
             if (body.product) {
               const stored = await AsyncStorage.getItem("products");
               const allProducts = stored ? JSON.parse(stored) : [];
-              allProducts.push(body.product);
-              await AsyncStorage.setItem("products", JSON.stringify(allProducts));
+              const exists = allProducts.some((p) => p.name === body.product.name);
+              const next = exists ? allProducts : [...allProducts, body.product];
+              await AsyncStorage.setItem("products", JSON.stringify(next));
               console.log("✅ Saved product to AsyncStorage");
             }
           } catch (err) {
@@ -193,7 +246,9 @@
         };
 
         fetchProduct();
-        return () => (mounted = false);
+        return () => {
+          mounted = false;
+        };
       }, [email, productName]);
 
       if (loadingWindow) return <ActivityIndicator size="large" color="#0000ff" />;
@@ -203,7 +258,7 @@
       return (
         <View style={styles.overlay}>
           <View style={styles.window}>
-            {loading ? (
+            {loadingWindow ? (
               <ActivityIndicator size="large" />
             ) : error ? (
               <>
@@ -248,12 +303,20 @@
                   { label: "Cukry", value: isPer100g ? product.sugar : product.totalSugar },
                   { label: "Soľ", value: isPer100g ? product.salt : product.totalSalt },
                 ].map((nutrient) => (
-                  <View key={nutrient.label} style={styles.nutritionRow}>
-                    <Text style={styles.nutritionLabel}>{nutrient.label}</Text>
-                    <Text style={styles.nutritionValue}>
-                      {nutrient.value ?? "N/A"} {nutrient.label === "Kalórie" ? "kcal" : "g"}
-                    </Text>
-                  </View>
+                  <React.Fragment key={nutrient.label}>
+                    <View style={styles.nutritionRow}>
+                      <Text style={styles.nutritionLabel}>{nutrient.label}</Text>
+                      <Text style={styles.nutritionValue}>
+                        {nutrient.value ?? "N/A"} {nutrient.label === "Kalórie" ? "kcal" : "g"}
+                      </Text>
+                    </View>
+                    {nutrient.label === "Soľ" && (
+                      <View style={styles.nutritionRow}>
+                        <Text style={styles.nutritionLabel}>Počet kusov</Text>
+                        <Text style={styles.nutritionValue}>{count ?? 1}</Text>
+                      </View>
+                    )}
+                  </React.Fragment>
                 ))}
 
                 <Pressable onPress={close} style={styles.closeButton}>
@@ -287,19 +350,18 @@
         </Pressable>
 
         <Modal visible={!!activeBox} animationType="slide" transparent={true} onRequestClose={closeWindow}>
-          <MealBoxWindow productName={activeBox?.name} email={email} close={closeWindow} />
+          <MealBoxWindow
+            productName={activeBox?.box?.name}
+            count={activeBox?.count}
+            email={email}
+            close={closeWindow}
+          />
         </Modal>
 
         <ScrollView style={styles.mealContainer}>
           <View style={styles.row}>
-            {mealBoxes.map((box) => (
-              <MealBoxItem
-                key={box.id}
-                box={box}
-                removeMealBox={(id) => handleRemoveMealBox(id, box.productId, box)}
-                removeProduct={removeProduct}
-                openWindow={openWindow}
-              />
+            {groupedMealBoxes.map((group) => (
+              <MealBoxItem key={group.key} group={group} />
             ))}
           </View>
         </ScrollView>
