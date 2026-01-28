@@ -1,4 +1,3 @@
-//App.js
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -11,14 +10,24 @@ import ProfileCompletition from './ProfileCompletition';
 import CameraScreen from './CameraScreen';
 import WelcomeScreen from "./WelcomeScreen";
 
-
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // ---- Deeplink konfigurácia ----
+  const linking = {
+    prefixes: ["https://app.bitewise.it.com"],
+    config: {
+      screens: {
+        ResetPass: "reset-password",
+        // Tu môžeš pridať ďalšie deeplinky, ak chceš
+      },
+    },
+  };
+
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking} fallback={<></>}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="WelcomeScreen" component={WelcomeScreen}/>
         <Stack.Screen name="HomeScreen">

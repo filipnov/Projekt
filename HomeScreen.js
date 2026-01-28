@@ -6,10 +6,10 @@ import logo from "./assets/logo_name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
-/*import { 
+import { 
   requestPermissions, 
   scheduleDailyNotifications 
-} from './notifications';*/
+} from './notifications';
 
 export default function HomeScreen({ setIsLoggedIn }) {
   const SERVER_URL = "https://app.bitewise.it.com";
@@ -18,16 +18,16 @@ export default function HomeScreen({ setIsLoggedIn }) {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
- /* async function setupNotifications() {
+  async function setupNotifications() {
   const granted = await requestPermissions();
   if (granted) {
     // Naplánujeme napr. 10:00 a 18:00
-    await scheduleDailyNotifications(['10:00', '18:00']);
+    await scheduleDailyNotifications(['10:00', '16:05']);
     console.log('✅ Notifikácie naplánované');
   } else {
     console.log('⚠️ Notifikácie zamietnuté používateľom');
   }
-}*/
+}
 
   async function pullAllUserData(email) {
     try {
@@ -113,7 +113,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
           if (response.ok) {
             console.log("✅ Autologin success, pulling user data");
             await pullAllUserData(storedEmail);
-             //await setupNotifications();
+             await setupNotifications();
             console.log("✅ Data pulled, navigating to Dashboard");
             setIsLoggedIn(true);
 
@@ -166,7 +166,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       // Tu zavoláme náš nový pull do AsyncStorage
       await pullAllUserData(data.user.email);
 
-       //await setupNotifications();
+       await setupNotifications();
 
       let totalsToUse = null;
 
