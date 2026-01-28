@@ -26,17 +26,13 @@ import setting from "../assets/settings.png";
 import storage from "../assets/storage.png";
 import speedometer from "../assets/speedometer.png";
 import account from "../assets/avatar.png";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import KeyboardWrapper from "../KeyboardWrapper";
 
 export default function Dashboard({ setIsLoggedIn }) {
   const SERVER_URL = "https://app.bitewise.it.com";
   const navigation = useNavigation();
   const route = useRoute(); //Treba
-  const insets = useSafeAreaInsets();
 
   const mergeTotalsPreferLocal = (localTotals, remoteTotals) => {
     if (!remoteTotals) return localTotals;
@@ -726,18 +722,19 @@ export default function Dashboard({ setIsLoggedIn }) {
     <>
       <View style={styles.dashTopBar}>
         <Image source={logo} style={styles.dashTopBar_img} />
-        <Text style={styles.dashTopBar_text}>Ahoj {nick}!</Text>
+        <Text style={styles.dashTopBar_text}>Ahoj {nick}</Text>
+        <Image source={account} style={styles.dashTopBar_img} />
       </View>
 
       <View style={styles.dashContentContainer}>
         <ScrollView
           style={{ flex: 1 }}
-         // contentContainerStyle={{ paddingBottom: 110 + (insets?.bottom ?? 0) }}
+          contentContainerStyle={{ paddingBottom: 8 }}
         >
           {renderContent()}
         </ScrollView>
 
-        <SafeAreaView edges={["bottom"]} style={styles.dashNavBar}>
+        <View style={styles.dashNavBar}>
           <Pressable
             onPress={() => setActiveTab(1)}
             style={[
@@ -773,7 +770,7 @@ export default function Dashboard({ setIsLoggedIn }) {
             </Text>
           </Pressable>
           <Pressable
-            style={styles.dashNavBar_tabs}
+            style={styles.dashNavBar_tab_Add}
             onPress={() => navigation.navigate("CameraScreen")}
           >
             <View style={styles.dashNavBar_Add_container}>
@@ -781,7 +778,6 @@ export default function Dashboard({ setIsLoggedIn }) {
             </View>
             <Text style={styles.dashNavBar_text_Add}>Pridať</Text>
           </Pressable>
-
           <Pressable
             onPress={() => setActiveTab(3)}
             style={[
@@ -816,7 +812,7 @@ export default function Dashboard({ setIsLoggedIn }) {
               Nastavenia
             </Text>
           </Pressable>
-        </SafeAreaView>
+        </View>
       </View>
     </>
   );
