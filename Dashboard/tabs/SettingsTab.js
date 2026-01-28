@@ -9,7 +9,8 @@ export default function SettingsTab({
   setIsPer100g,
   navigation,
 }) {
-  const [checked, setChecked] = useState();
+  const [checked100g, setChecked100g] = useState();
+  const [checkedExpiration, setCheckedExpiration] = useState();
 
   useEffect(() => {
     (async () => {
@@ -17,7 +18,7 @@ export default function SettingsTab({
         const storedValue = await AsyncStorage.getItem("isPer100g");
         if (storedValue !== null) {
           const parsed = JSON.parse(storedValue);
-          setChecked(parsed);
+          setChecked100g(parsed);
           if (setIsPer100g) setIsPer100g(parsed);
         }
       } catch (err) {
@@ -26,11 +27,38 @@ export default function SettingsTab({
     })();
   }, []);
 
-  const toggleSwitch = async (value) => {
-    setChecked(value);
+  const toggleSwitch100g = async (value) => {
+    setChecked100g(value);
     if (setIsPer100g) setIsPer100g(value);
+    console.log("Toggling 100g switch to:", value);
     try {
       await AsyncStorage.setItem("isPer100g", JSON.stringify(value));
+    } catch (err) {
+      console.error("Chyba pri ukladaní nastavení:", err);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem("expiration");
+        if (storedValue !== null) {
+          const parsed = JSON.parse(storedValue);
+          setCheckedExpiration(parsed);
+          if (setCheckedExpiration) setCheckedExpiration(parsed);
+        }
+      } catch (err) {
+        console.error("Chyba pri načítaní nastavení:", err);
+      }
+    })();
+  }, []);
+
+  const toggleSwitchExpiration = async (value) => {
+    setCheckedExpiration(value);
+    if (setCheckedExpiration) setCheckedExpiration(value);
+    console.log("Toggling expiration switch to:", value);
+    try {
+      await AsyncStorage.setItem("expiration", JSON.stringify(value));
     } catch (err) {
       console.error("Chyba pri ukladaní nastavení:", err);
     }
@@ -53,12 +81,25 @@ export default function SettingsTab({
           style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}
         >
           <Switch
-            value={checked}
-            onValueChange={toggleSwitch}
+            value={checked100g}
+            onValueChange={toggleSwitch100g}
             trackColor={{ false: "#767577", true: "#4CAF50" }}
-            thumbColor={checked ? "#fff" : "#f4f3f4"}
+            thumbColor={checked100g ? "#fff" : "#f4f3f4"}
           />
           <Text style={{ marginLeft: 8 }}>Zobraziť hodnoty na 100 g</Text>
+        </View>
+
+
+        <View
+          style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}
+        >
+          <Switch
+            value={checkedExpiration}
+            onValueChange={toggleSwitchExpiration}
+            trackColor={{ false: "#767577", true: "#4CAF50" }}
+            thumbColor={checkedExpiration ? "#fff" : "#f4f3f4"}
+          />
+          <Text style={{ marginLeft: 8 }}>Zobraziť dátumy spotreby</Text>
         </View>
 
         <Pressable
@@ -71,12 +112,13 @@ export default function SettingsTab({
                 "recipes",
                 "dailyConsumption",
                 "userEmail",
-                "isPer100g",
+              //  "isPer100g",
                 "userNick",
                 "eatenTotals",
                 "drunkWater",
                 "mealBox",
-                "onboardingSeen"
+              //  "expiration",
+                "onboardingSeen",
               ];
               await AsyncStorage.multiRemove(keysToRemove);
 

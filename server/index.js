@@ -276,6 +276,7 @@ async function start() {
       email,
       image,
       product,
+      expirationDate,
       totalCalories,
       totalProteins,
       totalCarbs,
@@ -299,10 +300,19 @@ async function start() {
         return res.status(404).json({ error: "User not found" });
       }
 
+      let expirationDateValue = null;
+      if (expirationDate) {
+        const parsed = new Date(expirationDate);
+        if (!Number.isNaN(parsed.getTime())) {
+          expirationDateValue = parsed;
+        }
+      }
+
       const productObj = {
         productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: product,
         image: image ?? null,
+        expirationDate: expirationDateValue,
         totalCalories: totalCalories ?? null,
         totalProteins: totalProteins ?? null,
         totalCarbs: totalCarbs ?? null,

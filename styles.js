@@ -1212,6 +1212,145 @@ export default StyleSheet.create({
     marginBottom: 10,
   },
 
+  // --- PANTRY (PantryTab) responsive variants ---
+  pantryRoot: {},
+  pantryMealContainer: {
+    marginTop: Math.round(clamp(vs(20), 16, 28)),
+    width: "90%",
+    alignSelf: "center",
+  },
+  pantryRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  pantryBox: {
+    width: "48%",
+    height: Math.round(clamp(vs(130), 100, 170)),
+    backgroundColor: "hsla(96, 56%, 35%, 1.00)",
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    overflow: "hidden",
+    marginBottom: Math.round(clamp(ms(12), 10, 14)),
+  },
+  pantryImageBackground: {
+    flex: 1,
+    // justifyContent: "space-between",
+  },
+  pantryMealBoxText: {
+    backgroundColor: "rgba(180, 215, 171, 0.9)",
+    fontSize: Math.round(clamp(ms(16), 12, 20)),
+    fontWeight: "bold",
+    padding: Math.round(clamp(ms(4), 2, 6)),
+    color: "black",
+    textAlign: "center",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  pantryEatenButton: {
+    backgroundColor: "hsla(0, 73%, 60%, 0.96)",
+    // padding: Math.round(clamp(ms(8), 6, 10)),
+    textAlign: "center",
+  },
+  pantryCountBadge: {
+    // position: "absolute",
+    // top: Math.round(clamp(ms(4), 2, 6)),
+    // right: Math.round(clamp(ms(115), 111, 119)),
+    width: "30%",
+    margin: Math.round(clamp(ms(4), 2, 6)),
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 255, 0, 0.9)",
+    borderRadius: Math.round(clamp(ms(12), 10, 14)),
+    paddingHorizontal: Math.round(clamp(ms(8), 6, 10)),
+    paddingVertical: Math.round(clamp(ms(2), 2, 3)),
+  },
+  pantryCountBadgeText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  pantryOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pantryWindow: {
+    width: "90%",
+    // maxHeight: "100%",
+    backgroundColor: "white",
+    borderRadius: Math.round(clamp(ms(12), 10, 14)),
+    padding: Math.round(clamp(ms(16), 12, 18)),
+    elevation: 10,
+  },
+  pantryWindowTitle: {
+    fontSize: Math.round(clamp(ms(20), 18, 24)),
+    fontWeight: "800",
+    marginBottom: Math.round(clamp(ms(12), 10, 14)),
+    textAlign: "center",
+  },
+  pantryModalImage: {
+    //width: "100%",
+    height: Math.round(clamp(vs(200), 160, 240)),
+    borderRadius: Math.round(clamp(ms(8), 6, 10)),
+    marginBottom: Math.round(clamp(ms(6), 4, 8)),
+  },
+  pantryNutritionHeaderText: {
+    margin: "auto",
+    fontWeight: "bold",
+  },
+  pantryNutritionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: Math.round(clamp(ms(7), 6, 10)),
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#ddd",
+  },
+  pantryNutritionLabel: {
+    fontWeight: "600",
+    color: "#333",
+  },
+  pantryNutritionValue: {
+    fontWeight: "700",
+    color: "#111",
+  },
+  pantryCloseButton: {
+    marginTop: Math.round(clamp(ms(8), 4, 12)),
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    paddingVertical: Math.round(clamp(ms(10), 8, 12)),
+    borderRadius: Math.round(clamp(ms(8), 6, 10)),
+    alignItems: "center",
+    alignSelf: "center",
+    width: "85%",
+  },
+  pantryEatenBtn: {
+    marginTop: Math.round(clamp(ms(18), 14, 22)),
+    backgroundColor: "hsla(0, 73%, 60%, 0.96)",
+    paddingVertical: Math.round(clamp(ms(10), 8, 12)),
+    borderRadius: Math.round(clamp(ms(8), 6, 10)),
+    alignItems: "center",
+    alignSelf: "center",
+    width: "85%",
+  },
+  pantryCloseButtonText: {
+    color: "white",
+    fontWeight: "700",
+  },
+  pantryTitle: {
+    fontSize: Math.round(clamp(ms(18), 16, 22)),
+    textAlign: "center",
+    marginBottom: Math.round(clamp(ms(12), 10, 14)),
+  },
+  pantryErrorText: {
+    color: "red",
+    textAlign: "center",
+    marginBottom: Math.round(clamp(ms(10), 8, 12)),
+  },
+  pantrySimpleErrorText: {
+    color: "red",
+  },
+
   // --- AUTH (HomeScreen + RegistrationScreen) responsive variants ---
   // These are screen-specific clones so we don't affect other screens that
   // still use the original shared style keys.
@@ -1447,9 +1586,9 @@ export default StyleSheet.create({
 
   dashNavBar: {
     width: "100%",
-   // paddingTop: 100,
+    // paddingTop: 100,
     //alignSelf: "center",
-    justifyContent:"center",
+    justifyContent: "center",
     // verticalAlign: "bottom",
     //height: "auto",
     flexDirection: "row",
@@ -1458,7 +1597,7 @@ export default StyleSheet.create({
     //backgroundColor: "hsl(0, 2%, 75%)",
   },
   dashNavBar_tabs: {
-   // height: Math.round(clamp(vs(40), 58, 84)),
+    // height: Math.round(clamp(vs(40), 58, 84)),
     width: Math.round(clamp(s(73), 60.5, 86.5)),
     // width: Math.round(clamp(s(82.5), 70, 96)),
     alignItems: "center",
@@ -1471,13 +1610,12 @@ export default StyleSheet.create({
 
     borderTopColor: "black",
     borderTopWidth: 1,
-  paddingTop: Math.round(clamp(vs(10), 8, 14)),
+    paddingTop: Math.round(clamp(vs(10), 8, 14)),
     //marginTop: 50,
     // opacity: 0.7,
     // borderBottomColor: "black",
     //borderBottomWidth: 1,
     //elevation: 10,
-    
   },
   dashNavBar_tabs_pressed: {
     // height: Math.round(clamp(vs(90), 78, 104)),
@@ -1514,7 +1652,6 @@ export default StyleSheet.create({
   dashNavBar_img: {
     width: Math.round(clamp(ms(35), 28, 44)),
     height: Math.round(clamp(ms(35), 28, 44)),
-    
   },
   dashNavBar_Add: {
     width: Math.round(clamp(ms(20), 16, 24)),
