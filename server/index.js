@@ -14,6 +14,8 @@ console.log("EMAIL_USER:", process.env.EMAIL_USER);
 console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 
+
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -21,6 +23,12 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
 const client = new MongoClient(MONGO_URI);
+
+// SERVE .well-known ASSETLINKS
+app.use(
+  "/.well-known",
+  express.static(path.join(path.resolve(), ".well-known"))
+);
 
 // ------------------- GPT CONFIG -------------------
 const openai = new OpenAI({
@@ -208,19 +216,21 @@ async function start() {
       });
 
       //Build reset link
-      const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+      const resetLink = `https://app.bitewise.it.com/reset-password?token=${token}`;
 
       //Send email
       await transporter.sendMail({
-        from: `"Socka" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Password Reset Request",
-        html: `
-          <p> You requestet to reset your password </p>
-          <p>Click the link below to reset password (expires in 15 minutes):</p>
-          <a href="${resetLink}">${resetLink}</a>
-          `,
-      });
+  from: `"Socka" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "Password Reset Request",
+  html: `
+    <p>Požiadali ste o reset hesla.</p>
+    <p>Kliknite na odkaz nižšie (platí 15 minút):</p>
+    <a href="${resetLink}" style="color: blue; text-decoration: underline;">
+      Resetovať heslo
+    </a>
+  `,
+});
 
       res.json({ ok: true, message: "Reset link sent to email. " });
     } catch (err) {
