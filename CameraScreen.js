@@ -5,7 +5,6 @@ import {
   View,
   Text,
   Button,
-  StyleSheet,
   Pressable,
   Image,
   TextInput,
@@ -13,7 +12,9 @@ import {
   ScrollView,
   Modal,
   ActivityIndicator,
+  Platform,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
 import arrow from "./assets/left_arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -32,8 +33,14 @@ export default function CameraScreen() {
   const [showNutriValues] = useState(true);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
-
+  const [expiration, setExpiration] = useState();
   const [isPer100g, setIsPer100g] = useState();
+  const [showExpInput, setShowExpInput] = useState(false);
+  const [selectedExpirationDate, setSelectedExpirationDate] = useState(
+    new Date(),
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [awaitingExpirationDate, setAwaitingExpirationDate] = useState(false);
   useEffect(() => {
     (async () => {
       try {
@@ -46,6 +53,20 @@ export default function CameraScreen() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem("expiration");
+        if (storedValue !== null) {
+          setExpiration(JSON.parse(storedValue));
+        }
+      } catch (err) {
+        console.error("Chyba pri načítaní nastavení:", err);
+      }
+    })();
+  }, []);
+
   const SERVER_URL = "https://app.bitewise.it.com";
 
   const API_URL = "https://world.openfoodfacts.org/api/v0/product";
@@ -74,6 +95,7 @@ export default function CameraScreen() {
     salt,
     sugar,
     image,
+    expirationDate,
   ) {
     try {
       const email = await AsyncStorage.getItem("userEmail");
@@ -107,6 +129,7 @@ export default function CameraScreen() {
           salt,
           sugar,
           image,
+          expirationDate,
         }),
       });
 
@@ -142,7 +165,8 @@ export default function CameraScreen() {
     setAwaitingQuantity(false);
     setQuantityInput("");
     setProductData(null);
-
+    setShowExpInput(false);
+    setShowDatePicker(false);
     try {
       const response = await debugFetch(`${API_URL}/${barcode}.json`);
       const data = await response.json();
@@ -255,6 +279,7 @@ export default function CameraScreen() {
         productData.salt,
         productData.sugar,
         productData.image,
+        selectedExpirationDate?.toISOString?.(),
       );
 
       setProductData(null);
@@ -365,8 +390,8 @@ export default function CameraScreen() {
         {productData && (
           <ScrollView
             style={{
-              maxHeight: 450,
-              marginBottom: 300,
+              // maxHeight: 450,
+              marginBottom: 100,
               backgroundColor: "#fff",
               borderRadius: 10,
               padding: 10,
@@ -424,10 +449,12 @@ export default function CameraScreen() {
                 </Pressable>
               </KeyboardWrapper>
             ) : (
-              <Text>Hmotnosť: {productData.quantity} g</Text>
+              !awaitingExpirationDate && (
+                <Text>Hmotnosť: {productData.quantity} g</Text>
+              )
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Text>
                 {showNutriValues && isPer100g
                   ? `Kalórie (100g): ${productData.calories ?? "N/A"} kcal`
@@ -435,7 +462,7 @@ export default function CameraScreen() {
               </Text>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Text>
                 {showNutriValues && isPer100g
                   ? `Tuky (100g): ${productData.fat ?? "N/A"} g`
@@ -443,7 +470,7 @@ export default function CameraScreen() {
               </Text>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Text>
                 {showNutriValues && isPer100g
                   ? `Bielkoviny (100g): ${productData.proteins ?? "N/A"} g`
@@ -451,7 +478,7 @@ export default function CameraScreen() {
               </Text>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Text>
                 {showNutriValues && isPer100g
                   ? `Sacharidy (100g): ${productData.carbs ?? "N/A"} g`
@@ -459,7 +486,7 @@ export default function CameraScreen() {
               </Text>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Text>
                 {showNutriValues && isPer100g
                   ? `Cukry (100g): ${productData.sugar ?? "N/A"} g`
@@ -467,7 +494,7 @@ export default function CameraScreen() {
               </Text>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Text>
                 {showNutriValues && isPer100g
                   ? `Soľ (100g): ${productData.salt ?? "N/A"} g`
@@ -475,7 +502,7 @@ export default function CameraScreen() {
               </Text>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Text>
                 {showNutriValues && isPer100g
                   ? `Vláknina (100g): ${productData.fiber ?? "N/A"} g`
@@ -483,25 +510,128 @@ export default function CameraScreen() {
               </Text>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
+              <Text>
+                {showNutriValues && isPer100g && expiration
+                  ? `Vlákno (100g): ${productData.fiber ?? "N/A"} g`
+                  : `Vláknina: ${productData.totalFiber ?? "N/A"} g`}
+              </Text>
+            )}
+
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Pressable
                 style={styles.primaryActionButton}
-                onPress={saveToDatabase}
+                onPress={() => {
+                  if (expiration) {
+                    setSelectedExpirationDate(new Date());
+                    setAwaitingExpirationDate(true);
+                    if (Platform.OS === "ios") {
+                      setShowDatePicker(true);
+                    }
+                  } else {
+                    saveToDatabase();
+                  }
+                }}
               >
                 <Text style={styles.primaryActionButtonText}>Špajza</Text>
               </Pressable>
             )}
 
-            {!awaitingQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && (
               <Pressable
                 style={[
                   styles.primaryActionButton,
                   { backgroundColor: "#2196F3" },
                 ]}
-                onPress={addDirectlyToEaten}
+                onPress={() => {
+                  addDirectlyToEaten();
+                }}
               >
                 <Text style={styles.primaryActionButtonText}>Zjedené</Text>
               </Pressable>
+            )}
+
+            {awaitingExpirationDate && expiration && (
+              <View
+                style={{
+                  width: "100%",
+                  marginTop: 12,
+                  paddingTop: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: "#eee",
+                }}
+              >
+                <Text style={{ fontWeight: "bold", textAlign: "center" }}>
+                  Vyberte dátum spotreby
+                </Text>
+
+                <Text style={{ textAlign: "center", marginTop: 6 }}>
+                  {selectedExpirationDate
+                    ? selectedExpirationDate.toLocaleDateString("sk-SK")
+                    : "—"}
+                </Text>
+
+                {Platform.OS === "android" && (
+                  <Pressable
+                    style={[styles.primaryActionButton, { marginTop: 10 }]}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Text style={styles.primaryActionButtonText}>
+                      Vybrať dátum
+                    </Text>
+                  </Pressable>
+                )}
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={selectedExpirationDate || new Date()}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "inline" : "default"}
+                    minimumDate={new Date()}
+                    onChange={(event, date) => {
+                      if (Platform.OS === "android") {
+                        setShowDatePicker(false);
+                      }
+                      if (event?.type === "dismissed") return;
+                      if (date) setSelectedExpirationDate(date);
+                    }}
+                  />
+                )}
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    marginTop: 10,
+                  }}
+                >
+                  <Pressable
+                    style={[
+                      styles.primaryActionButton,
+                      { flex: 1, backgroundColor: "#9e9e9e" },
+                    ]}
+                    onPress={() => {
+                      setShowExpInput(false);
+                      setShowDatePicker(false);
+                      setAwaitingExpirationDate(false);
+                    }}
+                  >
+                    <Text style={styles.primaryActionButtonText}>Zrušiť</Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.primaryActionButton, { flex: 1 }]}
+                    onPress={async () => {
+                      await saveToDatabase();
+                      setShowExpInput(false);
+                      setShowDatePicker(false);
+                    }}
+                  >
+                    <Text style={styles.primaryActionButtonText}>Uložiť</Text>
+                  </Pressable>
+                </View>
+              </View>
             )}
           </ScrollView>
         )}
