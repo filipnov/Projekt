@@ -540,6 +540,65 @@ async function start() {
     }
   });
 
+  //------------ CONSUME RECIPE (add to daily consumption) ------------------
+  app.post("/api/consumeRecipe", async (req, res) => {
+    console.log("📩 Incoming /api/consumeRecipe request:", req.body);
+    
+    const { email, nutrition } = req.body;
+
+    if (!email || !nutrition) {
+      return res.status(400).json({ error: "Missing email or nutrition data" });
+    }
+
+    try {
+      const user = await users.findOne({ email });
+      console.log("👤 Found user:", user ? user.email : "NOT FOUND");
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Get today's date in format YYYY-MM-DD
+      const today = new Date().toISOString().slice(0, 10);
+
+      // Get current daily consumption for today
+      const currentTotals = user.dailyConsumption?.[today] || {
+        calories: 0,
+        proteins: 0,
+        carbs: 0,
+        fat: 0,
+        fiber: 0,
+        sugar: 0,
+        salt: 0,
+        drunkWater: 0,
+      };
+
+      // Add recipe nutrition to current totals
+      const updatedTotals = {
+        calories: (currentTotals.calories || 0) + (nutrition.calories || 0),
+        proteins: (currentTotals.proteins || 0) + (nutrition.proteins || 0),
+        carbs: (currentTotals.carbs || 0) + (nutrition.carbohydrates || 0),
+        fat: (currentTotals.fat || 0) + (nutrition.fats || 0),
+        fiber: (currentTotals.fiber || 0) + (nutrition.fiber || 0),
+        sugar: (currentTotals.sugar || 0) + (nutrition.sugars || 0),
+        salt: (currentTotals.salt || 0) + (nutrition.salt || 0),
+        drunkWater: currentTotals.drunkWater || 0,
+      };
+
+      // Update daily consumption in database
+      await users.updateOne(
+        { email },
+        { $set: { [`dailyConsumption.${today}`]: updatedTotals } },
+      );
+
+      console.log("✅ Recipe consumed, totals updated:", updatedTotals);
+      res.json({ ok: true, message: "Recipe consumed", totals: updatedTotals });
+    } catch (err) {
+      console.error("❌ Consume recipe error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   app.post("/api/generateRecipe", async (req, res) => {
     try {
       if (gptRequestCount >= GPT_REQUEST_LIMIT) {
