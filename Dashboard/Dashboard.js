@@ -54,6 +54,19 @@ export default function Dashboard({ setIsLoggedIn }) {
     return merged;
   };
 
+  // Prefer remote (server) totals when available to ensure overview is current
+  const mergeTotalsPreferRemote = (localTotals, remoteTotals) => {
+    if (!remoteTotals) return localTotals;
+    const merged = { ...localTotals };
+    for (const key of Object.keys(merged)) {
+      const remoteVal = remoteTotals[key];
+      if (remoteVal !== null && remoteVal !== undefined) {
+        merged[key] = remoteVal;
+      }
+    }
+    return merged;
+  };
+
   const isTotalsEmptyOrAllZero = (totals) => {
     if (!totals) return true;
     return Object.values(totals).every((v) => Number(v) === 0);
@@ -210,8 +223,8 @@ export default function Dashboard({ setIsLoggedIn }) {
 
           if (storedMealBox) setMealBox(JSON.parse(storedMealBox));
 
-          // server fallback: only if AsyncStorage doesn't have usable totals
-          if (email && !hasLocalTotals) {
+          // Always refresh daily totals from server when opening Overview
+          if (email) {
             try {
               const response = await fetch(
                 `${SERVER_URL}/api/getDailyConsumption?email=${email}&date=${new Date().toISOString().slice(0, 10)}`,
@@ -219,7 +232,8 @@ export default function Dashboard({ setIsLoggedIn }) {
               if (response.ok) {
                 const data = await response.json();
                 if (data?.totals) {
-                  totals = mergeTotalsPreferLocal(totals, data.totals);
+                  // prefer server totals so overview reflects latest values
+                  totals = mergeTotalsPreferRemote(totals, data.totals);
                 }
               }
             } catch (err) {
@@ -229,7 +243,7 @@ export default function Dashboard({ setIsLoggedIn }) {
               );
             }
 
-            // fetch products fallback
+            // fetch products fallback (unchanged)
             const products = await fetchUserProducts();
             if (
               products.length > 0 &&
@@ -259,6 +273,48 @@ export default function Dashboard({ setIsLoggedIn }) {
     if (!eatenLoaded) return;
     AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
   }, [eatenTotals, eatenLoaded]);
+
+  // --- REFRESH TOTALS WHEN USER SWITCHES TO OVERVIEW TAB ---
+  useEffect(() => {
+    if (activeTab !== 1 || !email) return;
+
+    let cancelled = false;
+
+    const refreshTotals = async () => {
+      try {
+        const response = await fetch(
+          `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(
+            email,
+          )}&date=${new Date().toISOString().slice(0, 10)}`,
+        );
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data?.totals && !cancelled) {
+          // Update state and persist so other screens read the latest
+          setEatenTotals((prev) => {
+            const merged = mergeTotalsPreferRemote(prev, data.totals);
+            try {
+              AsyncStorage.setItem("eatenTotals", JSON.stringify(merged));
+            } catch (e) {
+              console.error("Failed to persist refreshed eatenTotals:", e);
+            }
+            return merged;
+          });
+          setEatenLoaded(true);
+        }
+      } catch (err) {
+        console.error("Error refreshing eatenTotals on tab switch:", err);
+      }
+    };
+
+    refreshTotals();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, email]);
 
   // --- PUSH DAILY CONSUMPTION TO SERVER (single payload) ---
   useEffect(() => {
