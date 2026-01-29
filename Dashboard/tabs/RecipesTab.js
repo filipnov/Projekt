@@ -135,6 +135,36 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
   }
 };
 
+  // Funkcia na konzumáciu receptu (pripočítanie nutričných hodnôt)
+  const consumeRecipe = async () => {
+    const nutrition = generatedRecipeModal?.nutrition || selectedRecept?.nutrition;
+    
+    if (!nutrition || !userEmail) return;
+
+    try {
+      const res = await fetch(`${SERVER_URL}/api/consumeRecipe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userEmail,
+          nutrition: nutrition,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        console.log("✅ Recipe consumed, nutrition added to daily goal");
+        setGeneratedRecipeModal(null);
+        setSelectedRecept(null);
+      } else {
+        console.error("❌ Failed to consume recipe:", data.error);
+      }
+    } catch (err) {
+      console.error("❌ Consume recipe failed:", err);
+    }
+  };
+
 // Načítanie receptov
 const fetchSavedRecipes = async () => {
   if (!userEmail) return;
@@ -328,21 +358,6 @@ const ADDITIONAL_PREFERENCES = [
     { 
       id: "snack",    label: "🍿 Snack",   description: "Malé jedlá medzi hlavnými chodmi."
     },],},
-  {
-  category: "Nutričné / diétne",
-  items: [
-    {
-      id: "low_carb", label: "🥖 Nízkosacharidové", description: "Jedlá s obmedzeným množstvom sacharidov."
-    },
-    {
-      id: "high_protein", label: "💪 Vysokoproteínové", description: "Recepty s vysokým obsahom bielkovín."
-    },
-    {
-      id: "gluten_free", label: "🌾 Bezlepkové", description: "Jedlá bez lepku, vhodné pre celiatikov."
-    },
-    {
-      id: "dairy_free", label: "🥛 Bez laktózy", description: "Recepty bez mliečnych výrobkov."
-    },],},
  {
   category: "Pre koho",
   items: [
@@ -378,48 +393,6 @@ const ADDITIONAL_PREFERENCES = [
     },
     {
       id: "not_spicy", label: "🌶️ Bez štipľavosti", description: "Jemné jedlá bez pálivých ingrediencií."
-    },],},
-  {
-  category: "Štýl",
-  items: [
-    {
-      id: "plant_based", label: "🌱 Plant-based", description: "Jedlá založené prevažne na rastlinných surovinách."
-    },
-    {
-      id: "traditional", label: "🍽️ Tradičný recept", description: "Klasické recepty podľa tradičných postupov."
-    },
-    {
-      id: "modern_fitness", label: "🧠 Moderná / fitness kuchyňa", description: "Moderné recepty zamerané na zdravý životný štýl."
-    },
-    {
-      id: "street_food", label: "🌍 Street food štýl", description: "Jedlá inšpirované pouličnou kuchyňou."
-    },
-    {
-      id: "comfort_food", label: "🍲 Comfort food", description: "Sýte a upokojujúce jedlá."
-    },
-    {
-      id: "slow_cooking", label: "🧘 Pomalé varenie / comfort food", description: "Jedlá pripravované pomaly pre plnú chuť."
-    },
-    {
-      id: "one_pot", label: "🥘 One-pot recept", description: "Jedlá pripravované v jednom hrnci."
-    },
-    {
-      id: "no_oven", label: "🍳 Bez rúry", description: "Recepty, ktoré nevyžadujú rúru."
-    },
-    {
-      id: "few_steps", label: "🔢 Minimum krokov", description: "Rýchle recepty s minimom krokov."
-    },],},
-  {
-  category: "Funkčné ciele",
-  items: [
-    {
-      id: "pre_workout", label: "🏃 Pred tréningom", description: "Jedlá vhodné pred fyzickou aktivitou."
-    },
-    {
-      id: "post_workout", label: "💪 Po tréningu", description: "Jedlá podporujúce regeneráciu po tréningu."
-    },
-    {
-      id: "focus_support", label: "🧠 Podpora sústredenia", description: "Jedlá podporujúce mentálnu výkonnosť."
     },],},
 {
   category: "Alergici",
@@ -462,7 +435,68 @@ const ADDITIONAL_PREFERENCES = [
     },
     {
       id: "no-sulfites", label: "⚗️ Bez siričitanov", description: "Vylúči potraviny a nápoje obsahujúce siričitany."
-    }],},];
+    }],},
+  {
+  category: "Kuchyne sveta",
+  items: [
+    {
+      id: "slovak",
+      label: "🇸🇰 Slovenská kuchyňa",
+      description: "Tradičné jedlá ako bryndzové halušky, kapustnica či pirohy."
+    },
+    {
+      id: "czech",
+      label: "🇨🇿 Česká kuchyňa",
+      description: "Sýte jedlá ako sviečková, knedle, guláš a vyprážaný syr."
+    },
+    {
+      id: "italian",
+      label: "🇮🇹 Talianska kuchyňa",
+      description: "Tradičné talianske jedlá ako pizza, cestoviny, rizoto a tiramisu."
+    },
+    {
+      id: "french",
+      label: "🇫🇷 Francúzska kuchyňa",
+      description: "Elegantné recepty, omáčky, syry, dezerty a pečivo."
+    },
+    {
+      id: "greek",
+      label: "🇬🇷 Grécka kuchyňa",
+      description: "Stredomorské jedlá s olivovým olejom, zeleninou, syrom feta a rybami."
+    },
+    {
+      id: "mexican",
+      label: "🇲🇽 Mexická kuchyňa",
+      description: "Výrazné chute, chilli, tacos, burritos, fazuľa a kukurica."
+    },
+    {
+      id: "american",
+      label: "🇺🇸 Americká kuchyňa",
+      description: "Burgery, BBQ, hranolky, pancakes a street food."
+    },
+    {
+      id: "japanese",
+      label: "🇯🇵 Japonská kuchyňa",
+      description: "Jedlá ako sushi, ramen, tempura a bento."
+    },
+    {
+      id: "chinese",
+      label: "🇨🇳 Čínska kuchyňa",
+      description: "Rezance, ryža, wok jedlá, sladkokyslé a pikantné chute."
+    },
+    {
+      id: "indian",
+      label: "🇮🇳 Indická kuchyňa",
+      description: "Korenisté kari, ryža, šošovica a množstvo vegetariánskych jedál."
+    },
+    {
+      id: "thai",
+      label: "🇹🇭 Thajská kuchyňa",
+      description: "Vyvážené chute, sladké, kyslé, slané a pikantné."
+    }
+  ]
+}
+  ];
 
 const availablePreferences = ALL_PREFERENCES.filter(
     pref => !selectedPreferences.some(sel => sel.id === pref.id)
@@ -691,7 +725,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
   </Text>
 
   <Slider
-    minimumValue={5}
+    minimumValue={15}
     maximumValue={180}
     step={5}
     value={maxCookingTime}
@@ -770,7 +804,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
   ))}
 </View>
       <Text style={styles.sectionTitle}>
-  Moje recepty
+  Uložené recepty
 </Text>
 
 <View style={styles.grid}>
@@ -818,7 +852,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
       : require("../../assets/logo.png")
   }
   style={styles.recipeModalImage}
-  resizeMode="cover"
+  resizeMode="center"
 />
 
 {/* TITLE */}
@@ -956,6 +990,16 @@ const availablePreferences = ALL_PREFERENCES.filter(
     <Text style={styles.modalButtonText}>Zavrieť</Text>
   </Pressable>
 
+        {(generatedRecipeModal || selectedRecept?.type === "ai") && (
+  <>
+    <Pressable
+      onPress={consumeRecipe}
+      style={styles.modalButtonEat}
+    >
+      <Text style={styles.modalButtonText}>🍽️ Zjesť recept</Text>
+    </Pressable>
+  </>
+)}
 
         {generatedRecipeModal && (
   <Pressable

@@ -349,10 +349,11 @@ export default StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     padding: 5,
-    backgroundColor: "black",
+    backgroundColor: "hsla(0, 0%, 0%, 0.8)",
   },
   imageBackground: {
     flex: 1,
+    justifyContent: "flex-end"
   },
   image: {
     resizeMode: "cover",
@@ -609,15 +610,15 @@ export default StyleSheet.create({
     fontWeight: "bold",
   },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
+    fontSize: 25,
+    fontWeight: "900",
     marginVertical: 10,
     marginLeft: 15,
   },
   recipeModalImage: {
     width: "100%",
-    height: 220,
-    borderRadius: 16,
+    height: 180,
+    borderRadius: 50,
     marginBottom: 15,
   },
 
@@ -735,6 +736,14 @@ export default StyleSheet.create({
     flex: 1,
     marginLeft: 5,
     backgroundColor: "hsla(129, 56%, 43%, 1)",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+
+  modalButtonEat: {
+    flex: 1,
+    marginLeft: 5,
+    backgroundColor: "#ff9500",
     paddingVertical: 12,
     borderRadius: 12,
   },
