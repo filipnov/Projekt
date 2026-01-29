@@ -17,53 +17,100 @@ const SERVER_URL = "https://app.bitewise.it.com";
 
 export default function PantryTab({
   removeMealBox,
-  removeProduct,
-  addEatenValues,
+  // removeProduct,
+  // addEatenValues,
 }) {
   const [email, setEmail] = useState(null);
   const [mealBoxes, setMealBoxes] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
-  const [loading, setLoading] = useState(true);
+  //const [loading, setLoading] = useState(true);
 
   const getExpirationMs = useCallback((p) => {
-    const raw = p?.expirationDate ?? p?.expiration ?? p?.expiryDate;
-    if (!raw) return Number.POSITIVE_INFINITY;
-    const d = new Date(raw);
-    const ms = d.getTime();
-    return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms;
+    const expiration = p?.expirationDate; // Dátum spotreby z produktu
+    if (!expiration) {
+      return Infinity; //Žiaden dátum = nekonečno
+    } else {
+      const miliseconds = new Date(expiration).getTime(); //Dátum na ms
+
+      if (Number.isNaN(miliseconds)) {
+        return Infinity; //Nesprávny dátum = nekonečno
+      } else {
+        return miliseconds;
+      }
+    }
   }, []);
 
   const groupedMealBoxes = useMemo(() => {
-    const map = new Map();
+    const map = new Map(); // Map = "slovník" (kľúč -> hodnota)
+
+    // Prejdeme všetky produkty/krabičky v špajzi a budeme ich grupovať.
     for (const box of mealBoxes) {
-      const normalizedName =
-        typeof box?.name === "string" ? box.name.trim().toLowerCase() : null;
-      const key = normalizedName
-        ? `name:${normalizedName}`
-        : String(box?.productId ?? box?.id ?? "unknown");
-      const existing = map.get(key);
-      if (existing) {
-        existing.count += 1;
-        existing.instances.push(box);
+      let normalizedName = null;
+
+      // Overení či box.name je text
+      if (box && typeof box.name === "string") {
+        const trimmed = box.name.trim(); // Odstráni medzery na začiatku a konci
+        if (trimmed.length > 0) {
+          normalizedName = trimmed.toLowerCase(); // Zmení na malé písmená
+        }
+      }
+
+      let key = "unknown"; //Defaultný kľúč skupiny
+
+      // Groupovanie podľa názvu
+      if (normalizedName) {
+        key = `name:${normalizedName}`;
       } else {
+        // Ak nie je názov = grupovanie podľa ID.
+        let idForKey = "unknown"; // Default, ak nie je id ani productId
+
+        // ProductId má prednosť
+        if (box && box.productId != null) {
+          idForKey = box.productId;
+        } else if (box && box.id != null) {
+          idForKey = box.id;
+        }
+
+        key = String(idForKey); // Prevedenie na text
+      }
+
+      // Kontrola, či už skupina existuje
+      const existing = map.get(key);
+
+      //Pridanie, ak existuje
+      if (existing) {
+        existing.count += 1; // Zvýšenie počtu kusov
+        existing.instances.push(box); // Uloženie konkrétneho kusu
+      } else {
+        // Ak neexistuje, vytvorenie novej skupiny
         map.set(key, { key, box, count: 1, instances: [box] });
       }
     }
-    // Ensure deterministic behavior when multiple instances exist:
-    // sort by earliest expiration first, then by id/productId/name.
+
+    // Map -> Array, aby sa to dalo jednoducho renderovať v Reacte.
     const values = Array.from(map.values());
-    for (const g of values) {
-      g.instances.sort((a, b) => {
-        const diff = getExpirationMs(a) - getExpirationMs(b);
-        if (diff !== 0) return diff;
-        const aid = a?.id ?? a?.productId ?? a?.name ?? "";
-        const bid = b?.id ?? b?.productId ?? b?.name ?? "";
-        return String(aid).localeCompare(String(bid));
+
+    // Zoradenie kusov v každej skupine podľa exspirácie
+    for (const group of values) {
+      group.instances.sort((a, b) => {
+        const aMs = getExpirationMs(a); // Dátum exspirácie na ms pre produkt a
+        const bMs = getExpirationMs(b); // Dátum exspirácie na ms pre produkt b
+        const diff = aMs - bMs;
+
+        if (diff !== 0) {
+          return diff; // Rovnaké = poradie rozhodne exspirácia.
+        } else {
+          return 0; //Nie sú rovnaké = poradie je jedno
+        }
       });
-      // Keep the representative box aligned with the earliest expiring instance.
-      g.box = g.instances[0] ?? g.box;
+
+      const firstInstance = group.instances[0] ?? null; // Prvý kus = najbližšia exspirácia
+      if (firstInstance) {
+        group.box = firstInstance;
+      }
     }
-    return values;
+
+    return values; // Pole skupín pre UI
   }, [mealBoxes, getExpirationMs]);
 
   // --- Load email from AsyncStorage ---
@@ -85,7 +132,7 @@ export default function PantryTab({
     async ({ forceServer = false } = {}) => {
       if (!email) return;
 
-      setLoading(true);
+      //setLoading(true);
       let boxes = null;
 
       try {
@@ -119,7 +166,7 @@ export default function PantryTab({
         console.error("❌ Error fetching mealBoxes:", err);
         setMealBoxes([]);
       } finally {
-        setLoading(false);
+        //setLoading(false);
       }
     },
     [email],
@@ -169,20 +216,20 @@ export default function PantryTab({
       let allProducts = stored ? JSON.parse(stored) : [];
 
       // 3️⃣ odstráň iba 1 kus (ak je tam viac rovnakých)
-      const boxExp = box?.expirationDate ?? box?.expiration ?? box?.expiryDate;
+      const boxExp = box?.expirationDate;
       const idx = allProducts.findIndex((p) => {
         if (id && p?.id === id) return true;
         if (productId && p?.productId === productId) {
           // If we know expiration for the instance, prefer removing that exact one.
           if (boxExp) {
-            const pExp = p?.expirationDate ?? p?.expiration ?? p?.expiryDate;
+            const pExp = p?.expirationDate;
             return String(pExp ?? "") === String(boxExp);
           }
           return true;
         }
         if (!productId && box?.name && p?.name === box.name) {
           if (boxExp) {
-            const pExp = p?.expirationDate ?? p?.expiration ?? p?.expiryDate;
+            const pExp = p?.expirationDate;
             return String(pExp ?? "") === String(boxExp);
           }
           return true;
@@ -257,7 +304,7 @@ export default function PantryTab({
 
     const expirationLabel = useMemo(() => {
       const candidates = (instances ?? [])
-        .map((p) => p?.expirationDate ?? p?.expiration ?? p?.expiryDate)
+        .map((p) => p?.expirationDate)
         .filter(Boolean)
         .map((v) => {
           const d = new Date(v);
