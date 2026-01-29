@@ -1,4 +1,7 @@
 // RegistrationScreen.js
+// Jednoduchá stránka registrácie používateľa.
+// - Zbavené zbytočných komplikácií, len základné validácie a volanie API.
+// - Po úspešnej registrácii sa uloží prezývka a vráti používateľ na Home.
 import { useState } from "react";
 import {
   Text,
@@ -35,17 +38,17 @@ export default function RegistrationScreen() {
 
   // Handle registration
   async function handleRegistration() {
+    // Simple required-consent check
     if (!gdprConsent) {
-      Alert.alert(
-        "Súhlas je povinný",
-        "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov.",
-      );
+      Alert.alert("Súhlas je povinný", "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov.");
       return;
     }
+
+    // Trim inputs to avoid simple user errors
     const trimmedEmail = email.trim();
     const trimmedNick = nick.trim();
 
-    // Basic validation
+    // Basic validation: all fields required and passwords must match
     if (!trimmedEmail || !trimmedNick || !password || !passwordConfirm) {
       Alert.alert("Registrácia nebola úspešná!", "Prosím vyplň všetky polia!");
       return;
@@ -55,15 +58,16 @@ export default function RegistrationScreen() {
       return;
     }
 
+    // Prepare body for API (keep it minimal)
     const body = {
       email: trimmedEmail,
       password,
       nick: trimmedNick,
-      gdprConsent, // boolean
-      gdprConsentAt: new Date().toISOString(), // ISO timestamp
-      gdprPolicyVersion: "1.0", // alebo dátum verzie GDPR
+      gdprConsent,
+      gdprConsentAt: new Date().toISOString(),
     };
-    await AsyncStorage.setItem("userNick", trimmedNick);
+
+    // Show loading spinner
     setLoading(true);
 
     try {
@@ -73,21 +77,23 @@ export default function RegistrationScreen() {
         body: JSON.stringify(body),
       });
 
+      // Parse response safely; if parse fails use empty object
       const data = await resp.json().catch(() => ({}));
 
       if (resp.ok) {
-        // Clear inputs
+        // Successful registration: store simple user info and navigate home
+        await AsyncStorage.setItem("userNick", trimmedNick);
+
+        // Clear inputs to leave form in a clean state
         setEmail("");
         setNick("");
         setPassword("");
         setPasswordConfirm("");
 
         Alert.alert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "HomeScreen" }],
-        });
+        navigation.reset({ index: 0, routes: [{ name: "HomeScreen" }] });
       } else {
+        // Show server-provided message (if any) otherwise a short default
         const msg = data.error || data.message || "Server vrátil chybu.";
         Alert.alert("Registrácia zlyhala", msg);
       }
@@ -98,8 +104,7 @@ export default function RegistrationScreen() {
       );
     } finally {
       setLoading(false);
-    }
-  }
+    }}
 
   return (
     <KeyboardWrapper style={styles.authMainLayout}>
@@ -131,7 +136,6 @@ export default function RegistrationScreen() {
           autoCapitalize="none"
           autoComplete="email"
         />
-
         <Text style={styles.authInfoLabel}>Zadaj ako ťa máme volať:</Text>
         <TextInput
           placeholder="prezývka"
@@ -140,7 +144,6 @@ export default function RegistrationScreen() {
           onChangeText={setNick}
           autoCapitalize="words"
         />
-
         <Text style={styles.authInfoLabel}>Zadaj svoje heslo:</Text>
         <TextInput
           placeholder="heslo"
@@ -150,7 +153,6 @@ export default function RegistrationScreen() {
           secureTextEntry
           autoCapitalize="none"
         />
-
         <Text style={styles.authInfoLabel}>Zopakuj heslo:</Text>
         <TextInput
           placeholder="heslo znova"
@@ -207,5 +209,4 @@ export default function RegistrationScreen() {
         </View>
       </View>
     </KeyboardWrapper>
-  );
-}
+  );}
