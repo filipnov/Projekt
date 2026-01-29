@@ -556,47 +556,54 @@ export default function CameraScreen() {
                   width: "100%",
                   marginTop: 12,
                   paddingTop: 10,
-                  borderTopWidth: 1,
-                  borderTopColor: "#eee",
+                  // borderTopWidth: 1,
+                  // borderTopColor: "#eee",
                 }}
               >
-                <Text style={{ fontWeight: "bold", textAlign: "center" }}>
-                  Vyberte dátum spotreby
-                </Text>
+                <View style={{ backgroundColor: "#eee", borderRadius: 15, paddingTop: 10 }}>
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      textAlign: "center",
+                      fontSize: 17,
+                    }}
+                  >
+                    Vyberte dátum spotreby
+                  </Text>
 
-                <Text style={{ textAlign: "center", marginTop: 6 }}>
+                  {/*<Text style={{ textAlign: "center", marginTop: 6 }}>
                   {selectedExpirationDate
                     ? selectedExpirationDate.toLocaleDateString("sk-SK")
                     : "—"}
-                </Text>
+                  </Text>*/}
 
-                {Platform.OS === "android" && (
-                  <Pressable
-                    style={[styles.primaryActionButton, { marginTop: 10 }]}
-                    onPress={() => setShowDatePicker(true)}
-                  >
-                    <Text style={styles.primaryActionButtonText}>
-                      Vybrať dátum
-                    </Text>
-                  </Pressable>
-                )}
+                  {Platform.OS === "android" && (
+                    <Pressable
+                      style={[styles.primaryActionButton, { marginTop: 10 }]}
+                      onPress={() => setShowDatePicker(true)}
+                    >
+                      <Text style={styles.primaryActionButtonText}>
+                        Vybrať dátum
+                      </Text>
+                    </Pressable>
+                  )}
 
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={selectedExpirationDate || new Date()}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "inline" : "default"}
-                    minimumDate={new Date()}
-                    onChange={(event, date) => {
-                      if (Platform.OS === "android") {
-                        setShowDatePicker(false);
-                      }
-                      if (event?.type === "dismissed") return;
-                      if (date) setSelectedExpirationDate(date);
-                    }}
-                  />
-                )}
-
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={selectedExpirationDate || new Date()}
+                      mode="date"
+                      display={Platform.OS === "ios" ? "inline" : "default"}
+                      minimumDate={new Date()}
+                      onChange={(event, date) => {
+                        if (Platform.OS === "android") {
+                          setShowDatePicker(false);
+                        }
+                        if (event?.type === "dismissed") return;
+                        if (date) setSelectedExpirationDate(date);
+                      }}
+                    />
+                  )}
+                </View>
                 <View
                   style={{
                     flexDirection: "row",

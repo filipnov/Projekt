@@ -771,7 +771,11 @@ export default function Dashboard({ setIsLoggedIn }) {
         );
       case 4:
         return (
-          <SettingsTab setIsLoggedIn={setIsLoggedIn} navigation={navigation} />
+          <SettingsTab
+            setIsLoggedIn={setIsLoggedIn}
+            navigation={navigation}
+            setNick={setNick}
+          />
         );
       default:
         return <Text>Oops, niečo sa pokazilo</Text>;
