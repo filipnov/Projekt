@@ -22,8 +22,16 @@ export default function PantryTab({
 }) {
   const [email, setEmail] = useState(null);
   const [mealBoxes, setMealBoxes] = useState([]);
-  const [activeBox, setActiveBox] = useState(null);
+  const [activeKey, setActiveKey] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const getExpirationMs = useCallback((p) => {
+    const raw = p?.expirationDate ?? p?.expiration ?? p?.expiryDate;
+    if (!raw) return Number.POSITIVE_INFINITY;
+    const d = new Date(raw);
+    const ms = d.getTime();
+    return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms;
+  }, []);
 
   const groupedMealBoxes = useMemo(() => {
     const map = new Map();
@@ -41,8 +49,22 @@ export default function PantryTab({
         map.set(key, { key, box, count: 1, instances: [box] });
       }
     }
-    return Array.from(map.values());
-  }, [mealBoxes]);
+    // Ensure deterministic behavior when multiple instances exist:
+    // sort by earliest expiration first, then by id/productId/name.
+    const values = Array.from(map.values());
+    for (const g of values) {
+      g.instances.sort((a, b) => {
+        const diff = getExpirationMs(a) - getExpirationMs(b);
+        if (diff !== 0) return diff;
+        const aid = a?.id ?? a?.productId ?? a?.name ?? "";
+        const bid = b?.id ?? b?.productId ?? b?.name ?? "";
+        return String(aid).localeCompare(String(bid));
+      });
+      // Keep the representative box aligned with the earliest expiring instance.
+      g.box = g.instances[0] ?? g.box;
+    }
+    return values;
+  }, [mealBoxes, getExpirationMs]);
 
   // --- Load email from AsyncStorage ---
   useEffect(() => {
@@ -59,70 +81,114 @@ export default function PantryTab({
   }, []);
 
   // --- Fetch mealBoxes with AsyncStorage first, server fallback ---
-  const fetchMealBoxes = useCallback(async () => {
-    if (!email) return;
+  const loadMealBoxes = useCallback(
+    async ({ forceServer = false } = {}) => {
+      if (!email) return;
 
-    setLoading(true);
-    let boxes = null;
+      setLoading(true);
+      let boxes = null;
 
-    try {
-      // 1️⃣ Try AsyncStorage
-      const storedMealBox = await AsyncStorage.getItem("products");
-      if (storedMealBox) {
-        boxes = JSON.parse(storedMealBox);
-        console.log("✅ Loaded mealBoxes from AsyncStorage:", boxes.length);
+      try {
+        // 1️⃣ Try AsyncStorage (unless forceServer)
+        if (!forceServer) {
+          const storedMealBox = await AsyncStorage.getItem("products");
+          if (storedMealBox) {
+            boxes = JSON.parse(storedMealBox);
+            console.log("✅ Loaded mealBoxes from AsyncStorage:", boxes.length);
+          }
+        }
+
+        // 2️⃣ Fallback server if AsyncStorage empty
+        if (!boxes || boxes.length === 0) {
+          console.log("⚠️ Fetching mealBoxes from server...");
+          const res = await fetch(
+            `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(email)}`,
+          );
+          if (!res.ok) throw new Error(`Server returned ${res.status}`);
+          const data = await res.json();
+          boxes = data.products || [];
+          console.log("✅ Loaded mealBoxes from server:", boxes.length);
+
+          // Save to AsyncStorage
+          await AsyncStorage.setItem("products", JSON.stringify(boxes));
+          console.log("✅ Saved server mealBoxes to AsyncStorage");
+        }
+
+        setMealBoxes(boxes);
+      } catch (err) {
+        console.error("❌ Error fetching mealBoxes:", err);
+        setMealBoxes([]);
+      } finally {
+        setLoading(false);
       }
-
-      // 2️⃣ Fallback server if AsyncStorage empty
-      if (!boxes || boxes.length === 0) {
-        console.log("⚠️ AsyncStorage empty, fetching from server...");
-        const res = await fetch(
-          `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(email)}`,
-        );
-        if (!res.ok) throw new Error(`Server returned ${res.status}`);
-        const data = await res.json();
-        boxes = data.products || [];
-        console.log("✅ Loaded mealBoxes from server:", boxes.length);
-
-        // Save to AsyncStorage
-        await AsyncStorage.setItem("products", JSON.stringify(boxes));
-        console.log("✅ Saved server mealBoxes to AsyncStorage");
-      }
-
-      setMealBoxes(boxes);
-    } catch (err) {
-      console.error("❌ Error fetching mealBoxes:", err);
-      setMealBoxes([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [email]);
+    },
+    [email],
+  );
 
   // --- Auto fetch on tab focus ---
   useFocusEffect(
     useCallback(() => {
-      if (email) fetchMealBoxes();
-    }, [email, fetchMealBoxes]),
+      if (email) loadMealBoxes();
+    }, [email, loadMealBoxes]),
   );
 
-  const openWindow = (group) => setActiveBox(group);
-  const closeWindow = () => setActiveBox(null);
+  const openWindow = (group) => setActiveKey(group?.key ?? null);
+  const closeWindow = () => setActiveKey(null);
+
+  const formatExpiration = (value) => {
+    if (!value) return null;
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("sk-SK");
+  };
+
+  const activeGroup = useMemo(() => {
+    if (!activeKey) return null;
+    return groupedMealBoxes.find((g) => g.key === activeKey) ?? null;
+  }, [groupedMealBoxes, activeKey]);
+
+  // If the active product disappears (eaten/removed), close the modal.
+  useEffect(() => {
+    if (activeKey && !activeGroup) setActiveKey(null);
+  }, [activeKey, activeGroup]);
 
   const handleRemoveMealBox = async (id, productId, box) => {
+    let shouldForceRefresh = false;
     try {
       // 1️⃣ zavolaj pôvodnú funkciu, ktorá maže na serveri/databáze
-      await removeMealBox(id, productId, box);
+      try {
+        await removeMealBox(id, productId, box);
+      } catch (err) {
+        // Ak už produkt v DB nie je, stále ho odstránime lokálne a zosyncneme zo servera.
+        shouldForceRefresh = true;
+        console.warn("⚠️ removeMealBox failed, forcing refresh:", err);
+      }
 
       // 2️⃣ načítaj aktuálne produkty z AsyncStorage
       const stored = await AsyncStorage.getItem("products");
       let allProducts = stored ? JSON.parse(stored) : [];
 
       // 3️⃣ odstráň iba 1 kus (ak je tam viac rovnakých)
-      const idx = allProducts.findIndex(
-        (p) =>
-          (productId && p.productId === productId) ||
-          (!productId && box?.name && p.name === box.name),
-      );
+      const boxExp = box?.expirationDate ?? box?.expiration ?? box?.expiryDate;
+      const idx = allProducts.findIndex((p) => {
+        if (id && p?.id === id) return true;
+        if (productId && p?.productId === productId) {
+          // If we know expiration for the instance, prefer removing that exact one.
+          if (boxExp) {
+            const pExp = p?.expirationDate ?? p?.expiration ?? p?.expiryDate;
+            return String(pExp ?? "") === String(boxExp);
+          }
+          return true;
+        }
+        if (!productId && box?.name && p?.name === box.name) {
+          if (boxExp) {
+            const pExp = p?.expirationDate ?? p?.expiration ?? p?.expiryDate;
+            return String(pExp ?? "") === String(boxExp);
+          }
+          return true;
+        }
+        return false;
+      });
       if (idx !== -1) allProducts.splice(idx, 1);
 
       // 4️⃣ ulož späť do AsyncStorage
@@ -130,6 +196,10 @@ export default function PantryTab({
 
       // 5️⃣ aktualizuj stav komponentu ihneď
       setMealBoxes(allProducts);
+
+      if (shouldForceRefresh) {
+        await loadMealBoxes({ forceServer: true });
+      }
 
       console.log("✅ Product removed locally and AsyncStorage updated");
     } catch (err) {
@@ -166,11 +236,39 @@ export default function PantryTab({
   );
 
   // --- Modal window ---
-  const MealBoxWindow = ({ productName, count, email, close }) => {
+  const MealBoxWindow = ({ productName, count, email, close, instances }) => {
     const [product, setProduct] = useState(null);
-    const [error, setError] = useState(null);
     const [loadingWindow, setLoadingWindow] = useState(true);
     const [isPer100g, setIsPer100g] = useState();
+    const [expiration, setExpiration] = useState();
+
+    useEffect(() => {
+      (async () => {
+        try {
+          const storedValue = await AsyncStorage.getItem("expiration");
+          if (storedValue !== null) {
+            setExpiration(JSON.parse(storedValue));
+          }
+        } catch (err) {
+          console.error("Chyba pri načítaní nastavení:", err);
+        }
+      })();
+    }, []);
+
+    const expirationLabel = useMemo(() => {
+      const candidates = (instances ?? [])
+        .map((p) => p?.expirationDate ?? p?.expiration ?? p?.expiryDate)
+        .filter(Boolean)
+        .map((v) => {
+          const d = new Date(v);
+          return Number.isNaN(d.getTime()) ? null : d;
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.getTime() - b.getTime());
+
+      const earliest = candidates[0];
+      return formatExpiration(earliest);
+    }, [instances]);
 
     useEffect(() => {
       (async () => {
@@ -183,87 +281,22 @@ export default function PantryTab({
       })();
     }, []);
 
+    // Product data already exists in pantry items (`instances`).
+    // Using it avoids fragile DB lookup by exact name and prevents 404 after eating.
     useEffect(() => {
-      if (!email || !productName) {
-        setProduct(null);
-        setLoadingWindow(false);
-        return;
-      }
-
-      let mounted = true;
-
-      const fetchProduct = async () => {
-        setLoadingWindow(true);
-        setError(null);
-
-        try {
-          // 1️⃣ AsyncStorage first
-          const storedMealBox = await AsyncStorage.getItem("products");
-          if (storedMealBox) {
-            const found = JSON.parse(storedMealBox).find(
-              (p) => p.name === productName,
-            );
-            if (found && mounted) {
-              setProduct(found);
-              setLoadingWindow(false);
-              return;
-            }
-          }
-
-          // 2️⃣ Server fallback
-          const url = `${SERVER_URL}/api/getProductByName?email=${encodeURIComponent(
-            email,
-          )}&name=${encodeURIComponent(productName)}`;
-          const res = await fetch(url);
-          const body = await res.json().catch(() => ({}));
-
-          if (!res.ok) {
-            throw new Error(body.error || `Server returned ${res.status}`);
-          }
-
-          if (mounted) setProduct(body.product || null);
-
-          // Save to AsyncStorage if found
-          if (body.product) {
-            const stored = await AsyncStorage.getItem("products");
-            const allProducts = stored ? JSON.parse(stored) : [];
-            const exists = allProducts.some(
-              (p) => p.name === body.product.name,
-            );
-            const next = exists ? allProducts : [...allProducts, body.product];
-            await AsyncStorage.setItem("products", JSON.stringify(next));
-            console.log("✅ Saved product to AsyncStorage");
-          }
-        } catch (err) {
-          console.error("❌ Error fetching product:", err);
-          if (mounted) setError(err.message);
-        } finally {
-          if (mounted) setLoadingWindow(false);
-        }
-      };
-
-      fetchProduct();
-      return () => {
-        mounted = false;
-      };
-    }, [email, productName]);
+      setLoadingWindow(true);
+      const p = instances?.[0] ?? null;
+      setProduct(p);
+      setLoadingWindow(false);
+    }, [instances]);
 
     //  if (loadingWindow) return <ActivityIndicator size="large" color="#0000ff" />;
-    if (error) return <Text style={styles.pantrySimpleErrorText}>{error}</Text>;
-    //  if (!product) return <Text>Produkt nebol nájdený</Text>;
 
     return (
       <View style={styles.pantryOverlay}>
         <View style={styles.pantryWindow}>
           {loadingWindow ? (
             <ActivityIndicator size="large" />
-          ) : error ? (
-            <>
-              <Text style={styles.pantryErrorText}>Error: {error}</Text>
-              <Pressable onPress={close} style={styles.pantryCloseButton}>
-                <Text style={styles.pantryCloseButtonText}>Close</Text>
-              </Pressable>
-            </>
           ) : !product ? (
             <>
               <Text style={styles.pantryTitle}>Product not found</Text>
@@ -409,34 +442,41 @@ export default function PantryTab({
                 <Text>{count ?? 1}</Text>
               </View>
 
-              <View
-                style={{
-                  justifyContent: "space-evenly",
-                  alignSelf: "center",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 5,
-                  borderRadius: 6,
-                  //marginBottom: 4,
-                  //backgroundColor: "white",
-                  width: "60%",
-                  backgroundColor: "hsla(227, 100%, 50%, 0.40)",
-                  marginTop: 10,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Exspirácia:</Text>
-              </View>
+              {expiration && (
+                <View
+                  style={{
+                    justifyContent: "space-evenly",
+                    alignSelf: "center",
+                    flexDirection: "row",
+                    borderWidth: 1,
+                    borderColor: "#ddd",
+                    padding: 5,
+                    borderRadius: 6,
+                    //marginBottom: 4,
+                    //backgroundColor: "white",
+                    width: "60%",
+                    backgroundColor: "hsla(227, 100%, 50%, 0.40)",
+                    marginTop: 10,
+                  }}
+                >
+                  <Text style={styles.pantryNutritionLabel}>Exspirácia:</Text>
+                  <Text>{expirationLabel ?? "—"}</Text>
+                </View>
+              )}
 
               <Pressable
                 onPress={() => {
-                  const instance = group.instances[0];
+                  const instance = instances?.[0];
                   if (!instance) return;
-                  handleRemoveMealBox(
-                    instance.id,
-                    instance.productId,
-                    instance,
-                  );
+                  // Close immediately so UI doesn't look like it "switches" to the next date.
+                  close?.();
+                  (async () => {
+                    await handleRemoveMealBox(
+                      instance.id,
+                      instance.productId,
+                      instance,
+                    );
+                  })();
                 }}
                 style={styles.pantryEatenBtn}
               >
@@ -457,15 +497,16 @@ export default function PantryTab({
   return (
     <View style={styles.pantryRoot}>
       <Modal
-        visible={!!activeBox}
+        visible={!!activeKey}
         animationType="slide"
         transparent={true}
         onRequestClose={closeWindow}
       >
         <MealBoxWindow
-          productName={activeBox?.box?.name}
-          count={activeBox?.count}
+          productName={activeGroup?.box?.name}
+          count={activeGroup?.count}
           email={email}
+          instances={activeGroup?.instances ?? []}
           close={closeWindow}
         />
       </Modal>

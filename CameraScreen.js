@@ -167,6 +167,8 @@ export default function CameraScreen() {
     setProductData(null);
     setShowExpInput(false);
     setShowDatePicker(false);
+    setAwaitingExpirationDate(false);
+    setSelectedExpirationDate(new Date());
     try {
       const response = await debugFetch(`${API_URL}/${barcode}.json`);
       const data = await response.json();
@@ -284,6 +286,9 @@ export default function CameraScreen() {
 
       setProductData(null);
       setScanned(false); // 🔁 znovu povolí skenovanie
+      setAwaitingExpirationDate(false);
+      setShowDatePicker(false);
+      setSelectedExpirationDate(new Date());
     } catch (err) {
       Alert.alert("Chyba", "Nepodarilo sa uložiť produkt.");
     }
@@ -324,6 +329,9 @@ export default function CameraScreen() {
 
       setProductData(null);
       setScanned(false); // 🔁 znovu skenovať
+      setAwaitingExpirationDate(false);
+      setShowDatePicker(false);
+      setSelectedExpirationDate(new Date());
     } catch (err) {
       Alert.alert("Chyba", "Nepodarilo sa pridať produkt.");
     }
@@ -511,23 +519,14 @@ export default function CameraScreen() {
             )}
 
             {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g && expiration
-                  ? `Vlákno (100g): ${productData.fiber ?? "N/A"} g`
-                  : `Vláknina: ${productData.totalFiber ?? "N/A"} g`}
-              </Text>
-            )}
-
-            {!awaitingQuantity && !awaitingExpirationDate && (
               <Pressable
                 style={styles.primaryActionButton}
                 onPress={() => {
                   if (expiration) {
                     setSelectedExpirationDate(new Date());
                     setAwaitingExpirationDate(true);
-                    if (Platform.OS === "ios") {
-                      setShowDatePicker(true);
-                    }
+                    // Auto-open date picker for each product (Android + iOS)
+                    setShowDatePicker(true);
                   } else {
                     saveToDatabase();
                   }
@@ -615,6 +614,7 @@ export default function CameraScreen() {
                       setShowExpInput(false);
                       setShowDatePicker(false);
                       setAwaitingExpirationDate(false);
+                      setSelectedExpirationDate(new Date());
                     }}
                   >
                     <Text style={styles.primaryActionButtonText}>Zrušiť</Text>
@@ -626,6 +626,8 @@ export default function CameraScreen() {
                       await saveToDatabase();
                       setShowExpInput(false);
                       setShowDatePicker(false);
+                      setAwaitingExpirationDate(false);
+                      setSelectedExpirationDate(new Date());
                     }}
                   >
                     <Text style={styles.primaryActionButtonText}>Uložiť</Text>
