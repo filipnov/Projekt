@@ -179,6 +179,11 @@ async function start() {
     }
   });
 
+   // ------------------ APP LINK DUMMY ROUTE ------------------
+  app.get("/reset-password", (req, res) => {
+    res.status(200).send("OK");
+  });
+
   // ------------------FORGOT PASSWORD ------------------
   app.post("/api/forgot-password", async (req, res) => {
     try {
