@@ -1290,6 +1290,7 @@ export default StyleSheet.create({
     marginBottom: Math.round(clamp(ms(12), 10, 14)),
     textAlign: "center",
   },
+
   pantryModalImage: {
     //width: "100%",
     height: Math.round(clamp(vs(200), 160, 240)),
@@ -1299,13 +1300,14 @@ export default StyleSheet.create({
   pantryNutritionHeaderText: {
     margin: "auto",
     fontWeight: "bold",
+    marginBottom: Math.round(clamp(ms(6), 4, 8)),
   },
   pantryNutritionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: Math.round(clamp(ms(7), 6, 10)),
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#ddd",
+    // paddingVertical: Math.round(clamp(ms(7), 6, 10)),
+    // borderBottomWidth: 0.5,
+    // borderBottomColor: "#ddd",
   },
   pantryNutritionLabel: {
     fontWeight: "600",
@@ -1314,6 +1316,47 @@ export default StyleSheet.create({
   pantryNutritionValue: {
     fontWeight: "700",
     color: "#111",
+  },
+
+  // Pantry modal reusable blocks (moved from inline styles)
+  pantryInfoRowBase: {
+    justifyContent: "space-between",
+    alignSelf: "center",
+    flexDirection: "row",
+    padding: Math.round(clamp(ms(7), 6, 9)),
+    borderRadius: Math.round(clamp(ms(6), 5, 8)),
+    width: "80%",
+  },
+  pantryInfoRowExpiration: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    backgroundColor: "hsla(0, 100%, 50%, 0.3)",
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+  },
+  pantryInfoRowCount: {
+    backgroundColor: "hsla(136, 100%, 50%, 0.5)",
+    margin: Math.round(clamp(ms(3), 2, 4)),
+  },
+  pantryNutritionCard: {
+    backgroundColor: "hsla(136, 100%, 50%, 0.2)",
+    width: "80%",
+    borderRadius: Math.round(clamp(ms(8), 7, 10)),
+    alignSelf: "center",
+    padding: Math.round(clamp(ms(5), 4, 6)),
+  },
+  pantryNutritionValueRowBase: {
+    justifyContent: "space-between",
+    flexDirection: "row",
+    borderRadius: Math.round(clamp(ms(6), 5, 8)),
+    width: "80%",
+    alignSelf: "center",
+    marginBottom: Math.round(clamp(ms(2), 2, 3)),
+  },
+  pantryNutritionValueRowGap3: {
+    gap: 3,
+  },
+  pantryNutritionValueRowGap1: {
+    gap: 1,
   },
   pantryCloseButton: {
     marginTop: Math.round(clamp(ms(8), 4, 12)),

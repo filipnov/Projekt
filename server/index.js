@@ -114,6 +114,44 @@ async function start() {
     }
   });
 
+  // ------------------- UPDATE NICK -------------------
+  app.post("/api/updateNick", async (req, res) => {
+    try {
+      const { email, nick } = req.body;
+
+      if (!email || typeof nick !== "string") {
+        return res.status(400).json({ error: "Missing fields" });
+      }
+
+      const trimmedNick = nick.trim();
+      if (!trimmedNick) {
+        return res.status(400).json({ error: "Nick cannot be empty" });
+      }
+      if (trimmedNick.length > 40) {
+        return res.status(400).json({ error: "Nick is too long" });
+      }
+
+      const result = await users.updateOne(
+        { email },
+        {
+          $set: {
+            nick: trimmedNick,
+            nickUpdatedAt: new Date(),
+          },
+        },
+      );
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      return res.json({ ok: true, nick: trimmedNick });
+    } catch (err) {
+      console.error("Update nick error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  });
+
   // ------------------- UPDATE PROFILE -------------------
   app.post("/api/updateProfile", async (req, res) => {
     console.log("REQ BODY:", req.body);

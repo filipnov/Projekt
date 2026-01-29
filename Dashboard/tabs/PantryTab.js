@@ -313,157 +313,80 @@ export default function PantryTab({
                 resizeMode="cover"
               />
 
-              <View style={styles.pantryNutritionRow}>
-                <Text style={styles.pantryNutritionHeaderText}>
-                  {isPer100g ? "Hodnoty na 100g" : "Hodnoty na celý produkt"}
-                </Text>
-              </View>
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 7,
-                  borderRadius: 6,
-                  marginBottom: 4,
-                  backgroundColor: "white",
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Kalórie: {""}</Text>
-                <Text>
-                  {isPer100g ? product.calories : product.totalCalories} kcal
-                </Text>
-              </View>
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 7,
-                  borderRadius: 6,
-                  marginBottom: 4,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Bielkoviny: </Text>
-                <Text>
-                  {isPer100g ? product.proteins : product.totalProteins} g
-                </Text>
-              </View>
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 7,
-                  borderRadius: 6,
-                  marginBottom: 4,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Sacharidy:</Text>
-                <Text>{isPer100g ? product.carbs : product.totalCarbs} g</Text>
-              </View>
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 7,
-                  borderRadius: 6,
-                  marginBottom: 4,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Tuky:</Text>
-                <Text>{isPer100g ? product.fat : product.totalFat} g</Text>
-              </View>
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 7,
-                  borderRadius: 6,
-                  marginBottom: 4,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Vlákniny:</Text>
-                <Text>{isPer100g ? product.fiber : product.totalFiber} g</Text>
-              </View>
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 7,
-                  borderRadius: 6,
-                  marginBottom: 4,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Cukry:</Text>
-                <Text>{isPer100g ? product.sugar : product.totalSugar} g</Text>
-              </View>
-              <View
-                style={{
-                  justifyContent: "space-between",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 7,
-                  borderRadius: 6,
-                  marginBottom: 4,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Soľ:</Text>
-                <Text>{isPer100g ? product.salt : product.totalSalt} g</Text>
-              </View>
-
-              <View
-                style={{
-                  justifyContent: "space-evenly",
-                  alignSelf: "center",
-                  flexDirection: "row",
-                  borderWidth: 1,
-                  borderColor: "#ddd",
-                  padding: 5,
-                  borderRadius: 6,
-                  //marginBottom: 4,
-                  //backgroundColor: "white",
-                  width: "60%",
-                  backgroundColor: "hsla(0, 100%, 50%, 0.2)",
-                  marginTop: 10,
-                }}
-              >
-                <Text style={styles.pantryNutritionLabel}>Počet v špajzi:</Text>
-                <Text>{count ?? 1}</Text>
-              </View>
-
               {expiration && (
                 <View
-                  style={{
-                    justifyContent: "space-evenly",
-                    alignSelf: "center",
-                    flexDirection: "row",
-                    borderWidth: 1,
-                    borderColor: "#ddd",
-                    padding: 5,
-                    borderRadius: 6,
-                    //marginBottom: 4,
-                    //backgroundColor: "white",
-                    width: "60%",
-                    backgroundColor: "hsla(227, 100%, 50%, 0.40)",
-                    marginTop: 10,
-                  }}
+                  style={[
+                    styles.pantryInfoRowBase,
+                    styles.pantryInfoRowExpiration,
+                  ]}
                 >
                   <Text style={styles.pantryNutritionLabel}>Exspirácia:</Text>
                   <Text>{expirationLabel ?? "—"}</Text>
                 </View>
               )}
 
+              <View
+                style={[styles.pantryInfoRowBase, styles.pantryInfoRowCount]}
+              >
+                <Text style={styles.pantryNutritionLabel}>Počet v špajzi:</Text>
+                <Text>{count ?? 1}</Text>
+              </View>
+
+              <View style={styles.pantryNutritionCard}>
+                <View style={styles.pantryNutritionRow}>
+                  <Text style={styles.pantryNutritionHeaderText}>
+                    {isPer100g ? "Hodnoty na 100g" : "Hodnoty na celý produkt"}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.pantryNutritionValueRowBase,
+                    styles.pantryNutritionValueRowGap3,
+                  ]}
+                >
+                  <Text style={styles.pantryNutritionLabel}>Kalórie: {""}</Text>
+                  <Text>
+                    {isPer100g ? product.calories : product.totalCalories} kcal
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.pantryNutritionValueRowBase,
+                    styles.pantryNutritionValueRowGap1,
+                  ]}
+                >
+                  <Text style={styles.pantryNutritionLabel}>Bielkoviny: </Text>
+                  <Text>
+                    {isPer100g ? product.proteins : product.totalProteins} g
+                  </Text>
+                </View>
+                <View style={styles.pantryNutritionValueRowBase}>
+                  <Text style={styles.pantryNutritionLabel}>Sacharidy:</Text>
+                  <Text>
+                    {isPer100g ? product.carbs : product.totalCarbs} g
+                  </Text>
+                </View>
+                <View style={styles.pantryNutritionValueRowBase}>
+                  <Text style={styles.pantryNutritionLabel}>Tuky:</Text>
+                  <Text>{isPer100g ? product.fat : product.totalFat} g</Text>
+                </View>
+                <View style={styles.pantryNutritionValueRowBase}>
+                  <Text style={styles.pantryNutritionLabel}>Vlákniny:</Text>
+                  <Text>
+                    {isPer100g ? product.fiber : product.totalFiber} g
+                  </Text>
+                </View>
+                <View style={styles.pantryNutritionValueRowBase}>
+                  <Text style={styles.pantryNutritionLabel}>Cukry:</Text>
+                  <Text>
+                    {isPer100g ? product.sugar : product.totalSugar} g
+                  </Text>
+                </View>
+                <View style={styles.pantryNutritionValueRowBase}>
+                  <Text style={styles.pantryNutritionLabel}>Soľ:</Text>
+                  <Text>{isPer100g ? product.salt : product.totalSalt} g</Text>
+                </View>
+              </View>
               <Pressable
                 onPress={() => {
                   const instance = instances?.[0];
