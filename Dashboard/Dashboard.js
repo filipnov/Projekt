@@ -25,44 +25,20 @@ import recipes from "../assets/recipe_book.png";
 import setting from "../assets/settings.png";
 import storage from "../assets/storage.png";
 import speedometer from "../assets/speedometer.png";
-import account from "../assets/avatar.png";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import KeyboardWrapper from "../KeyboardWrapper";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Dashboard({ setIsLoggedIn }) {
   const SERVER_URL = "https://app.bitewise.it.com";
   const navigation = useNavigation();
   const route = useRoute(); //Treba
-  const insets = useSafeAreaInsets();
-
-  const mergeTotalsPreferLocal = (localTotals, remoteTotals) => {
-    if (!remoteTotals) return localTotals;
-    const merged = { ...localTotals };
-    for (const key of Object.keys(merged)) {
-      const localVal = merged[key];
-      const remoteVal = remoteTotals[key];
-      const localHasValue =
-        localVal !== null && localVal !== undefined && Number(localVal) !== 0;
-
-      if (!localHasValue && remoteVal !== null && remoteVal !== undefined) {
-        merged[key] = remoteVal;
-      }
-    }
-    return merged;
-  };
 
   // Prefer remote (server) totals when available to ensure overview is current
   const mergeTotalsPreferRemote = (localTotals, remoteTotals) => {
+    // If no remote totals, keep local. Otherwise copy remote values that are not null.
     if (!remoteTotals) return localTotals;
     const merged = { ...localTotals };
-    for (const key of Object.keys(merged)) {
-      const remoteVal = remoteTotals[key];
-      if (remoteVal !== null && remoteVal !== undefined) {
-        merged[key] = remoteVal;
-      }
+    for (const k in remoteTotals) {
+      if (remoteTotals[k] != null) merged[k] = remoteTotals[k];
     }
     return merged;
   };
