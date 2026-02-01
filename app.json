@@ -3,6 +3,7 @@
     "name": "MyApp",
     "slug": "MyApp",
     "version": "1.0.0",
+    "platforms": ["android"],
     "scheme": "bitewise",
     "orientation": "portrait",
     "icon": "./assets/logo_icon.png",
@@ -25,7 +26,10 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "category": ["BROWSABLE", "DEFAULT"],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
           "data": [
             {
               "scheme": "https",
@@ -54,6 +58,12 @@
       "eas": {
         "projectId": "aa53fb3b-02b6-49aa-80a5-f6615c6b3df0"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/aa53fb3b-02b6-49aa-80a5-f6615c6b3df0"
     }
   }
 }

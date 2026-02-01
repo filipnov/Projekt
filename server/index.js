@@ -365,6 +365,7 @@ async function start() {
         productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: product,
         image: image ?? null,
+        isCustom: false,
         expirationDate: expirationDateValue,
         totalCalories: totalCalories ?? null,
         totalProteins: totalProteins ?? null,
@@ -428,6 +429,45 @@ async function start() {
       });
     } catch (err) {
       console.error("❌ Remove product error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
+  //ADD CUSTOM PRODUCT TO DB
+  app.post("/api/addCustomProduct", async (req, res) => {
+    try {
+      const { email, name } = req.body;
+
+      if (!email || !name) {
+        return res.status(400).json({ error: "Missing email or name" });
+      }
+
+      const user = await users.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const customProduct = {
+        productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: String(name).trim(),
+        isCustom: true,
+        image: null,
+        createdAt: new Date(),
+      };
+
+      if (!user.products || user.products.length === 0) {
+        await users.updateOne({ email }, { $set: { products: [customProduct] } });
+      } else if (user.products.length >= 200) {
+        return res.status(400).json({ error: "Too many products" });
+      } else {
+        await users.updateOne({ email }, { $push: { products: customProduct } });
+      }
+
+      const updatedUser = await users.findOne({ email });
+
+      res.json({ success: true, product: customProduct, products: updatedUser.products || [] });
+    } catch (err) {
+      console.error("❌ Add custom product error:", err);
       res.status(500).json({ error: "Server error" });
     }
   });
@@ -658,26 +698,27 @@ PRAVIDLÁ:
 2. Recepty nemusia byť len slovenské, možeš použiť aj exotickejšie recepty.
 3. Recept MUSÍ byť reálny, overiteľný a prakticky vykonateľný.
 4. Ingrediencie musia byť bežne dostupné v obchodoch.
-5. Kroky musia byť jasné, očíslované a zrozumiteľné.
-6. Čas prípravy musí byť realistický pre daný recept.
-7. Recept musí byť originálny, neopakuj predchádzajúce recepty.
-8. Dodrž všetky používateľské preferencie (sladké, štipľavé, mäsité, vegánske, bezmäsité, atď.).
-9. Ak je zvolená preferencia "Morské plody", použite rôzne druhy morských plodov a neobmedzujte sa len na jeden.
-10. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
-11. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
-12. Priraď každému receptu jednu kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé.
-13. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií – kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
-14. Nepoužívaj odhady typu "cca" alebo "približne".
-15. Ak nevieš presnú hodnotu, použi databázový priemer.
-16. Celkové kalórie musia korešpondovať so súčtom makroživín.
-17. Hodnoty sú pre celú porciu (celý recept), čísla nie stringy.
-18. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
-19. Celkový čas varenia nesmie byť viac ako {maxCookingTime} minút.
-20. Čas musí zahŕňať prípravu surovín aj samotné varenie/pečenie.
-21. Odhadni čas každého kroku a výsledok urči ako ich súčet, zaokrúhlený na 5 minút.
-22. Skontroluj, že JSON je validný.
-23. Odpoveď MUSÍ začínať { a končiť }.
-24. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
+5. Názov receptu musí byť dlhý maximálne 31 znakov vrátane medzier.
+6. Kroky musia byť jasné, očíslované a zrozumiteľné.
+7. Čas prípravy musí byť realistický pre daný recept.
+8. Recept musí byť originálny, neopakuj predchádzajúce recepty.
+9. Dodrž všetky používateľské preferencie (sladké, štipľavé, mäsité, vegánske, bezmäsité, atď.).
+10. Ak je zvolená preferencia "Morské plody", použite rôzne druhy morských plodov a neobmedzujte sa len na jeden.
+11. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
+12. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
+13. Priraď každému receptu jednu kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé.
+14. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií – kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
+15. Nepoužívaj odhady typu "cca" alebo "približne".
+16. Ak nevieš presnú hodnotu, použi databázový priemer.
+17. Celkové kalórie musia korešpondovať so súčtom makroživín.
+18. Hodnoty sú pre celú porciu (celý recept), čísla nie stringy.
+19. Nezvyšuj ani neznižuj hodnoty kvôli preferenciám, zachovaj realitu.
+20. Celkový čas varenia nesmie byť viac ako {maxCookingTime} minút.
+21. Čas musí zahŕňať prípravu surovín aj samotné varenie/pečenie.
+22. Odhadni čas každého kroku a výsledok urči ako ich súčet, zaokrúhlený na 5 minút.
+23. Skontroluj, že JSON je validný.
+24. Odpoveď MUSÍ začínať { a končiť }.
+25. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
 
 JSON ŠTRUKTÚRA:
 {

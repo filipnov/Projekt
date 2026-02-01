@@ -3,6 +3,7 @@ import {
   View,
   Text,
   ScrollView,
+  TextInput,
   Pressable,
   Image,
   Modal,
@@ -23,6 +24,8 @@ export default function PantryTab({
   const [email, setEmail] = useState(null);
   const [mealBoxes, setMealBoxes] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
+  const [customName, setCustomName] = useState("");
+  const [savingCustom, setSavingCustom] = useState(false);
   //const [loading, setLoading] = useState(true);
 
   const getExpirationMs = useCallback((p) => {
@@ -40,11 +43,21 @@ export default function PantryTab({
     }
   }, []);
 
+  const scannedMealBoxes = useMemo(
+    () => mealBoxes.filter((p) => !p?.isCustom),
+    [mealBoxes],
+  );
+
+  const customMealBoxes = useMemo(
+    () => mealBoxes.filter((p) => p?.isCustom),
+    [mealBoxes],
+  );
+
   const groupedMealBoxes = useMemo(() => {
     const map = new Map(); // Map = "slovník" (kľúč -> hodnota)
 
     // Prejdeme všetky produkty/krabičky v špajzi a budeme ich grupovať.
-    for (const box of mealBoxes) {
+    for (const box of scannedMealBoxes) {
       let normalizedName = null;
 
       // Overení či box.name je text
@@ -111,7 +124,7 @@ export default function PantryTab({
     }
 
     return values; // Pole skupín pre UI
-  }, [mealBoxes, getExpirationMs]);
+  }, [scannedMealBoxes, getExpirationMs]);
 
   // --- Load email from AsyncStorage ---
   useEffect(() => {
@@ -251,6 +264,52 @@ export default function PantryTab({
       console.log("✅ Product removed locally and AsyncStorage updated");
     } catch (err) {
       console.error("❌ Error removing mealBox:", err);
+    }
+  };
+
+  const addCustomMealBox = async () => {
+    const name = customName.trim();
+    if (!name || !email) return;
+
+    setSavingCustom(true);
+    try {
+      const res = await fetch(`${SERVER_URL}/api/addCustomProduct`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add custom product");
+
+      const data = await res.json();
+      const nextProducts = data.products || [];
+
+      await AsyncStorage.setItem("products", JSON.stringify(nextProducts));
+      setMealBoxes(nextProducts);
+      setCustomName("");
+    } catch (err) {
+      console.error("❌ Error adding custom product:", err);
+    } finally {
+      setSavingCustom(false);
+    }
+  };
+
+  const removeCustomMealBox = async (productId) => {
+    if (!email || !productId) return;
+    try {
+      await fetch(`${SERVER_URL}/api/removeProduct`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, productId }),
+      });
+
+      const stored = await AsyncStorage.getItem("products");
+      const allProducts = stored ? JSON.parse(stored) : [];
+      const filtered = allProducts.filter((p) => p.productId !== productId);
+      await AsyncStorage.setItem("products", JSON.stringify(filtered));
+      setMealBoxes(filtered);
+    } catch (err) {
+      console.error("❌ Error removing custom product:", err);
     }
   };
 
@@ -450,7 +509,7 @@ export default function PantryTab({
                 }}
                 style={styles.pantryEatenBtn}
               >
-                <Text style={styles.pantryCloseButtonText}>Zjedené ✅</Text>
+                <Text style={styles.pantryCloseButtonText}>Zjedené</Text>
               </Pressable>
 
               <Pressable onPress={close} style={styles.pantryCloseButton}>
@@ -482,10 +541,50 @@ export default function PantryTab({
       </Modal>
 
       <ScrollView style={styles.pantryMealContainer}>
+        <Text style={styles.pantrySectionTitle}>Naskenované položky</Text>
         <View style={styles.pantryRow}>
           {groupedMealBoxes.map((group) => (
             <MealBoxItem key={group.key} group={group} />
           ))}
+        </View>
+
+        <Text style={styles.pantrySectionTitle}>Vlastné položky</Text>
+        <View style={styles.pantryCustomInputRow}>
+          <TextInput
+            placeholder="Názov potraviny"
+            value={customName}
+            onChangeText={setCustomName}
+            style={styles.pantryCustomInput}
+          />
+          <Pressable
+            onPress={addCustomMealBox}
+            style={styles.pantryCustomButton}
+            disabled={savingCustom}
+          >
+            <Text style={styles.pantryCustomButtonText}>
+              {savingCustom ? "..." : "Pridať"}
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.pantryCustomList}>
+          {customMealBoxes.length === 0 ? (
+            <Text style={styles.pantryItemText}>
+              Zatiaľ nemáš vlastné položky.
+            </Text>
+          ) : (
+            customMealBoxes.map((item) => (
+              <View key={item.productId} style={styles.pantryCustomItemRow}>
+                <Text style={styles.pantryCustomItemText}>{item.name}</Text>
+                <Pressable
+                  onPress={() => removeCustomMealBox(item.productId)}
+                  style={styles.pantryCustomRemove}
+                >
+                  <Text style={styles.pantryCustomRemoveText}>Zmazať</Text>
+                </Pressable>
+              </View>
+            ))
+          )}
         </View>
       </ScrollView>
     </View>

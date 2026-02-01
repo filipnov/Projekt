@@ -19,6 +19,8 @@ export default function RecipesTab() {
     const SERVER_URL = "https://app.bitewise.it.com"
   const [selectedRecept, setSelectedRecept] = useState(null);
 const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
+const [showGenerateError, setShowGenerateError] = useState(false);
+const [generateErrorMessage, setGenerateErrorMessage] = useState("");
 const [generateModalVisible, setGenerateModalVisible] = useState(false);
 const [savedRecipes, setSavedRecipes] = useState([]);
 const [userEmail, setUserEmail] = useState(null);
@@ -61,6 +63,21 @@ useEffect(() => {
         }, [userEmail, usePantryItems]);
 
   // Funkcia na generovanie receptu z AI
+  const showGenerateErrorModal = (serverMessage) => {
+    const base =
+      serverMessage ||
+      "Recept sa nepodarilo vygenerovať. Skús to prosím ešte raz.";
+
+    const reasons =
+      "Možné dôvody:\n" +
+      "• Použil si potravinu, ktorá sa bežne pri varení nepoužíva.\n" +
+      "• Zadal si nejedlú alebo nesúvisiacu položku.\n" +
+      "• Náš AI šéfkuchár je preťažený a potrebuje pauzu.";
+
+    setGenerateErrorMessage(`${base}\n\n${reasons}`);
+    setShowGenerateError(true);
+  };
+
   const generateRecipe = async () => {
 
   setIsGenerating(true);
@@ -99,10 +116,14 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
       }),
     });
     const data = await response.json();
-    if (!data.success || !data.recipe) return;
+    if (!data.success || !data.recipe) {
+      showGenerateErrorModal(data?.error);
+      return;
+    }
     setGeneratedRecipeModal(data.recipe);
   } catch (error) {
     console.error("❌ ERROR:", error);
+    showGenerateErrorModal();
   }finally {
     setIsGenerating(false);
   }
@@ -782,6 +803,27 @@ const availablePreferences = ALL_PREFERENCES.filter(
   </View>
 </Modal>
 
+      <Modal
+  visible={showGenerateError}
+  transparent
+  animationType="fade"
+  onRequestClose={() => setShowGenerateError(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={[styles.modalContainer, styles.generateErrorContainer]}>
+      <Text style={styles.generateErrorTitle}>Oops, niečo sa pokazilo</Text>
+      <Text style={styles.generateErrorText}>{generateErrorMessage}</Text>
+
+      <Pressable
+        onPress={() => setShowGenerateError(false)}
+        style={styles.generateErrorButton}
+      >
+        <Text style={styles.generateErrorButtonText}>Zavrieť</Text>
+      </Pressable>
+    </View>
+  </View>
+</Modal>
+
      <Text style={styles.sectionTitle}>
   Overené klasické recepty
 </Text>
@@ -837,8 +879,8 @@ const availablePreferences = ALL_PREFERENCES.filter(
   }}
 >
   <View style={styles.modalOverlay}>
-    <View style={[styles.modalContainer, { padding: 20 }]}>
-      <ScrollView>
+          <View style={styles.recipeModalCard}>
+            <ScrollView contentContainerStyle={styles.recipeModalContent}>
 
         {/* IMAGE */}
 <Image
@@ -852,53 +894,61 @@ const availablePreferences = ALL_PREFERENCES.filter(
       : require("../../assets/logo.png")
   }
   style={styles.recipeModalImage}
-  resizeMode="center"
+        resizeMode="cover"
 />
 
 {/* TITLE */}
-<Text style={styles.recipeModalTitle}>
-  {selectedRecept?.nazov || selectedRecept?.name || generatedRecipeModal?.name}
-</Text>
+      <View style={styles.recipeModalHeader}>
+        <Text style={styles.recipeModalTitle}>
+          {selectedRecept?.nazov || selectedRecept?.name || generatedRecipeModal?.name}
+        </Text>
+        <Text style={styles.recipeModalSubtitle}>Recept</Text>
+      </View>
 
 
         {/* STATIC RECEPT */}
 {selectedRecept?.type === "static" && (
   <>
-    {selectedRecept?.ingrediencie && (
-      <Text style={styles.staticText}>
-        <Text style={{ fontWeight: "bold" }}>Ingrediencie:{"\n"}</Text>
-        {selectedRecept.ingrediencie}
-      </Text>
-    )}
-    {selectedRecept?.postup && (
-      <Text style={styles.staticText}>
-        <Text style={{ fontWeight: "bold" }}>Postup:{"\n"}</Text>
-        {selectedRecept.postup}
-      </Text>
-    )}
-    {selectedRecept?.obsah && (
-      <Text style={styles.staticText}>{selectedRecept.obsah}</Text>
-    )}
+    <View style={styles.recipeSectionCard}>
+      <Text style={styles.recipeSectionTitle}>Ingrediencie</Text>
+      {selectedRecept?.ingrediencie && (
+        <Text style={styles.staticText}>{selectedRecept.ingrediencie}</Text>
+      )}
+    </View>
+    <View style={styles.recipeSectionCard}>
+      <Text style={styles.recipeSectionTitle}>Postup</Text>
+      {selectedRecept?.postup && (
+        <Text style={styles.staticText}>{selectedRecept.postup}</Text>
+      )}
+      {selectedRecept?.obsah && (
+        <Text style={styles.staticText}>{selectedRecept.obsah}</Text>
+      )}
+    </View>
   </>
 )}
        {/* AI / GENERATED RECEPT */}
 {(selectedRecept?.type === "ai" || generatedRecipeModal) && (
   <>
     {/* CATEGORY & TIME */}
-    <Text style={styles.aiSectionTitle}>Kategória:</Text>
-    <Text style={styles.aiSectionText}>
-      {selectedRecept?.category || generatedRecipeModal?.category}
-    </Text>
-
-    <Text style={styles.aiSectionTitle}>Čas prípravy:</Text>
-    <Text style={styles.aiSectionText}>
-      {selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}
-    </Text>
+    <View style={styles.recipeMetaRow}>
+      <View style={styles.recipeMetaChip}>
+        <Text style={styles.recipeMetaLabel}>Kategória</Text>
+        <Text style={styles.recipeMetaValue}>
+          {selectedRecept?.category || generatedRecipeModal?.category}
+        </Text>
+      </View>
+      <View style={styles.recipeMetaChip}>
+        <Text style={styles.recipeMetaLabel}>Čas prípravy</Text>
+        <Text style={styles.recipeMetaValue}>
+          {selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}
+        </Text>
+      </View>
+    </View>
 
             {/* --- NUTRITION TABLE --- */}
-<Text style={styles.nutritionTitle}>Nutričné hodnoty:</Text>
-
-<View style={styles.nutritionContainer}>
+<View style={styles.recipeSectionCard}>
+  <Text style={styles.recipeSectionTitle}>Nutričné hodnoty</Text>
+  <View style={styles.nutritionContainer}>
   {(() => {
     const nutrition = selectedRecept?.nutrition || generatedRecipeModal?.nutrition || {};
     const values = [
@@ -914,7 +964,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
     return values.map((item, idx) => (
       <View
         key={idx}
-        style={[styles.nutritionRow, { backgroundColor: idx % 2 === 0 ? "#e6f4ea" : "#f0fdf4" }]}
+        style={styles.nutritionRow}
       >
         <Text style={styles.nutritionLabel}>{item.label}:</Text>
         <Text style={styles.nutritionValue}>
@@ -923,25 +973,28 @@ const availablePreferences = ALL_PREFERENCES.filter(
       </View>
     ));
   })()}
+  </View>
 </View>
             {/* INGREDIENTS */}
-<View style={styles.ingredientsHeader}>
-  <Text style={styles.ingredientsTitle}>Ingrediencie</Text>
-  {/* Info button */}
-  <Pressable
-    onPress={() => setShowUnitInfo(true)}
-    style={styles.ingredientsInfoButton}
-  >
-    <Text style={styles.ingredientsInfoButtonText}>i</Text>
-  </Pressable>
-</View>
+<View style={styles.recipeSectionCard}>
+  <View style={styles.ingredientsHeader}>
+    <Text style={styles.ingredientsTitle}>Ingrediencie</Text>
+    {/* Info button */}
+    <Pressable
+      onPress={() => setShowUnitInfo(true)}
+      style={styles.ingredientsInfoButton}
+    >
+      <Text style={styles.ingredientsInfoButtonText}>i</Text>
+    </Pressable>
+  </View>
 
-{/* Zoznam ingrediencií */}
-{(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
-  <Text key={idx} style={styles.ingredientText}>
-    • {ing.name}: {ing.amountGrams} g
-  </Text>
-))}
+  {/* Zoznam ingrediencií */}
+  {(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
+    <Text key={idx} style={styles.recipeIngredientItem}>
+      • {ing.name}: {ing.amountGrams} g
+    </Text>
+  ))}
+</View>
 
 
 {/* INFO MODAL PRE JEDNOTKY */}
@@ -968,57 +1021,52 @@ const availablePreferences = ALL_PREFERENCES.filter(
   </View>
 </Modal>
             {/* STEPS */}
-<Text style={styles.stepsTitle}>Postup:</Text>
-{(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
-  <View key={idx} style={styles.stepContainer}>
-    <Text style={styles.stepText}>{step}</Text>
-  </View>
-))}
+<View style={styles.recipeSectionCard}>
+  <Text style={styles.stepsTitle}>Postup</Text>
+  {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
+    <View key={idx} style={styles.stepContainer}>
+      <Text style={styles.stepText}>{step}</Text>
+    </View>
+  ))}
+</View>
           </>
         )}
       </ScrollView>
 
       {/* BUTTONS */}
-<View style={styles.modalButtonsContainer}>
-  <Pressable
-    onPress={() => {
-      setSelectedRecept(null);
-      setGeneratedRecipeModal(null);
-    }}
-    style={styles.modalButtonClose}
-  >
-    <Text style={styles.modalButtonText}>Zavrieť</Text>
-  </Pressable>
+      {(generatedRecipeModal || selectedRecept?.type === "ai") && (
+        <View style={styles.modalButtonsContainer}>
+          <Pressable onPress={consumeRecipe} style={styles.modalButtonEat}>
+            <Text style={styles.modalButtonText}>Zjesť recept</Text>
+          </Pressable>
+        </View>
+      )}
 
-        {(generatedRecipeModal || selectedRecept?.type === "ai") && (
-  <>
-    <Pressable
-      onPress={consumeRecipe}
-      style={styles.modalButtonEat}
-    >
-      <Text style={styles.modalButtonText}>🍽️ Zjesť recept</Text>
-    </Pressable>
-  </>
-)}
+      <View style={styles.modalButtonsContainer}>
+        <Pressable
+          onPress={() => {
+            setSelectedRecept(null);
+            setGeneratedRecipeModal(null);
+          }}
+          style={styles.modalModalButtonClose}
+        >
+          <Text style={styles.modalButtonText}>Zavrieť</Text>
+        </Pressable>
 
         {generatedRecipeModal && (
-  <Pressable
-    onPress={saveGeneratedRecipe}
-    style={styles.modalButtonSave}
-  >
-    <Text style={styles.modalButtonText}>Uložiť</Text>
-  </Pressable>
-)}
+          <Pressable
+            onPress={saveGeneratedRecipe}
+            style={styles.modalButtonSave}
+          >
+            <Text style={styles.modalButtonText}>Uložiť</Text>
+          </Pressable>
+        )}
 
-{selectedRecept?.type === "ai" && (
-  <Pressable
-    onPress={deleteRecipe}
-    style={styles.modalButtonDelete}
-  >
-    <Text style={styles.modalButtonText}>🗑️ Zmazať recept</Text>
-  </Pressable>
-)}
-
+        {selectedRecept?.type === "ai" && (
+          <Pressable onPress={deleteRecipe} style={styles.modalButtonDelete}>
+            <Text style={styles.modalButtonText}>Zmazať recept</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   </View>

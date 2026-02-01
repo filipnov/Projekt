@@ -11,6 +11,9 @@ const s = (size) => (SCREEN_WIDTH / AUTH_BASE_WIDTH) * size;
 const vs = (size) => (SCREEN_HEIGHT / AUTH_BASE_HEIGHT) * size;
 const ms = (size, factor = 0.5) => size + (s(size) - size) * factor;
 
+// Welcome screen logo size (responsive but capped)
+const WELCOME_LOGO_SIZE = Math.min(SCREEN_WIDTH * 0.7, 220);
+
 export default StyleSheet.create({
   forgotText: {
     fontWeight: "900",
@@ -58,6 +61,30 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     height: "auto",
+  },
+  // WELCOME SCREEN (layout helpers)
+  welcomeSafeArea: {
+    flex: 1,
+    width: "100%",
+  },
+  welcomeScrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+  },
+  welcomeLogo: {
+    marginTop: 0,
+    marginBottom: 12,
+  },
+  welcomeLogoSized: {
+    width: WELCOME_LOGO_SIZE,
+    height: WELCOME_LOGO_SIZE,
+  },
+  welcomeCardContainer: {
+    width: "90%",
+    maxWidth: 360,
   },
   topBar: {
     backgroundColor: "hsl(0, 0%, 95%)",
@@ -401,6 +428,35 @@ export default StyleSheet.create({
     textAlign: "center",
     marginBottom: 10,
   },
+  generateErrorContainer: {
+    maxHeight: "85%",
+    paddingVertical: 20,
+  },
+  generateErrorTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  generateErrorText: {
+    fontSize: 15,
+    color: "#374151",
+    textAlign: "left",
+    lineHeight: 22,
+    marginBottom: 18,
+  },
+  generateErrorButton: {
+    alignSelf: "center",
+    backgroundColor: "#22c55e",
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  generateErrorButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
 
   selectedPreferencesBox: {
     borderWidth: 1,
@@ -628,6 +684,75 @@ export default StyleSheet.create({
     textAlign: "center",
     marginBottom: 15,
   },
+  recipeModalCard: {
+    width: "92%",
+    maxHeight: "90%",
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 18,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  recipeModalContent: {
+    paddingBottom: 10,
+  },
+  recipeModalHeader: {
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  recipeModalSubtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 2,
+  },
+  recipeMetaRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 6,
+    marginBottom: 12,
+  },
+  recipeMetaChip: {
+    flex: 1,
+    backgroundColor: "#f0fdf4",
+    borderRadius: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: "#cfead7",
+  },
+  recipeMetaLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "600",
+  },
+  recipeMetaValue: {
+    fontSize: 15,
+    color: "#111827",
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  recipeSectionCard: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  recipeSectionTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: 8,
+  },
+  recipeIngredientItem: {
+    fontSize: 15,
+    color: "#111827",
+    marginBottom: 4,
+  },
   staticText: {
     fontSize: 18,
     marginBottom: 8,
@@ -650,7 +775,7 @@ export default StyleSheet.create({
 
   nutritionContainer: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#cfead7",
     borderRadius: 12,
     padding: 12,
     backgroundColor: "#f0fdf4",
@@ -671,7 +796,7 @@ export default StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "#4ade80",
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
@@ -703,10 +828,11 @@ export default StyleSheet.create({
   },
 
   stepContainer: {
-    backgroundColor: "#d1fae5",
     padding: 8,
-    borderRadius: 10,
-    marginBottom: 6,
+    borderRadius: 15,
+    marginBottom: 10,
+    borderBottomColor: "hsla(129, 56%, 43%, 1)",
+    borderBottomWidth: 1
   },
 
   stepText: {
@@ -717,11 +843,24 @@ export default StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 15,
   },
+  modalButtonEatContainer: {
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 10,
+  },
 
   modalButtonClose: {
     flex: 1,
     marginRight: 5,
     backgroundColor: "grey",
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+
+  modalModalButtonClose: {
+    flex: 1,
+    marginRight: 5,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
     paddingVertical: 12,
     borderRadius: 12,
   },
@@ -1189,7 +1328,7 @@ export default StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "hsl(0, 0%, 50%)",
   },
   nutritionLabel: {
     fontWeight: "600",
@@ -1232,6 +1371,68 @@ export default StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+  },
+  pantrySectionTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)",
+    marginBottom: 10,
+    marginTop: 10,
+    marginLeft: 6,
+  },
+  pantryCustomInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 12,
+  },
+  pantryCustomInput: {
+    flex: 1,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    fontSize: 16,
+  },
+  pantryCustomButton: {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  pantryCustomButtonText: {
+    color: "white",
+    fontWeight: "800",
+  },
+  pantryCustomList: {
+    backgroundColor: "#f7f7f7",
+    borderRadius: 12,
+    padding: 10,
+  },
+  pantryCustomItemRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  pantryCustomItemText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+  },
+  pantryCustomRemove: {
+    backgroundColor: "#ff4d4d",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  pantryCustomRemoveText: {
+    color: "white",
+    fontWeight: "800",
   },
   pantryBox: {
     width: "48%",
@@ -1541,6 +1742,113 @@ export default StyleSheet.create({
     justifyContent: "center",
     alignSelf: "center",
     opacity: 0.8,
+  },
+
+  // --- RESET PASSWORD responsive variants (ResetPass.js) ---
+  resetMainLayout: {
+    flex: 1,
+    backgroundColor: "#618a335d",
+    width: "100%",
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: Math.round(clamp(ms(16), 12, 22)),
+  },
+  resetSafeArea: {
+    flex: 1,
+    width: "100%",
+  },
+  resetScrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  resetCardContainer: {
+    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
+    padding: Math.round(clamp(ms(12), 10, 16)),
+    borderRadius: Math.round(clamp(ms(20), 16, 24)),
+    borderWidth: 2,
+    borderColor: "white",
+    width: Math.round(clamp(ms(340), 280, 380)),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resetTitleText: {
+    fontSize: Math.round(clamp(ms(28), 24, 32)),
+    fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1.00)",
+    marginBottom: Math.round(clamp(vs(10), 8, 14)),
+    textAlign: "center",
+  },
+  resetInfoText: {
+    fontSize: Math.round(clamp(ms(15), 13, 17)),
+    fontWeight: "700",
+    color: "hsla(0, 0%, 15%, 1.00)",
+    marginBottom: Math.round(clamp(vs(6), 4, 10)),
+    textAlign: "center",
+  },
+  resetTextInput: {
+    backgroundColor: "white",
+    fontSize: Math.round(clamp(ms(18), 16, 20)),
+    fontWeight: "300",
+    width: Math.round(clamp(ms(260), 220, 300)),
+    height: Math.round(clamp(vs(50), 44, 56)),
+    borderRadius: Math.round(clamp(ms(15), 12, 18)),
+    borderColor: "black",
+    borderWidth: 1,
+    margin: Math.round(clamp(ms(7), 5, 9)),
+    textAlign: "center",
+    elevation: 6,
+  },
+  resetActionButton: {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    width: Math.round(clamp(ms(225), 190, 250)),
+    height: Math.round(clamp(vs(55), 48, 60)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    marginTop: Math.round(clamp(vs(12), 10, 16)),
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  resetActionButtonPressed: {
+    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
+    width: Math.round(clamp(ms(225), 190, 250)),
+    height: Math.round(clamp(vs(55), 48, 60)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    marginTop: Math.round(clamp(vs(12), 10, 16)),
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  resetActionButtonText: {
+    color: "white",
+    fontSize: Math.round(clamp(ms(22), 20, 26)),
+    fontWeight: "900",
+  },
+  resetBackArrowContainer: {
+    height: Math.round(clamp(ms(60), 52, 68)),
+    width: Math.round(clamp(ms(60), 52, 68)),
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: Math.round(clamp(vs(16), 12, 20)),
+  },
+  resetBackArrowPressed: {
+    height: Math.round(clamp(ms(55), 48, 64)),
+    width: Math.round(clamp(ms(55), 48, 64)),
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    opacity: 0.8,
+    marginTop: Math.round(clamp(vs(16), 12, 20)),
+  },
+  resetBackArrow: {
+    height: "100%",
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: Math.round(clamp(ms(50), 44, 56)),
   },
 
   // --- DASHBOARD responsive variants (Dashboard/Dashboard.js) ---
