@@ -1,7 +1,7 @@
 // RegistrationScreen.js
-// Jednoduchá stránka registrácie používateľa.
-// - Zbavené zbytočných komplikácií, len základné validácie a volanie API.
-// - Po úspešnej registrácii sa uloží prezývka a vráti používateľ na Home.
+// Obrazovka registrácie používateľa.
+// - Obsahuje základné validácie a volanie API.
+// - Po úspešnej registrácii uloží prezývku a vráti používateľa na Home.
 import { useState } from "react";
 import {
   Text,
@@ -22,33 +22,38 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 
 export default function RegistrationScreen() {
+  // Navigácia medzi obrazovkami
   const navigation = useNavigation();
 
-  // State for user input
+  // Stav formulára (vstupy používateľa)
   const [email, setEmail] = useState("");
   const [nick, setNick] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  // Stav spínajúci loading počas registrácie
   const [loading, setLoading] = useState(false);
+  // GDPR súhlas
   const [gdprConsent, setGdprConsent] = useState(false);
 
+  // Základné URL backendu
   const SERVER = "https://app.bitewise.it.com";
 
+  // Koncový bod registrácie
   const REGISTER_URL = `${SERVER}/api/register`;
 
-  // Handle registration
+  // Spracovanie registrácie po kliknutí na tlačidlo
   async function handleRegistration() {
-    // Simple required-consent check
+    // Jednoduchá kontrola povinného súhlasu
     if (!gdprConsent) {
       Alert.alert("Súhlas je povinný", "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov.");
       return;
     }
 
-    // Trim inputs to avoid simple user errors
+    // Očistenie vstupov (zabráni jednoduchým chybám používateľa)
     const trimmedEmail = email.trim();
     const trimmedNick = nick.trim();
 
-    // Basic validation: all fields required and passwords must match
+    // Základná validácia: všetky polia sú povinné a heslá sa musia zhodovať
     if (!trimmedEmail || !trimmedNick || !password || !passwordConfirm) {
       Alert.alert("Registrácia nebola úspešná!", "Prosím vyplň všetky polia!");
       return;
@@ -58,7 +63,7 @@ export default function RegistrationScreen() {
       return;
     }
 
-    // Prepare body for API (keep it minimal)
+    // Príprava payloadu pre API (len potrebné údaje)
     const body = {
       email: trimmedEmail,
       password,
@@ -67,65 +72,71 @@ export default function RegistrationScreen() {
       gdprConsentAt: new Date().toISOString(),
     };
 
-    // Show loading spinner
+    // Zapnutie loading spinnera
     setLoading(true);
 
     try {
+      // Odoslanie registrácie na server
       const resp = await fetch(REGISTER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
 
-      // Parse response safely; if parse fails use empty object
+      // Bezpečné parsovanie odpovede (pri chybe použijeme prázdny objekt)
       const data = await resp.json().catch(() => ({}));
 
       if (resp.ok) {
-        // Successful registration: store simple user info and navigate home
+        // Úspešná registrácia: uložíme prezývku a vrátime sa na Home
         await AsyncStorage.setItem("userNick", trimmedNick);
 
-        // Clear inputs to leave form in a clean state
+        // Vyčistenie formulára
         setEmail("");
         setNick("");
         setPassword("");
         setPasswordConfirm("");
 
+        // Potvrdenie pre používateľa a návrat na Home
         Alert.alert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
         navigation.reset({ index: 0, routes: [{ name: "HomeScreen" }] });
       } else {
-        // Show server-provided message (if any) otherwise a short default
+        // Zobrazíme správu zo servera, ak existuje, inak default
         const msg = data.error || data.message || "Server vrátil chybu.";
         Alert.alert("Registrácia zlyhala", msg);
       }
     } catch (err) {
+      // Sieťová chyba / problém so serverom
       Alert.alert(
-        "Network error",
+        "Chyba siete",
         err.message || "Nepodarilo sa spojiť so serverom.",
       );
     } finally {
+      // Vypnutie spinnera po dokončení
       setLoading(false);
-    }}
+    }
+  }
 
   return (
     <KeyboardWrapper style={styles.authMainLayout}>
+      {/* Modal s loading spinnerom */}
       <Modal visible={loading} transparent animationType="fade">
-  <View style={styles.modalOverlay}>
-    <View style={styles.generatingModalContainer}>
-      <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
-      <Text style={styles.generatingModalTitle}>
-        Registrujem účet...
-      </Text>
-      <Text style={styles.generatingModalSubtitle}>
-        Prosím počkaj chvíľu
-      </Text>
-    </View>
-  </View>
-</Modal>
+        <View style={styles.modalOverlay}>
+          <View style={styles.generatingModalContainer}>
+            <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
+            <Text style={styles.generatingModalTitle}>Registrujem účet...</Text>
+            <Text style={styles.generatingModalSubtitle}>
+              Prosím počkaj chvíľu
+            </Text>
+          </View>
+        </View>
+      </Modal>
+      {/* Logo aplikácie */}
       <Image style={styles.authProfileAvatarReg} source={logo} />
 
       <View style={styles.authCardContainer}>
         <Text style={styles.authTitleText}>Registrácia!</Text>
 
+        {/* Vstup pre e‑mail */}
         <Text style={styles.authInfoLabel}>Zadaj email:</Text>
         <TextInput
           placeholder="e-mail"
@@ -136,6 +147,7 @@ export default function RegistrationScreen() {
           autoCapitalize="none"
           autoComplete="email"
         />
+        {/* Vstup pre prezývku */}
         <Text style={styles.authInfoLabel}>Zadaj ako ťa máme volať:</Text>
         <TextInput
           placeholder="prezývka"
@@ -144,6 +156,7 @@ export default function RegistrationScreen() {
           onChangeText={setNick}
           autoCapitalize="words"
         />
+        {/* Vstup pre heslo */}
         <Text style={styles.authInfoLabel}>Zadaj svoje heslo:</Text>
         <TextInput
           placeholder="heslo"
@@ -153,6 +166,7 @@ export default function RegistrationScreen() {
           secureTextEntry
           autoCapitalize="none"
         />
+        {/* Opakované zadanie hesla */}
         <Text style={styles.authInfoLabel}>Zopakuj heslo:</Text>
         <TextInput
           placeholder="heslo znova"
@@ -162,6 +176,7 @@ export default function RegistrationScreen() {
           secureTextEntry
           autoCapitalize="none"
         />
+        {/* GDPR súhlas */}
         <View
           style={{
             flexDirection: "row",
@@ -182,6 +197,7 @@ export default function RegistrationScreen() {
             osobných údajov.
           </Text>
         </View>
+        {/* Akcie: registrácia + návrat späť */}
         <View style={styles.buttonLayout}>
           <Pressable
             style={({ pressed }) =>

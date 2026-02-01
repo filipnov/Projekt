@@ -1,64 +1,76 @@
 // HomeScreen.js
+// Úvodná obrazovka prihlásenia a automatického prihlásenia
 import { useState, useEffect } from "react";
-import { Text, View, Image, TextInput, Pressable, Alert, Modal, ActivityIndicator } from "react-native";
+import {
+  Text,
+  View,
+  Image,
+  TextInput,
+  Pressable,
+  Alert,
+  Modal,
+  ActivityIndicator,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo_name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
-import { 
-  requestPermissions, 
-  scheduleDailyNotifications 
-} from './notifications';
+// Funkcie pre notifikácie (aktuálne vypnuté v logike)
+import { requestPermissions, scheduleDailyNotifications } from "./notifications";
 
 export default function HomeScreen({ setIsLoggedIn }) {
+  // URL backendu
   const SERVER_URL = "https://app.bitewise.it.com";
+  // Navigácia medzi obrazovkami
   const navigation = useNavigation();
 
-  // Simple UI state
-  const [email, setEmail] = useState(""); // typed email
-  const [password, setPassword] = useState(""); // typed password
-  const [isLoading, setIsLoading] = useState(false); // loading circle
+  // Jednoduchý UI stav
+  const [email, setEmail] = useState(""); // zadaný e‑mail
+  const [password, setPassword] = useState(""); // zadané heslo
+  const [isLoading, setIsLoading] = useState(false); // spinner pri načítaní
+
+  // Stiahne a uloží všetky používateľské dáta po prihlásení
   async function pullAllUserData(email) {
-    // Pull profile, products, recipes and last 7 days of consumption
-    // Stored AsyncStorage keys:
-    // - 'userProfile'  -> basic profile object
-    // - 'products'     -> array of user's pantry products
-    // - 'recipes'      -> array of saved recipes
-    // - 'dailyConsumption' -> object keyed by YYYY-MM-DD with totals
+    // Stiahne profil, produkty, recepty a 7 dní konzumácie
+    // Kľúče v AsyncStorage:
+    // - 'userProfile'       -> profil používateľa
+    // - 'products'          -> produkty v špajzi
+    // - 'recipes'           -> uložené recepty
+    // - 'dailyConsumption'  -> objekt podľa dátumu (YYYY-MM-DD)
     try {
-      // 1) USER PROFILE
-      // GET /api/userProfile?email=... -> returns profile data used in Dashboard
+      // 1) PROFIL POUŽÍVATEĽA
+      // GET /api/userProfile?email=... -> profil pre Dashboard
       const userProfileRes = await fetch(`${SERVER_URL}/api/userProfile?email=${email}`);
       const userProfile = await userProfileRes.json();
       await AsyncStorage.setItem("userProfile", JSON.stringify(userProfile));
 
-      // 2) PRODUCTS
-      // GET /api/getProducts?email=... -> returns user's pantry products array
+      // 2) PRODUKTY
+      // GET /api/getProducts?email=... -> produkty v špajzi
       const productsRes = await fetch(`${SERVER_URL}/api/getProducts?email=${email}`);
       const productsData = await productsRes.json();
       await AsyncStorage.setItem("products", JSON.stringify(productsData.products));
 
-      // 3) RECIPES
-      // GET /api/getRecipes?email=... -> returns saved recipes
+      // 3) RECEPTY
+      // GET /api/getRecipes?email=... -> uložené recepty
       const recipesRes = await fetch(`${SERVER_URL}/api/getRecipes?email=${email}`);
       const recipesData = await recipesRes.json();
       await AsyncStorage.setItem("recipes", JSON.stringify(recipesData.recipes));
 
-      // 4) DAILY CONSUMPTION for last 7 days
-      // We fetch each day separately and store them under 'dailyConsumption'
-      // Structure: { 'YYYY-MM-DD': { calories: ..., proteins: ..., ... } | null }
+      // 4) DENNÁ KONZUMÁCIA za posledných 7 dní
+      // Každý deň sa sťahuje osobitne a ukladá do 'dailyConsumption'
+      // Štruktúra: { 'YYYY-MM-DD': { calories, proteins, ... } | null }
       const dailyConsumption = {};
       const today = new Date();
-      // Loop for 7 days: i == 0 -> today, i == 1 -> yesterday, etc.
+      // Cyklus 7 dní: i == 0 -> dnes, i == 1 -> včera, ...
       for (let i = 0; i < 7; i++) {
-        // Use a fresh Date copy so we don't mutate the original 'today'
+        // Použijeme kópiu dátumu, aby sa nepremenil pôvodný 'today'
         const date = new Date(today);
-        // Subtract 'i' days to get the target date
+        // Odpočítame i dní
         date.setDate(today.getDate() - i);
-        // Normalize to an ISO date string used as the storage + API key
-        // e.g. '2026-01-29' (YYYY-MM-DD). Note: toISOString() returns UTC,
-        // which is acceptable here because we only need a stable day-key.
+        // ISO dátum pre API a kľúč v storage
+        // Napr. '2026-01-29' (YYYY-MM-DD). toISOString() je UTC,
+        // čo tu nevadí, potrebujeme stabilný kľúč dňa.
         const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD
 
         try {
@@ -66,14 +78,14 @@ export default function HomeScreen({ setIsLoggedIn }) {
           const dayRes = await fetch(`${SERVER_URL}/api/getDailyConsumption?email=${email}&date=${dateStr}`);
           if (dayRes.ok) {
             const dayData = await dayRes.json();
-            // dayData.totals expected to be an object with calories, proteins, etc.
+            // dayData.totals obsahuje kalórie, bielkoviny, ...
             dailyConsumption[dateStr] = dayData.totals;
           } else {
-            // server returned 404 or no data -> keep null
+            // server vrátil 404 alebo bez dát -> uložíme null
             dailyConsumption[dateStr] = null;
           }
         } catch {
-          // network error -> keep null so UI knows no data
+          // chyba siete -> uložíme null, aby UI vedelo že niet dát
           dailyConsumption[dateStr] = null;
         }
       }
@@ -86,22 +98,22 @@ export default function HomeScreen({ setIsLoggedIn }) {
   }
  
   useEffect(() => {
-    // Try to login automatically using saved credentials (if any)
+    // Pokus o automatické prihlásenie zo saved údajov (ak existujú)
     const tryAutoLogin = async () => {
       try {
-        // Read saved credentials from AsyncStorage (keys used elsewhere)
-        // 'userEmail' and 'userPass' are saved after a successful manual login.
+        // Načítanie uložených údajov z AsyncStorage
+        // 'userEmail' a 'userPass' sa ukladajú po úspešnom prihlásení
         const storedEmail = await AsyncStorage.getItem("userEmail");
         const storedPass = await AsyncStorage.getItem("userPass");
 
         console.log("Stored credentials:", storedEmail ? storedEmail : "<none>");
 
-        // If we have both email and pass, try to authenticate without user input
+        // Ak máme e‑mail aj heslo, skúsime prihlásiť bez zásahu používateľa
         if (storedEmail && storedPass) {
-          // show spinner while contacting server
+          // zapneme spinner počas komunikácie so serverom
           setIsLoading(true);
 
-          // POST /api/login { email, password } - server returns basic user info
+          // POST /api/login { email, password } - server vráti základné info
           const response = await fetch(`${SERVER_URL}/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -112,44 +124,47 @@ export default function HomeScreen({ setIsLoggedIn }) {
           console.log("Login response status:", response.status);
 
           if (response.ok) {
-            // successful: pull all user data (products/recipes/history)
+            // úspech: stiahneme všetky dáta (produkty/recepty/história)
             console.log("✅ Autologin success, pulling user data");
             await pullAllUserData(storedEmail);
-            // schedule notifications (asks permission if needed)
+            // plánovanie notifikácií (po prípadnom súhlase)
             //await setupNotifications();
             console.log("✅ Data pulled, navigating to Dashboard");
             setIsLoggedIn(true);
 
-            // Reset navigation and open Dashboard as the root screen
-            navigation.reset({ index: 0, routes: [{ name: "Dashboard" }] });//Routuje na prvu položku = Dashboard
+            // Reset navigácie a otvorenie Dashboardu ako root
+            navigation.reset({ index: 0, routes: [{ name: "Dashboard" }] }); // Routuje na prvú položku = Dashboard
           } else {
-            // stored credentials invalid or server rejected them
+            // uložené údaje sú neplatné alebo server ich odmietol
             console.warn("Autologin failed:", data.error);
           }
         } else {
-          // No stored credentials found - user must login manually
+          // Žiadne uložené údaje - používateľ sa musí prihlásiť ručne
           console.log("No stored credentials, manual login required");
         }
       } catch (err) {
         console.error("Error during autologin:", err);
       } finally {
-        setIsLoading(false);//Turn of loading spinner
+        // vypnúť spinner
+        setIsLoading(false);
       }
     };
 
-    tryAutoLogin();// Call function
+    // Spustenie auto-login logiky
+    tryAutoLogin();
   }, []);
 
-  // Called when user taps "Prihlásiť sa" - performs server login and pulls data
+  // Volá sa po stlačení "Prihlásiť sa" - prihlásenie a stiahnutie dát
   async function handleLogin() {
-    // basic validation: require both fields
+    // základná validácia: obe polia musia byť vyplnené
     if (!email || !password) {
       Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
       return;
     }
-    setIsLoading(true);//Turn on spinner
+    // zapnúť spinner
+    setIsLoading(true);
     try {
-      // call login API
+      // volanie login API
       const response = await fetch(`${SERVER_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,29 +179,29 @@ export default function HomeScreen({ setIsLoggedIn }) {
         return;
       }
 
-      // login succeeded: mark logged in and save small user info locally
+      // úspech: nastavíme prihlásenie a uložíme základné info lokálne
       setIsLoggedIn(true);
       await AsyncStorage.setItem("userEmail", data.user.email);
       await AsyncStorage.setItem("userNick", data.user.nick);
       await AsyncStorage.setItem("userPass", password);
 
-      // pull the rest of user data (products, recipes, history)
+      // stiahneme zvyšok používateľských dát (produkty, recepty, história)
       await pullAllUserData(data.user.email);
-     // await setupNotifications();
+      // await setupNotifications();
 
-      // Decide initial eatenTotals (what the Dashboard will show):
-      // - First try local cache 'eatenTotals' (fast)
-      // - If not present, request today's totals from server
-      // - If that fails, use a zeroed default object
+      // Určíme počiatočné eatenTotals (čo zobrazí Dashboard):
+      // - najprv lokálna cache 'eatenTotals' (rýchle)
+      // - ak nie je, pokus o dnešné dáta zo servera
+      // - ak zlyhá, použijeme nulové hodnoty
       let totalsToUse = null;
       const storedTotals = await AsyncStorage.getItem("eatenTotals");
       if (storedTotals) {
-        // Use locally cached totals if available (quick startup)
+        // použijeme lokálne cache, ak existuje (rýchly štart)
         totalsToUse = JSON.parse(storedTotals);
       }
 
       if (!totalsToUse) {
-        // No local totals -> attempt to fetch today's totals from server.
+        // Nemáme lokálne hodnoty -> skúsime dnešné hodnoty zo servera
         try {
           const isoDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
           const url = `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(data.user.email)}&date=${encodeURIComponent(isoDate)}`;
@@ -194,21 +209,21 @@ export default function HomeScreen({ setIsLoggedIn }) {
           if (dbResponse.ok) {
             const dbData = await dbResponse.json();
             if (dbData && dbData.totals) {
-              totalsToUse = dbData.totals; // server totals (preferred)
+              totalsToUse = dbData.totals; // serverové hodnoty (preferované)
             }
           }
         } catch (err) {
-          // network or server error -> we'll fall back to zeros
+          // chyba siete alebo servera -> padneme na nuly
           console.error("Error fetching eatenTotals from DB:", err);
         }
       }
 
       if (!totalsToUse) {
-        // No data anywhere: initialize to safe zeros so UI doesn't break
+        // Nikde nie sú dáta: nastavíme bezpečné nuly
         totalsToUse = { calories: 0, proteins: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, salt: 0 };
       }
 
-      // Persist chosen totals so other screens read consistent values
+      // Uložíme zvolené totals, aby ich ostatné obrazovky čítali konzistentne
       await AsyncStorage.setItem("eatenTotals", JSON.stringify(totalsToUse));
 
       navigation.reset({
@@ -220,13 +235,14 @@ export default function HomeScreen({ setIsLoggedIn }) {
       Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
     }
      finally {
-      setIsLoading(false); // hide spinner
+      // vypnúť spinner
+      setIsLoading(false);
     }
   }
 
   return (
     <KeyboardWrapper style={styles.authMainLayout}>
-      {/* Spinner Modal */}
+      {/* Modal so spinnerom počas spracovania */}
       <Modal visible={isLoading} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.generatingModalContainer}>
@@ -236,13 +252,13 @@ export default function HomeScreen({ setIsLoggedIn }) {
           </View>
         </View>
       </Modal>
-  
+      {/* Logo a prihlasovací formulár */}
         <Image style={styles.authProfileAvatar} source={logo} />
         <View style={styles.authCardContainer}>
           <Text style={styles.authTitleText}>Prihlásenie!</Text>
           <Text style={styles.authInfoLabel}>Tu vyplň svoje údaje:</Text>
 
-        {/* Email input */}
+        {/* Vstup pre e‑mail */}
         <TextInput
           placeholder="e-mail"
           style={styles.authTextInput}
@@ -250,7 +266,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
           onChangeText={setEmail}
         />
 
-        {/* Password input */}
+        {/* Vstup pre heslo */}
         <TextInput
           placeholder="heslo"
           style={styles.authTextInput}
@@ -259,7 +275,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
           secureTextEntry
         />
 
-        {/* Forgot password link */}
+        {/* Odkaz na zabudnuté heslo */}
         <Text
           onPress={() => navigation.navigate("ForgetPass")}
           style={styles.authForgotText}
@@ -267,7 +283,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
           Zabudnuté heslo?
         </Text>
 
-        {/* Login button */}
+        {/* Tlačidlo prihlásenia */}
         <Pressable
           style={({ pressed }) =>
             pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
@@ -279,7 +295,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
         <Text style={styles.authOrText}>ALEBO</Text>
 
-        {/* Registration button */}
+        {/* Tlačidlo registrácie */}
         <Pressable
           style={({ pressed }) =>
             pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn

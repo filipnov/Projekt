@@ -21,6 +21,20 @@
       }
     },
     "android": {
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": ["BROWSABLE", "DEFAULT"],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.bitewise.it.com",
+              "pathPrefix": "/reset-password"
+            }
+          ]
+        }
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo_icon.png",
         "backgroundColor": "#ffffff"
