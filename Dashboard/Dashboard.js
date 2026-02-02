@@ -62,9 +62,14 @@ export default function Dashboard({ setIsLoggedIn }) {
     drunkWater: 0,
   };
 
-  // Pomocná funkcia na dnešný dátum (YYYY-MM-DD)
+  // Pomocná funkcia na dnešný dátum (YYYY-MM-DD) v lokálnom čase
   // Tento formát vyžaduje aj backend API
-  const getTodayKey = () => new Date().toISOString().slice(0, 10);
+  const getTodayKey = (date = new Date()) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   // Stav profilu (či je profil načítaný + konkrétne hodnoty)
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -91,6 +96,7 @@ export default function Dashboard({ setIsLoggedIn }) {
   const [eatenLoaded, setEatenLoaded] = useState(false);
   // Denné súhrny skonzumovaných živín
   const [eatenTotals, setEatenTotals] = useState(DEFAULT_TOTALS);
+  const [currentDayKey, setCurrentDayKey] = useState(getTodayKey());
 
   // Načíta uložený e‑mail a prezývku
   // Tieto údaje ukladáme po prihlásení v inej časti aplikácie
@@ -224,6 +230,16 @@ export default function Dashboard({ setIsLoggedIn }) {
           // 2) Lokálne denné súhrny
           let totals = await loadStoredTotals();
 
+          // Reset pri zmene dňa (lokálny čas)
+          const todayKey = getTodayKey();
+          const storedTotalsDate = await AsyncStorage.getItem("eatenTotalsDate");
+          if (storedTotalsDate !== todayKey) {
+            totals = { ...DEFAULT_TOTALS };
+            await AsyncStorage.setItem("eatenTotals", JSON.stringify(totals));
+            await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+            setCurrentDayKey(todayKey);
+          }
+
           // Ak máme lokálny jedálniček, nastavíme ho do stavu
           if (storedMealBox) setMealBox(JSON.parse(storedMealBox));
 
@@ -271,7 +287,29 @@ export default function Dashboard({ setIsLoggedIn }) {
     if (!eatenLoaded) return;
     // Uložíme denné súhrny lokálne
     AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
+    AsyncStorage.setItem("eatenTotalsDate", getTodayKey());
   }, [eatenTotals, eatenLoaded]);
+
+  // Reset o polnoci (lokálny čas) aj pri otvorenej appke
+  useEffect(() => {
+    if (!eatenLoaded) return;
+
+    const now = new Date();
+    const nextMidnight = new Date(now);
+    nextMidnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = nextMidnight.getTime() - now.getTime() + 500;
+
+    const timer = setTimeout(async () => {
+      const todayKey = getTodayKey();
+      const cleared = { ...DEFAULT_TOTALS };
+      setEatenTotals(cleared);
+      await AsyncStorage.setItem("eatenTotals", JSON.stringify(cleared));
+      await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+      setCurrentDayKey(todayKey);
+    }, msUntilMidnight);
+
+    return () => clearTimeout(timer);
+  }, [currentDayKey, eatenLoaded]);
 
   // Pri prepnutí na Prehľad znovu načíta serverové súhrny
   // Tým sa zabezpečí, že Prehľad ukazuje čerstvé dáta
@@ -330,7 +368,7 @@ export default function Dashboard({ setIsLoggedIn }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email,
-            date: new Date().toISOString().slice(0, 10),
+            date: getTodayKey(),
             totals: eatenTotals,
           }),
         });

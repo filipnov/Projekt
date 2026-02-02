@@ -28,68 +28,37 @@ export default function SettingsTab({
   const [nickInput, setNickInput] = useState("");
   const [nickSaving, setNickSaving] = useState(false);
 
-  //-------------Per 100g switch  ----------------
   useEffect(() => {
-    (async () => {
-      try {
-        const storedValue = await AsyncStorage.getItem("isPer100g");
-        if (storedValue !== null) {
-          const parsed = JSON.parse(storedValue);
-          setChecked100g(parsed);
-          if (setIsPer100g) setIsPer100g(parsed);
-        }
-      } catch (err) {
-        console.error("Chyba pri načítaní nastavení:", err);
+    AsyncStorage.getItem("isPer100g").then((storedValue) => {
+      if (storedValue !== null) {
+        const parsed = JSON.parse(storedValue);
+        setChecked100g(parsed);
+        if (setIsPer100g) setIsPer100g(parsed);
       }
-    })();
+    });
   }, []);
 
-  const toggleSwitch100g = async (value) => {
+  const toggleSwitch100g = (value) => {
     setChecked100g(value);
     if (setIsPer100g) setIsPer100g(value);
-    console.log("Toggling 100g switch to:", value);
-    try {
-      await AsyncStorage.setItem("isPer100g", JSON.stringify(value));
-    } catch (err) {
-      console.error("Chyba pri ukladaní nastavení:", err);
-    }
+    AsyncStorage.setItem("isPer100g", JSON.stringify(value));
   };
-  //-------------Expiration switch  ----------------
+
   useEffect(() => {
-    (async () => {
-      try {
-        const storedValue = await AsyncStorage.getItem("expiration");
-        if (storedValue !== null) {
-          const parsed = JSON.parse(storedValue);
-          setCheckedExpiration(parsed);
-          if (setCheckedExpiration) setCheckedExpiration(parsed);
-        }
-      } catch (err) {
-        console.error("Chyba pri načítaní nastavení:", err);
-      }
-    })();
+    AsyncStorage.getItem("expiration").then((storedValue) => {
+      if (storedValue !== null) setCheckedExpiration(JSON.parse(storedValue));
+    });
   }, []);
 
-  const toggleSwitchExpiration = async (value) => {
+  const toggleSwitchExpiration = (value) => {
     setCheckedExpiration(value);
-    if (setCheckedExpiration) setCheckedExpiration(value);
-    console.log("Toggling expiration switch to:", value);
-    try {
-      await AsyncStorage.setItem("expiration", JSON.stringify(value));
-    } catch (err) {
-      console.error("Chyba pri ukladaní nastavení:", err);
-    }
+    AsyncStorage.setItem("expiration", JSON.stringify(value));
   };
-  //-------------Nick change-----------------
+
   useEffect(() => {
-    (async () => {
-      try {
-        const storedNick = await AsyncStorage.getItem("userNick");
-        if (storedNick) setCurrentNick(storedNick);
-      } catch (err) {
-        console.error("Chyba pri načítaní prezývky:", err);
-      }
-    })();
+    AsyncStorage.getItem("userNick").then((storedNick) => {
+      if (storedNick) setCurrentNick(storedNick);
+    });
   }, []);
   const openNickModal = () => {
     setNickInput(currentNick || "");
@@ -103,12 +72,7 @@ export default function SettingsTab({
       return;
     }
 
-    let email = null;
-    try {
-      email = await AsyncStorage.getItem("userEmail");
-    } catch (err) {
-      console.error("Chyba pri načítaní emailu:", err);
-    }
+    const email = await AsyncStorage.getItem("userEmail");
 
     if (!email) {
       Alert.alert(
@@ -120,32 +84,44 @@ export default function SettingsTab({
     }
 
     setNickSaving(true);
-    try {
-      const resp = await fetch(`${SERVER}/api/updateNick`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, nick: trimmedNick }),
-      });
+    const resp = await fetch(`${SERVER}/api/updateNick`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, nick: trimmedNick }),
+    });
 
-      const data = await resp.json().catch(() => ({}));
-      if (!resp.ok) {
-        const msg = data.error || data.message || "Server vrátil chybu.";
-        throw new Error(msg);
-      }
-
-      await AsyncStorage.setItem("userNick", trimmedNick);
-      setCurrentNick(trimmedNick);
-      if (setNick) setNick(trimmedNick);
-      setNickModalVisible(false);
-      Alert.alert("Hotovo", "Prezývka bola zmenená.");
-    } catch (err) {
-      Alert.alert(
-        "Nepodarilo sa zmeniť prezývku",
-        err?.message || "Skús to prosím neskôr.",
-      );
-    } finally {
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      const msg = data.error || data.message || "Server vrátil chybu.";
+      Alert.alert("Nepodarilo sa zmeniť prezývku", msg);
       setNickSaving(false);
+      return;
     }
+
+    await AsyncStorage.setItem("userNick", trimmedNick);
+    setCurrentNick(trimmedNick);
+    if (setNick) setNick(trimmedNick);
+    setNickModalVisible(false);
+    setNickSaving(false);
+    Alert.alert("Hotovo", "Prezývka bola zmenená.");
+  };
+
+  const handleLogout = async () => {
+    const keysToRemove = [
+      "userProfile",
+      "products",
+      "recipes",
+      "dailyConsumption",
+      "userEmail",
+      "userNick",
+      "eatenTotals",
+      "drunkWater",
+      "mealBox",
+      "onboardingSeen",
+    ];
+    await AsyncStorage.multiRemove(keysToRemove);
+    setIsLoggedIn(false);
+    navigation.reset({ index: 0, routes: [{ name: "HomeScreen" }] });
   };
 
   return (
@@ -238,37 +214,7 @@ export default function SettingsTab({
         </View>
 
         <Pressable
-          onPress={async () => {
-            try {
-              // 1️⃣ Vymazať všetky údaje používateľa z AsyncStorage
-              const keysToRemove = [
-                "userProfile",
-                "products",
-                "recipes",
-                "dailyConsumption",
-                "userEmail",
-                //  "isPer100g",
-                "userNick",
-                "eatenTotals",
-                "drunkWater",
-                "mealBox",
-                //  "expiration",
-                "onboardingSeen",
-              ];
-              await AsyncStorage.multiRemove(keysToRemove);
-
-              // 2️⃣ Odhlásiť používateľa v stave appky
-              setIsLoggedIn(false);
-
-              // 3️⃣ Navigovať na HomeScreen a resetovať stack
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "HomeScreen" }],
-              });
-            } catch (err) {
-              console.error("Chyba pri odhlasovaní:", err);
-            }
-          }}
+          onPress={handleLogout}
           style={({ pressed }) =>
             pressed ? styles.logout_button_pressed : styles.logout_button
           }

@@ -8,304 +8,191 @@ import {
   Modal,
   ScrollView,
   Switch,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage"; 
-import Slider from '@react-native-community/slider'; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Slider from "@react-native-community/slider";
 import styles from "../../styles";
 
-export default function RecipesTab() {
+const SERVER_URL = "https://app.bitewise.it.com";
 
-    const SERVER_URL = "https://app.bitewise.it.com"
-  const [selectedRecept, setSelectedRecept] = useState(null);
-const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
-const [showGenerateError, setShowGenerateError] = useState(false);
-const [generateErrorMessage, setGenerateErrorMessage] = useState("");
-const [generateModalVisible, setGenerateModalVisible] = useState(false);
-const [savedRecipes, setSavedRecipes] = useState([]);
-const [userEmail, setUserEmail] = useState(null);
-
-const [selectedPreferences, setSelectedPreferences] = useState([]);
-const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false);
-const [showPreferenceInfo, setShowPreferenceInfo] = useState(false);
-
-const [useFitnessGoal, setUseFitnessGoal] = useState(false);
-const [usePantryItems, setUsePantryItems] = useState(false);
-const [pantryItems, setPantryItems] = useState([]);
-const [selectedPantryItems, setSelectedPantryItems] = useState([]);
-const [isGenerating, setIsGenerating] = useState(false);
-const [maxCookingTime, setMaxCookingTime] = useState(60);
-const [showUnitInfo, setShowUnitInfo] = useState(false);
-
-
-useEffect(() => { 
-  const loadEmail = async () => { 
-    const email = await AsyncStorage.getItem("userEmail");
-     setUserEmail(email); }; loadEmail(); }, []);
-
- useEffect(() => { 
-  fetchSavedRecipes();
- }, [userEmail]);
-
-  useEffect(() => {
-     if (!userEmail || !usePantryItems) return;
-      const fetchPantryItems = async () => {
-         try { 
-          const res = await fetch(`${SERVER_URL}/api/getProducts?email=${userEmail}`); 
-          const data = await res.json();
-           if (data.success) { 
-            setPantryItems(data.products); 
-            setSelectedPantryItems([]); } 
-          } catch (err) 
-          { console.error("Failed to load pantry items:", err); 
-
-          } }; fetchPantryItems(); 
-        }, [userEmail, usePantryItems]);
-
-  // Funkcia na generovanie receptu z AI
-  const showGenerateErrorModal = (serverMessage) => {
-    const base =
-      serverMessage ||
-      "Recept sa nepodarilo vygenerovať. Skús to prosím ešte raz.";
-
-    const reasons =
-      "Možné dôvody:\n" +
-      "• Použil si potravinu, ktorá sa bežne pri varení nepoužíva.\n" +
-      "• Zadal si nejedlú alebo nesúvisiacu položku.\n" +
-      "• Náš AI šéfkuchár je preťažený a potrebuje pauzu.";
-
-    setGenerateErrorMessage(`${base}\n\n${reasons}`);
-    setShowGenerateError(true);
-  };
-
-  const generateRecipe = async () => {
-
-  setIsGenerating(true);
-  const preferencesText =
-  selectedPreferences.length > 0
-    ? selectedPreferences
-        .map(p => p.label.replace(/^[^\w\s]+ /, "")) // odstráni emoji na začiatku
-        .join(", ")
-    : "žiadne špecifické preferencie";
-
-    const pantryText =
-    selectedPantryItems.length > 0
-      ? `Musíš použiť tieto produkty zo špajze: ${selectedPantryItems.join(", ")}.
-      Cieľom je čo najmenej plýtvať jedlom, takže musíš použiť všetky produkty pokiaľ je to možné.
-      Pokiaľ nieje možné použiť všetky, použi ich čo najviac!`
-      : "";
-
-    const userPrompt = `
-Vygeneruj recept podľa týchto kritérií:
-- Preferencie: ${preferencesText}
-${useFitnessGoal ? "- Zohľadni fitness cieľ používateľa." : ""}
-${maxCookingTime ? `- Čas varenia max ${maxCookingTime} minút.` : ""}
-${pantryText}
-Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
-`;
-  try {
-    const response = await fetch(`${SERVER_URL}/api/generateRecipe`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userPrompt,
-        email: userEmail,
-        useFitnessGoal,
-        maxCookingTime,
-        pantryItems: selectedPantryItems
-      }),
-    });
-    const data = await response.json();
-    if (!data.success || !data.recipe) {
-      showGenerateErrorModal(data?.error);
-      return;
-    }
-    setGeneratedRecipeModal(data.recipe);
-  } catch (error) {
-    console.error("❌ ERROR:", error);
-    showGenerateErrorModal();
-  }finally {
-    setIsGenerating(false);
-  }
-};
-  // Funkcia na uloženie receptu do DB
-  const saveGeneratedRecipe = async () => {
-  try {
-    const res = await fetch(`${SERVER_URL}/api/addRecipe`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: userEmail,
-        recipe: generatedRecipeModal,
-      }),
-    });
-
-    const data = await res.json();
-
-    // ⬇️ ZMENA JE LEN TU
-    if (data.success && Array.isArray(data.recipes)) {
-      setSavedRecipes(data.recipes);
-      await AsyncStorage.setItem("recipes", JSON.stringify(data.recipes));
-
-      setGeneratedRecipeModal(null);
-      setSelectedRecept(null);
-      console.log("✅ Recipe saved + Async updated");
-    }
-  } catch (err) {
-    console.error("❌ Save recipe failed:", err);
-  }
+const getTodayKey = (date = new Date()) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 };
 
-  // Funkcia na konzumáciu receptu (pripočítanie nutričných hodnôt)
-  const consumeRecipe = async () => {
-    const nutrition = generatedRecipeModal?.nutrition || selectedRecept?.nutrition;
-    
-    if (!nutrition || !userEmail) return;
-
-    try {
-      const res = await fetch(`${SERVER_URL}/api/consumeRecipe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: userEmail,
-          nutrition: nutrition,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.ok) {
-        console.log("✅ Recipe consumed, nutrition added to daily goal");
-        setGeneratedRecipeModal(null);
-        setSelectedRecept(null);
-      } else {
-        console.error("❌ Failed to consume recipe:", data.error);
-      }
-    } catch (err) {
-      console.error("❌ Consume recipe failed:", err);
-    }
-  };
-
-// Načítanie receptov
-const fetchSavedRecipes = async () => {
-  if (!userEmail) return;
-
-  try {
-    // 1️⃣ AsyncStorage first
-    const stored = await AsyncStorage.getItem("recipes");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        setSavedRecipes(parsed);
-        console.log("✅ Recipes loaded from AsyncStorage");
-        return;
-      }
-    }
-
-    // 2️⃣ Server fallback
-    console.log("⚠️ Async empty → fetching recipes from server");
-    const res = await fetch(`${SERVER_URL}/api/getRecipes?email=${userEmail}`);
-    const data = await res.json();
-
-    if (data.success) {
-      setSavedRecipes(data.recipes);
-      await AsyncStorage.setItem("recipes", JSON.stringify(data.recipes));
-      console.log("✅ Recipes saved to AsyncStorage");
-    }
-  } catch (err) {
-    console.error("❌ Failed to load recipes:", err);
-  }
+const recipeImagesByCategory = {
+  mäsité: require("./../../assets/meat.png"),
+  bezmäsité: require("./../../assets/no_meat.png"),
+  vegánske: require("./../../assets/lettuce.png"),
+  sladké: require("./../../assets/cake.png"),
+  štipľavé: require("./../../assets/chili.png"),
 };
 
-  const deleteRecipe = async () => {
-  if (!selectedRecept?.recipeId) return;
-
-  try {
-    const res = await fetch(`${SERVER_URL}/api/deleteRecipe`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: userEmail,
-        recipeId: selectedRecept.recipeId,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      const updatedRecipes = savedRecipes.filter(
-        r => r.recipeId !== selectedRecept.recipeId
-      );
-
-      setSavedRecipes(updatedRecipes);
-      await AsyncStorage.setItem("recipes", JSON.stringify(updatedRecipes));
-
-      setSelectedRecept(null);
-      console.log("✅ Recipe deleted + Async updated");
-    }
-  } catch (err) {
-    console.error("❌ Failed to delete recipe:", err);
-  }
-};
-
-
-  const recipeImagesByCategory = {
-    mäsité: require("./../../assets/meat.png"),
-    bezmäsité: require("./../../assets/no_meat.png"),
-    vegánske: require("./../../assets/lettuce.png"),
-    sladké: require("./../../assets/cake.png"),
-    štipľavé: require("./../../assets/chili.png"),
-  };
-
-  const getRecipeImage = (category) => {
-    if (!category) return require("../../assets/logo.png");
-    const key = category.toLowerCase();
-    return recipeImagesByCategory[key] || require("../../assets/logo.png");
-  };
-
-  const resetState = () => {
-  setSelectedPreferences([]);
-  setUseFitnessGoal(false);
-  setUsePantryItems(false);
-  setSelectedPantryItems([]);
-  setMaxCookingTime(60);
-  setShowAdditionalPreferences(false);
-};
-  const recepty = [
+const STATIC_RECIPES = [
     {
       id: 1,
-      nazov: "Bryndzové halušky",
-      ingrediencie: "zemiaky, polohrubá múka, soľ, bryndza, slanina a pažitka",
-      postup: "",
+      name: "Bryndzové halušky",
+      category: "mäsité",
+      estimatedCookingTime: "45 min",
+      ingredients: [
+        { name: "Zemiaky", amountGrams: 500 },
+        { name: "Polohrubá múka", amountGrams: 200 },
+        { name: "Soľ", amountGrams: 5 },
+        { name: "Bryndza", amountGrams: 150 },
+        { name: "Slanina", amountGrams: 80 },
+        { name: "Pažitka", amountGrams: 5 },
+      ],
+      steps: [
+        "1. Zemiaky ošúp, najemno nastrúhaj a jemne osoľ.",
+        "2. Pridaj múku a vymiešaj husté cesto.",
+        "3. Cesto pretláčaj cez haluškovač do vriacej osolenej vody a var 3–4 minúty.",
+        "4. Scedené halušky premiešaj s bryndzou.",
+        "5. Slaninu opeč do chrumkava a spolu s pažitkou nasyp na halušky.",
+      ],
+      nutrition: {
+        calories: 650,
+        proteins: 22,
+        carbohydrates: 70,
+        fats: 30,
+        fiber: 5,
+        salt: 2.5,
+        sugars: 6,
+      },
       obrazok: require("../../assets/bryndzove_halusky.jpg"),
     },
     {
       id: 2,
-      nazov: "Kapustnica",
-      obsah: "Ingrediencie: kapusta, klobása...\nPostup...",
+      name: "Kapustnica",
+      category: "mäsité",
+      estimatedCookingTime: "90 min",
+      ingredients: [
+        { name: "Kyslá kapusta", amountGrams: 400 },
+        { name: "Klobása", amountGrams: 150 },
+        { name: "Údené mäso", amountGrams: 200 },
+        { name: "Cibuľa", amountGrams: 80 },
+        { name: "Cesnak", amountGrams: 10 },
+        { name: "Sušené huby", amountGrams: 15 },
+        { name: "Smotana na varenie", amountGrams: 150 },
+        { name: "Paprika mletá", amountGrams: 4 },
+        { name: "Bobkový list", amountGrams: 1 },
+        { name: "Soľ", amountGrams: 6 },
+      ],
+      steps: [
+        "1. Údené mäso a huby zalej vodou a var 30 minút.",
+        "2. Na cibuli opeč klobásu, pridaj cesnak a mletú papriku.",
+        "3. Pridaj kyslú kapustu, bobkový list a vývar z mäsa.",
+        "4. Var spolu 30–40 minút, podľa potreby dolej vodu.",
+        "5. Na záver zjemni smotanou a dochuť soľou.",
+      ],
+      nutrition: {
+        calories: 320,
+        proteins: 15,
+        carbohydrates: 20,
+        fats: 18,
+        fiber: 6,
+        salt: 2.2,
+        sugars: 7,
+      },
       obrazok: require("../../assets/kapustnica.jpg"),
     },
     {
       id: 3,
-      nazov: "Segedínsky guláš",
-      ingrediencie: "bravčové mäso, kapusta, paprika, smotana",
-      postup: "",
+      name: "Segedínsky guláš",
+      category: "mäsité",
+      estimatedCookingTime: "70 min",
+      ingredients: [
+        { name: "Bravčové mäso", amountGrams: 400 },
+        { name: "Kyslá kapusta", amountGrams: 300 },
+        { name: "Cibuľa", amountGrams: 120 },
+        { name: "Mletá paprika", amountGrams: 5 },
+        { name: "Rasca", amountGrams: 2 },
+        { name: "Smotana na varenie", amountGrams: 150 },
+        { name: "Soľ", amountGrams: 6 },
+      ],
+      steps: [
+        "1. Na oleji opeč cibuľu do sklovita.",
+        "2. Pridaj mäso, osoľ a opeč zo všetkých strán.",
+        "3. Vmiešaj papriku, rascu a krátko opeč.",
+        "4. Pridaj kapustu a podlej vodou, duste 40–45 minút.",
+        "5. Na záver zjemni smotanou a krátko prevar.",
+      ],
+      nutrition: {
+        calories: 420,
+        proteins: 28,
+        carbohydrates: 18,
+        fats: 26,
+        fiber: 5,
+        salt: 2.3,
+        sugars: 7,
+      },
       obrazok: require("../../assets/segedin.jpg"),
     },
     {
       id: 4,
-      nazov: "Placky",
-      obsah: "Ingrediencie...\nPostup...",
+      name: "Zemiakové placky",
+      category: "bezmäsité",
+      estimatedCookingTime: "35 min",
+      ingredients: [
+        { name: "Zemiaky", amountGrams: 500 },
+        { name: "Vajce", amountGrams: 50 },
+        { name: "Múka", amountGrams: 60 },
+        { name: "Cesnak", amountGrams: 8 },
+        { name: "Soľ", amountGrams: 5 },
+        { name: "Majorán", amountGrams: 2 },
+        { name: "Olej na vyprážanie", amountGrams: 30 },
+      ],
+      steps: [
+        "1. Zemiaky nastrúhaj a vyžmýkaj prebytočnú vodu.",
+        "2. Pridaj vajce, múku, cesnak, soľ a majorán.",
+        "3. Vymiešaj cesto a tvaruj tenké placky.",
+        "4. Vyprážaj na rozpálenom oleji do zlatista z oboch strán.",
+      ],
+      nutrition: {
+        calories: 380,
+        proteins: 7,
+        carbohydrates: 45,
+        fats: 18,
+        fiber: 5,
+        salt: 1.5,
+        sugars: 3,
+      },
       obrazok: require("../../assets/placky.jpg"),
     },
     {
       id: 5,
-      nazov: "Palacinky",
-      ingrediencie: "vajce, mlieko, múka",
-      postup: "1. Vymiešame cesto...",
+      name: "Palacinky",
+      category: "sladké",
+      estimatedCookingTime: "25 min",
+      ingredients: [
+        { name: "Mlieko", amountGrams: 300 },
+        { name: "Vajce", amountGrams: 100 },
+        { name: "Hladká múka", amountGrams: 150 },
+        { name: "Cukor", amountGrams: 15 },
+        { name: "Soľ", amountGrams: 2 },
+        { name: "Olej", amountGrams: 10 },
+      ],
+      steps: [
+        "1. V miske rozšľahaj vajcia s mliekom.",
+        "2. Prisyp múku, cukor a soľ, vymiešaj hladké cesto.",
+        "3. Nechaj 10 minút odpočinúť.",
+        "4. Palacinky peč na tenkej vrstve oleja z oboch strán.",
+      ],
+      nutrition: {
+        calories: 320,
+        proteins: 10,
+        carbohydrates: 45,
+        fats: 10,
+        fiber: 2,
+        salt: 0.8,
+        sugars: 8,
+      },
       obrazok: require("../../assets/palacinky.jpg"),
     },
   ];
+
 const ALL_PREFERENCES = [
   {
     id: "sweet",
@@ -519,22 +406,223 @@ const ADDITIONAL_PREFERENCES = [
 }
   ];
 
-const availablePreferences = ALL_PREFERENCES.filter(
-    pref => !selectedPreferences.some(sel => sel.id === pref.id)
+export default function RecipesTab() {
+  const [selectedRecept, setSelectedRecept] = useState(null);
+  const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
+  const [showGenerateError, setShowGenerateError] = useState(false);
+  const [generateErrorMessage, setGenerateErrorMessage] = useState("");
+  const [generateModalVisible, setGenerateModalVisible] = useState(false);
+  const [savedRecipes, setSavedRecipes] = useState([]);
+  const [userEmail, setUserEmail] = useState(null);
+
+  const [selectedPreferences, setSelectedPreferences] = useState([]);
+  const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false);
+  const [showPreferenceInfo, setShowPreferenceInfo] = useState(false);
+
+  const [useFitnessGoal, setUseFitnessGoal] = useState(false);
+  const [usePantryItems, setUsePantryItems] = useState(false);
+  const [pantryItems, setPantryItems] = useState([]);
+  const [selectedPantryItems, setSelectedPantryItems] = useState([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [maxCookingTime, setMaxCookingTime] = useState(60);
+  const [showUnitInfo, setShowUnitInfo] = useState(false);
+
+  const availablePreferences = ALL_PREFERENCES.filter(
+    (pref) => !selectedPreferences.some((sel) => sel.id === pref.id),
   );
+
+  const activeRecipe = selectedRecept || generatedRecipeModal;
+  const canConsumeRecipe = Boolean(activeRecipe?.nutrition);
+
+  const getRecipeImage = (category) => {
+    if (!category) return require("../../assets/logo.png");
+    const key = category.toLowerCase();
+    return recipeImagesByCategory[key] || require("../../assets/logo.png");
+  };
+
+  const resetState = () => {
+    setSelectedPreferences([]);
+    setUseFitnessGoal(false);
+    setUsePantryItems(false);
+    setSelectedPantryItems([]);
+    setMaxCookingTime(60);
+    setShowAdditionalPreferences(false);
+  };
+
+  const closeRecipeModal = () => {
+    setSelectedRecept(null);
+    setGeneratedRecipeModal(null);
+  };
+
+  const showGenerateErrorModal = (serverMessage) => {
+    const base =
+      serverMessage ||
+      "Recept sa nepodarilo vygenerovať. Skús to prosím ešte raz.";
+    const reasons =
+      "Možné dôvody:\n" +
+      "• Použil si potravinu, ktorá sa bežne pri varení nepoužíva.\n" +
+      "• Zadal si nejedlú alebo nesúvisiacu položku.\n" +
+      "• Náš AI šéfkuchár je preťažený a potrebuje pauzu.";
+    setGenerateErrorMessage(`${base}\n\n${reasons}`);
+    setShowGenerateError(true);
+  };
+
+  const fetchSavedRecipes = async (email) => {
+    const stored = await AsyncStorage.getItem("recipes");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setSavedRecipes(parsed);
+        return;
+      }
+    }
+
+    const res = await fetch(`${SERVER_URL}/api/getRecipes?email=${email}`);
+    const data = await res.json();
+    if (data.success) {
+      setSavedRecipes(data.recipes);
+      await AsyncStorage.setItem("recipes", JSON.stringify(data.recipes));
+    }
+  };
+
+  const generateRecipe = async () => {
+    setIsGenerating(true);
+
+    const preferencesText = selectedPreferences.length
+      ? selectedPreferences
+          .map((p) => p.label.replace(/^[^\w\s]+ /, ""))
+          .join(", ")
+      : "žiadne špecifické preferencie";
+
+    const pantryText = selectedPantryItems.length
+      ? `Musíš použiť tieto produkty zo špajze: ${selectedPantryItems.join(", ")}.
+Cieľom je čo najmenej plýtvať jedlom, takže musíš použiť všetky produkty pokiaľ je to možné.
+Pokiaľ nieje možné použiť všetky, použi ich čo najviac!`
+      : "";
+
+    const userPrompt = `
+Vygeneruj recept podľa týchto kritérií:
+- Preferencie: ${preferencesText}
+${useFitnessGoal ? "- Zohľadni fitness cieľ používateľa." : ""}
+${maxCookingTime ? `- Čas varenia max ${maxCookingTime} minút.` : ""}
+${pantryText}
+Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
+`;
+
+    try {
+      const response = await fetch(`${SERVER_URL}/api/generateRecipe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userPrompt,
+          email: userEmail,
+          useFitnessGoal,
+          maxCookingTime,
+          pantryItems: selectedPantryItems,
+        }),
+      });
+      const data = await response.json();
+      if (!data.success || !data.recipe) {
+        showGenerateErrorModal(data?.error);
+        return;
+      }
+      setGeneratedRecipeModal(data.recipe);
+    } catch {
+      showGenerateErrorModal();
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const saveGeneratedRecipe = async () => {
+    if (!generatedRecipeModal || !userEmail) return;
+
+    const res = await fetch(`${SERVER_URL}/api/addRecipe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: userEmail, recipe: generatedRecipeModal }),
+    });
+
+    const data = await res.json();
+    if (data.success && Array.isArray(data.recipes)) {
+      setSavedRecipes(data.recipes);
+      await AsyncStorage.setItem("recipes", JSON.stringify(data.recipes));
+      closeRecipeModal();
+    }
+  };
+
+  const consumeRecipe = async () => {
+    const nutrition = activeRecipe?.nutrition;
+    if (!nutrition || !userEmail) return;
+
+    const res = await fetch(`${SERVER_URL}/api/consumeRecipe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        date: getTodayKey(),
+        nutrition,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.ok) closeRecipeModal();
+  };
+
+  const deleteRecipe = async () => {
+    if (!selectedRecept?.recipeId || !userEmail) return;
+
+    const res = await fetch(`${SERVER_URL}/api/deleteRecipe`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: userEmail,
+        recipeId: selectedRecept.recipeId,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      const updatedRecipes = savedRecipes.filter(
+        (r) => r.recipeId !== selectedRecept.recipeId,
+      );
+      setSavedRecipes(updatedRecipes);
+      await AsyncStorage.setItem("recipes", JSON.stringify(updatedRecipes));
+      setSelectedRecept(null);
+    }
+  };
+
+  useEffect(() => {
+    AsyncStorage.getItem("userEmail").then(setUserEmail);
+  }, []);
+
+  useEffect(() => {
+    if (!userEmail) return;
+    fetchSavedRecipes(userEmail);
+  }, [userEmail]);
+
+  useEffect(() => {
+    if (!userEmail || !usePantryItems) return;
+    fetch(`${SERVER_URL}/api/getProducts?email=${userEmail}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setPantryItems(data.products || []);
+          setSelectedPantryItems([]);
+        }
+      });
+  }, [userEmail, usePantryItems]);
 
   return (
     <>
       <View style={styles.recipesContainer}>
-  <Pressable
-    onPress={() => setGenerateModalVisible(true)}
-    style={styles.recipeButton}
-  >
-    <Text style={styles.createRecipeText}>
-      Vytvoriť recept
-    </Text>
-  </Pressable>
-</View>
+        <Pressable
+          onPress={() => setGenerateModalVisible(true)}
+          style={styles.recipeButton}
+        >
+          <Text style={styles.createRecipeText}>Vytvoriť recept</Text>
+        </Pressable>
+      </View>
 
       <Modal
   visible={generateModalVisible}
@@ -829,7 +917,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
 </Text>
 
 <View style={styles.grid}>
-  {recepty.map((item) => (
+  {STATIC_RECIPES.map((item) => (
     <Pressable
       key={item.id}
       style={({ pressed }) => [styles.card, { opacity: pressed ? 0.7 : 1 }]}
@@ -840,7 +928,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
         style={styles.imageBackground}
         imageStyle={styles.image}
       >
-        <Text style={styles.cardText}>{item.nazov}</Text>
+        <Text style={styles.cardText}>{item.name || item.nazov}</Text>
       </ImageBackground>
     </Pressable>
   ))}
@@ -848,6 +936,11 @@ const availablePreferences = ALL_PREFERENCES.filter(
       <Text style={styles.sectionTitle}>
   Uložené recepty
 </Text>
+
+
+{savedRecipes.length === 0 && (
+  <Text style={styles.pantryEmptyMessage}>Nemáš uložené žiadne recepty.</Text>
+)}
 
 <View style={styles.grid}>
   {savedRecipes.map((item) => (
@@ -874,8 +967,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
   transparent
   animationType="fade"
   onRequestClose={() => {
-    setSelectedRecept(null);
-    setGeneratedRecipeModal(null);
+          closeRecipeModal();
   }}
 >
   <View style={styles.modalOverlay}>
@@ -906,41 +998,21 @@ const availablePreferences = ALL_PREFERENCES.filter(
       </View>
 
 
-        {/* STATIC RECEPT */}
-{selectedRecept?.type === "static" && (
-  <>
-    <View style={styles.recipeSectionCard}>
-      <Text style={styles.recipeSectionTitle}>Ingrediencie</Text>
-      {selectedRecept?.ingrediencie && (
-        <Text style={styles.staticText}>{selectedRecept.ingrediencie}</Text>
-      )}
-    </View>
-    <View style={styles.recipeSectionCard}>
-      <Text style={styles.recipeSectionTitle}>Postup</Text>
-      {selectedRecept?.postup && (
-        <Text style={styles.staticText}>{selectedRecept.postup}</Text>
-      )}
-      {selectedRecept?.obsah && (
-        <Text style={styles.staticText}>{selectedRecept.obsah}</Text>
-      )}
-    </View>
-  </>
-)}
-       {/* AI / GENERATED RECEPT */}
-{(selectedRecept?.type === "ai" || generatedRecipeModal) && (
+       {/* RECEPT (statický aj generovaný) */}
+{activeRecipe && (
   <>
     {/* CATEGORY & TIME */}
     <View style={styles.recipeMetaRow}>
       <View style={styles.recipeMetaChip}>
         <Text style={styles.recipeMetaLabel}>Kategória</Text>
         <Text style={styles.recipeMetaValue}>
-          {selectedRecept?.category || generatedRecipeModal?.category}
+          {activeRecipe?.category}
         </Text>
       </View>
       <View style={styles.recipeMetaChip}>
         <Text style={styles.recipeMetaLabel}>Čas prípravy</Text>
         <Text style={styles.recipeMetaValue}>
-          {selectedRecept?.estimatedCookingTime || generatedRecipeModal?.estimatedCookingTime}
+          {activeRecipe?.estimatedCookingTime}
         </Text>
       </View>
     </View>
@@ -950,7 +1022,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
   <Text style={styles.recipeSectionTitle}>Nutričné hodnoty</Text>
   <View style={styles.nutritionContainer}>
   {(() => {
-    const nutrition = selectedRecept?.nutrition || generatedRecipeModal?.nutrition || {};
+    const nutrition = activeRecipe?.nutrition || {};
     const values = [
       { label: "Kalórie", value: nutrition.calories, unit: "kcal" },
       { label: "Bielkoviny", value: nutrition.proteins, unit: "g" },
@@ -989,7 +1061,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
   </View>
 
   {/* Zoznam ingrediencií */}
-  {(selectedRecept?.ingredients || generatedRecipeModal?.ingredients)?.map((ing, idx) => (
+  {(activeRecipe?.ingredients || [])?.map((ing, idx) => (
     <Text key={idx} style={styles.recipeIngredientItem}>
       • {ing.name}: {ing.amountGrams} g
     </Text>
@@ -1023,7 +1095,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
             {/* STEPS */}
 <View style={styles.recipeSectionCard}>
   <Text style={styles.stepsTitle}>Postup</Text>
-  {(selectedRecept?.steps || generatedRecipeModal?.steps)?.map((step, idx) => (
+  {(activeRecipe?.steps || [])?.map((step, idx) => (
     <View key={idx} style={styles.stepContainer}>
       <Text style={styles.stepText}>{step}</Text>
     </View>
@@ -1034,7 +1106,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
       </ScrollView>
 
       {/* BUTTONS */}
-      {(generatedRecipeModal || selectedRecept?.type === "ai") && (
+      {canConsumeRecipe && (
         <View style={styles.modalButtonsContainer}>
           <Pressable onPress={consumeRecipe} style={styles.modalButtonEat}>
             <Text style={styles.modalButtonText}>Zjesť recept</Text>
@@ -1045,8 +1117,7 @@ const availablePreferences = ALL_PREFERENCES.filter(
       <View style={styles.modalButtonsContainer}>
         <Pressable
           onPress={() => {
-            setSelectedRecept(null);
-            setGeneratedRecipeModal(null);
+            closeRecipeModal();
           }}
           style={styles.modalModalButtonClose}
         >

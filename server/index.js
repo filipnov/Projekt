@@ -584,7 +584,7 @@ async function start() {
   app.post("/api/consumeRecipe", async (req, res) => {
     console.log("📩 Incoming /api/consumeRecipe request:", req.body);
     
-    const { email, nutrition } = req.body;
+    const { email, nutrition, date } = req.body;
 
     if (!email || !nutrition) {
       return res.status(400).json({ error: "Missing email or nutrition data" });
@@ -599,7 +599,7 @@ async function start() {
       }
 
       // Get today's date in format YYYY-MM-DD
-      const today = new Date().toISOString().slice(0, 10);
+      const today = date || new Date().toISOString().slice(0, 10);
 
       // Get current daily consumption for today
       const currentTotals = user.dailyConsumption?.[today] || {

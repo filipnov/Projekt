@@ -25,6 +25,13 @@ export default function HomeScreen({ setIsLoggedIn }) {
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
 
+  const getTodayKey = (date = new Date()) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   // Jednoduchý UI stav
   const [email, setEmail] = useState(""); // zadaný e‑mail
   const [password, setPassword] = useState(""); // zadané heslo
@@ -71,7 +78,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
         // ISO dátum pre API a kľúč v storage
         // Napr. '2026-01-29' (YYYY-MM-DD). toISOString() je UTC,
         // čo tu nevadí, potrebujeme stabilný kľúč dňa.
-        const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD
+        const dateStr = getTodayKey(date); // YYYY-MM-DD (lokálny čas)
 
         try {
           // GET /api/getDailyConsumption?email=...&date=YYYY-MM-DD
@@ -203,7 +210,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       if (!totalsToUse) {
         // Nemáme lokálne hodnoty -> skúsime dnešné hodnoty zo servera
         try {
-          const isoDate = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+          const isoDate = getTodayKey(); // YYYY-MM-DD (lokálny čas)
           const url = `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(data.user.email)}&date=${encodeURIComponent(isoDate)}`;
           const dbResponse = await fetch(url);
           if (dbResponse.ok) {
@@ -225,6 +232,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
       // Uložíme zvolené totals, aby ich ostatné obrazovky čítali konzistentne
       await AsyncStorage.setItem("eatenTotals", JSON.stringify(totalsToUse));
+      await AsyncStorage.setItem("eatenTotalsDate", getTodayKey());
 
       navigation.reset({
         index: 0,

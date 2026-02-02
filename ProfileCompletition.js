@@ -1,7 +1,6 @@
 // ProfileCompletition.js
 import React, { useState, useEffect } from "react";
 import {
-  StyleSheet,
   Text,
   View,
   TextInput,
@@ -14,8 +13,39 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import arrow from "./assets/left_arrow.png";
 import { useNavigation } from "@react-navigation/native";
-import styles from "./styles"
+import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+
+const SERVER = "https://app.bitewise.it.com";
+const UPDATE_URL = `${SERVER}/api/updateProfile`;
+
+const ACTIVITY_OPTIONS = [
+  {
+    label: "Sedavý",
+    description: "Väčšinu času tráviš sedením. Pohybuješ sa skôr výnimočne.",
+    value: 1.2,
+  },
+  {
+    label: "Ľahko aktívny",
+    description: "Občas sa postavíš a rozhýbeš, ale inak deň tráviš v sede.",
+    value: 1.375,
+  },
+  {
+    label: "Stredne aktívny",
+    description: "Chodíš na prechádzky alebo robíš ľahký šport.",
+    value: 1.55,
+  },
+  {
+    label: "Veľmi aktívny",
+    description: "Pravidelne a intenzívne športuješ.",
+    value: 1.725,
+  },
+  {
+    label: "Extrémne aktívny",
+    description: "Denne robíš vytrvalostné fyzické výkony.",
+    value: 1.9,
+  },
+];
 
 export default function ProfileCompletition() {
   const navigation = useNavigation();
@@ -33,21 +63,16 @@ export default function ProfileCompletition() {
     value: 1.375,
   });
 
-  const SERVER = "https://app.bitewise.it.com";
-  const UPDATE_URL = `${SERVER}/api/updateProfile`;
-
   useEffect(() => {
     AsyncStorage.getItem("userEmail").then((value) => {
       if (value) setEmail(value);
     });
   }, []);
 
-useEffect(() => {
-  if (!email) return;
+  useEffect(() => {
+    if (!email) return;
 
-  const loadUserProfile = async () => {
-    try {
-      // 1️⃣ Najprv AsyncStorage
+    const loadUserProfile = async () => {
       const storedProfile = await AsyncStorage.getItem("userProfile");
       if (storedProfile) {
         const data = JSON.parse(storedProfile);
@@ -62,39 +87,30 @@ useEffect(() => {
             value: data.activityLevel,
           });
         }
+        return;
       }
 
-      // 2️⃣ Fallback – API fetch, len ak AsyncStorage nemal hodnoty
-      if (!storedProfile) {
-        const response = await fetch(`${SERVER}/api/userProfile?email=${email}`);
-        const data = await response.json();
+      const response = await fetch(`${SERVER}/api/userProfile?email=${email}`);
+      const data = await response.json();
 
-        if (response.ok) {
-          setWeight(String(data.weight || ""));
-          setHeight(String(data.height || ""));
-          setAge(String(data.age || ""));
-          setGender(data.gender || "male");
-          setGoal(data.goal || "maintain");
-          if (data.activityLevel) {
-            setSelectedActivity({
-              label: data.activityLabel || "Ľahko aktívny",
-              value: data.activityLevel,
-            });
-          }
-
-          // uložiť do AsyncStorage pre budúce použitie
-          await AsyncStorage.setItem("userProfile", JSON.stringify(data));
-        } else {
-          console.warn("Nepodarilo sa načítať profil:", data.error);
+      if (response.ok) {
+        setWeight(String(data.weight || ""));
+        setHeight(String(data.height || ""));
+        setAge(String(data.age || ""));
+        setGender(data.gender || "male");
+        setGoal(data.goal || "maintain");
+        if (data.activityLevel) {
+          setSelectedActivity({
+            label: data.activityLabel || "Ľahko aktívny",
+            value: data.activityLevel,
+          });
         }
+        await AsyncStorage.setItem("userProfile", JSON.stringify(data));
       }
-    } catch (err) {
-      console.error("Chyba pri načítaní profilu:", err);
-    }
-  };
+    };
 
-  loadUserProfile();
-}, [email]);
+    loadUserProfile();
+  }, [email]);
 
 
   async function handleCompletion() {
@@ -127,20 +143,15 @@ useEffect(() => {
 
       const data = await resp.json().catch(() => ({}));
 
-
       if (resp.ok) {
-        try {
-          await AsyncStorage.setItem("userProfile", JSON.stringify(body));
-        } catch (err) {
-          console.error("Error saving profile locally:", err);
-        }
+        await AsyncStorage.setItem("userProfile", JSON.stringify(body));
         Alert.alert("Úspech", "Údaje boli uložené ✅");
         navigation.goBack();
       } else {
         Alert.alert("Chyba", data.error || "Server error");
       }
-    } catch (err) {
-      Alert.alert("Network error", err.message);
+    } catch {
+      Alert.alert("Network error", "Skús to prosím neskôr.");
     }
   }
 
@@ -260,38 +271,7 @@ useEffect(() => {
       <Text style={styles.modalTitle}>Vyber úroveň aktivity</Text>
 
       <ScrollView>
-        {[
-          {
-            label: "Sedavý",
-            description:
-              "Väčšinu času tráviš sedením. Pohybuješ sa skôr výnimočne.",
-            value: 1.2,
-          },
-          {
-            label: "Ľahko aktívny",
-            description:
-              "Občas sa postavíš a rozhýbeš, ale inak deň tráviš v sede.",
-            value: 1.375,
-          },
-          {
-            label: "Stredne aktívny",
-            description:
-              "Chodíš na prechádzky alebo robíš ľahký šport.",
-            value: 1.55,
-          },
-          {
-            label: "Veľmi aktívny",
-            description:
-              "Pravidelne a intenzívne športuješ.",
-            value: 1.725,
-          },
-          {
-            label: "Extrémne aktívny",
-            description:
-              "Denne robíš vytrvalostné fyzické výkony.",
-            value: 1.9,
-          },
-        ].map((option) => (
+        {ACTIVITY_OPTIONS.map((option) => (
           <Pressable
             key={option.label}
             style={styles.activityOption}

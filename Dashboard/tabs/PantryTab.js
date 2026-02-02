@@ -18,29 +18,16 @@ const SERVER_URL = "https://app.bitewise.it.com";
 
 export default function PantryTab({
   removeMealBox,
-  // removeProduct,
-  // addEatenValues,
 }) {
   const [email, setEmail] = useState(null);
   const [mealBoxes, setMealBoxes] = useState([]);
   const [activeKey, setActiveKey] = useState(null);
   const [customName, setCustomName] = useState("");
   const [savingCustom, setSavingCustom] = useState(false);
-  //const [loading, setLoading] = useState(true);
 
   const getExpirationMs = useCallback((p) => {
-    const expiration = p?.expirationDate; // Dátum spotreby z produktu
-    if (!expiration) {
-      return Infinity; //Žiaden dátum = nekonečno
-    } else {
-      const miliseconds = new Date(expiration).getTime(); //Dátum na ms
-
-      if (Number.isNaN(miliseconds)) {
-        return Infinity; //Nesprávny dátum = nekonečno
-      } else {
-        return miliseconds;
-      }
-    }
+    const time = new Date(p?.expirationDate).getTime();
+    return Number.isNaN(time) ? Infinity : time;
   }, []);
 
   const scannedMealBoxes = useMemo(
@@ -54,90 +41,38 @@ export default function PantryTab({
   );
 
   const groupedMealBoxes = useMemo(() => {
-    const map = new Map(); // Map = "slovník" (kľúč -> hodnota)
+    const map = new Map();
 
-    // Prejdeme všetky produkty/krabičky v špajzi a budeme ich grupovať.
     for (const box of scannedMealBoxes) {
-      let normalizedName = null;
+      const name = typeof box?.name === "string" ? box.name.trim() : "";
+      const normalized = name ? name.toLowerCase() : null;
+      const idKey = box?.productId ?? box?.id ?? "unknown";
+      const key = normalized ? `name:${normalized}` : String(idKey);
 
-      // Overení či box.name je text
-      if (box && typeof box.name === "string") {
-        const trimmed = box.name.trim(); // Odstráni medzery na začiatku a konci
-        if (trimmed.length > 0) {
-          normalizedName = trimmed.toLowerCase(); // Zmení na malé písmená
-        }
-      }
-
-      let key = "unknown"; //Defaultný kľúč skupiny
-
-      // Groupovanie podľa názvu
-      if (normalizedName) {
-        key = `name:${normalizedName}`;
-      } else {
-        // Ak nie je názov = grupovanie podľa ID.
-        let idForKey = "unknown"; // Default, ak nie je id ani productId
-
-        // ProductId má prednosť
-        if (box && box.productId != null) {
-          idForKey = box.productId;
-        } else if (box && box.id != null) {
-          idForKey = box.id;
-        }
-
-        key = String(idForKey); // Prevedenie na text
-      }
-
-      // Kontrola, či už skupina existuje
       const existing = map.get(key);
-
-      //Pridanie, ak existuje
       if (existing) {
-        existing.count += 1; // Zvýšenie počtu kusov
-        existing.instances.push(box); // Uloženie konkrétneho kusu
+        existing.count += 1;
+        existing.instances.push(box);
       } else {
-        // Ak neexistuje, vytvorenie novej skupiny
         map.set(key, { key, box, count: 1, instances: [box] });
       }
     }
 
-    // Map -> Array, aby sa to dalo jednoducho renderovať v Reacte.
     const values = Array.from(map.values());
 
-    // Zoradenie kusov v každej skupine podľa exspirácie
     for (const group of values) {
-      group.instances.sort((a, b) => {
-        const aMs = getExpirationMs(a); // Dátum exspirácie na ms pre produkt a
-        const bMs = getExpirationMs(b); // Dátum exspirácie na ms pre produkt b
-        const diff = aMs - bMs;
-
-        if (diff !== 0) {
-          return diff; // Rovnaké = poradie rozhodne exspirácia.
-        } else {
-          return 0; //Nie sú rovnaké = poradie je jedno
-        }
-      });
-
-      const firstInstance = group.instances[0] ?? null; // Prvý kus = najbližšia exspirácia
-      if (firstInstance) {
-        group.box = firstInstance;
-      }
+      group.instances.sort((a, b) => getExpirationMs(a) - getExpirationMs(b));
+      group.box = group.instances[0] ?? group.box;
     }
 
-    return values; // Pole skupín pre UI
+    return values;
   }, [scannedMealBoxes, getExpirationMs]);
 
   // --- Load email from AsyncStorage ---
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const storedEmail = await AsyncStorage.getItem("userEmail");
-        if (mounted && storedEmail) setEmail(storedEmail);
-      } catch (err) {
-        console.error("❌ Error loading email:", err);
-      }
-    })();
-    return () => (mounted = false);
+    AsyncStorage.getItem("userEmail").then((storedEmail) => {
+      if (storedEmail) setEmail(storedEmail);
+    });
   }, []);
 
   // --- Fetch mealBoxes with AsyncStorage first, server fallback ---
@@ -145,42 +80,23 @@ export default function PantryTab({
     async ({ forceServer = false } = {}) => {
       if (!email) return;
 
-      //setLoading(true);
-      let boxes = null;
+      let boxes = [];
 
-      try {
-        // 1️⃣ Try AsyncStorage (unless forceServer)
-        if (!forceServer) {
-          const storedMealBox = await AsyncStorage.getItem("products");
-          if (storedMealBox) {
-            boxes = JSON.parse(storedMealBox);
-            console.log("✅ Loaded mealBoxes from AsyncStorage:", boxes.length);
-          }
-        }
-
-        // 2️⃣ Fallback server if AsyncStorage empty
-        if (!boxes || boxes.length === 0) {
-          console.log("⚠️ Fetching mealBoxes from server...");
-          const res = await fetch(
-            `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(email)}`,
-          );
-          if (!res.ok) throw new Error(`Server returned ${res.status}`);
-          const data = await res.json();
-          boxes = data.products || [];
-          console.log("✅ Loaded mealBoxes from server:", boxes.length);
-
-          // Save to AsyncStorage
-          await AsyncStorage.setItem("products", JSON.stringify(boxes));
-          console.log("✅ Saved server mealBoxes to AsyncStorage");
-        }
-
-        setMealBoxes(boxes);
-      } catch (err) {
-        console.error("❌ Error fetching mealBoxes:", err);
-        setMealBoxes([]);
-      } finally {
-        //setLoading(false);
+      if (!forceServer) {
+        const storedMealBox = await AsyncStorage.getItem("products");
+        if (storedMealBox) boxes = JSON.parse(storedMealBox);
       }
+
+      if (!boxes.length) {
+        const res = await fetch(
+          `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(email)}`,
+        );
+        const data = await res.json();
+        boxes = data.products || [];
+        await AsyncStorage.setItem("products", JSON.stringify(boxes));
+      }
+
+      setMealBoxes(boxes);
     },
     [email],
   );
@@ -214,57 +130,37 @@ export default function PantryTab({
 
   const handleRemoveMealBox = async (id, productId, box) => {
     let shouldForceRefresh = false;
+
     try {
-      // 1️⃣ zavolaj pôvodnú funkciu, ktorá maže na serveri/databáze
-      try {
-        await removeMealBox(id, productId, box);
-      } catch (err) {
-        // Ak už produkt v DB nie je, stále ho odstránime lokálne a zosyncneme zo servera.
-        shouldForceRefresh = true;
-        console.warn("⚠️ removeMealBox failed, forcing refresh:", err);
-      }
-
-      // 2️⃣ načítaj aktuálne produkty z AsyncStorage
-      const stored = await AsyncStorage.getItem("products");
-      let allProducts = stored ? JSON.parse(stored) : [];
-
-      // 3️⃣ odstráň iba 1 kus (ak je tam viac rovnakých)
-      const boxExp = box?.expirationDate;
-      const idx = allProducts.findIndex((p) => {
-        if (id && p?.id === id) return true;
-        if (productId && p?.productId === productId) {
-          // If we know expiration for the instance, prefer removing that exact one.
-          if (boxExp) {
-            const pExp = p?.expirationDate;
-            return String(pExp ?? "") === String(boxExp);
-          }
-          return true;
-        }
-        if (!productId && box?.name && p?.name === box.name) {
-          if (boxExp) {
-            const pExp = p?.expirationDate;
-            return String(pExp ?? "") === String(boxExp);
-          }
-          return true;
-        }
-        return false;
-      });
-      if (idx !== -1) allProducts.splice(idx, 1);
-
-      // 4️⃣ ulož späť do AsyncStorage
-      await AsyncStorage.setItem("products", JSON.stringify(allProducts));
-
-      // 5️⃣ aktualizuj stav komponentu ihneď
-      setMealBoxes(allProducts);
-
-      if (shouldForceRefresh) {
-        await loadMealBoxes({ forceServer: true });
-      }
-
-      console.log("✅ Product removed locally and AsyncStorage updated");
-    } catch (err) {
-      console.error("❌ Error removing mealBox:", err);
+      await removeMealBox(id, productId, box);
+    } catch {
+      shouldForceRefresh = true;
     }
+
+    const stored = await AsyncStorage.getItem("products");
+    const allProducts = stored ? JSON.parse(stored) : [];
+    const boxExp = box?.expirationDate;
+
+    const idx = allProducts.findIndex((p) => {
+      if (id && p?.id === id) return true;
+      if (productId && p?.productId === productId) {
+        return boxExp
+          ? String(p?.expirationDate ?? "") === String(boxExp)
+          : true;
+      }
+      if (!productId && box?.name && p?.name === box.name) {
+        return boxExp
+          ? String(p?.expirationDate ?? "") === String(boxExp)
+          : true;
+      }
+      return false;
+    });
+
+    if (idx !== -1) allProducts.splice(idx, 1);
+    await AsyncStorage.setItem("products", JSON.stringify(allProducts));
+    setMealBoxes(allProducts);
+
+    if (shouldForceRefresh) await loadMealBoxes({ forceServer: true });
   };
 
   const addCustomMealBox = async () => {
@@ -272,45 +168,35 @@ export default function PantryTab({
     if (!name || !email) return;
 
     setSavingCustom(true);
-    try {
-      const res = await fetch(`${SERVER_URL}/api/addCustomProduct`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name }),
-      });
+    const res = await fetch(`${SERVER_URL}/api/addCustomProduct`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, name }),
+    });
 
-      if (!res.ok) throw new Error("Failed to add custom product");
+    const data = await res.json();
+    const nextProducts = data.products || [];
 
-      const data = await res.json();
-      const nextProducts = data.products || [];
-
-      await AsyncStorage.setItem("products", JSON.stringify(nextProducts));
-      setMealBoxes(nextProducts);
-      setCustomName("");
-    } catch (err) {
-      console.error("❌ Error adding custom product:", err);
-    } finally {
-      setSavingCustom(false);
-    }
+    await AsyncStorage.setItem("products", JSON.stringify(nextProducts));
+    setMealBoxes(nextProducts);
+    setCustomName("");
+    setSavingCustom(false);
   };
 
   const removeCustomMealBox = async (productId) => {
     if (!email || !productId) return;
-    try {
-      await fetch(`${SERVER_URL}/api/removeProduct`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, productId }),
-      });
 
-      const stored = await AsyncStorage.getItem("products");
-      const allProducts = stored ? JSON.parse(stored) : [];
-      const filtered = allProducts.filter((p) => p.productId !== productId);
-      await AsyncStorage.setItem("products", JSON.stringify(filtered));
-      setMealBoxes(filtered);
-    } catch (err) {
-      console.error("❌ Error removing custom product:", err);
-    }
+    await fetch(`${SERVER_URL}/api/removeProduct`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, productId }),
+    });
+
+    const stored = await AsyncStorage.getItem("products");
+    const allProducts = stored ? JSON.parse(stored) : [];
+    const filtered = allProducts.filter((p) => p.productId !== productId);
+    await AsyncStorage.setItem("products", JSON.stringify(filtered));
+    setMealBoxes(filtered);
   };
 
   // --- MealBoxItem ---
@@ -342,23 +228,16 @@ export default function PantryTab({
   );
 
   // --- Modal window ---
-  const MealBoxWindow = ({ productName, count, email, close, instances }) => {
+  const MealBoxWindow = ({ count, close, instances }) => {
     const [product, setProduct] = useState(null);
     const [loadingWindow, setLoadingWindow] = useState(true);
     const [isPer100g, setIsPer100g] = useState();
     const [expiration, setExpiration] = useState();
 
     useEffect(() => {
-      (async () => {
-        try {
-          const storedValue = await AsyncStorage.getItem("expiration");
-          if (storedValue !== null) {
-            setExpiration(JSON.parse(storedValue));
-          }
-        } catch (err) {
-          console.error("Chyba pri načítaní nastavení:", err);
-        }
-      })();
+      AsyncStorage.getItem("expiration").then((storedValue) => {
+        if (storedValue !== null) setExpiration(JSON.parse(storedValue));
+      });
     }, []);
 
     const expirationLabel = useMemo(() => {
@@ -372,27 +251,20 @@ export default function PantryTab({
         .filter(Boolean)
         .sort((a, b) => a.getTime() - b.getTime());
 
-      const earliest = candidates[0];
-      return formatExpiration(earliest);
+      return formatExpiration(candidates[0]);
     }, [instances]);
 
     useEffect(() => {
-      (async () => {
-        try {
-          const stored = await AsyncStorage.getItem("isPer100g");
-          if (stored !== null) setIsPer100g(JSON.parse(stored));
-        } catch (err) {
-          console.error("❌ Error loading isPer100g:", err);
-        }
-      })();
+      AsyncStorage.getItem("isPer100g").then((stored) => {
+        if (stored !== null) setIsPer100g(JSON.parse(stored));
+      });
     }, []);
 
     // Product data already exists in pantry items (`instances`).
     // Using it avoids fragile DB lookup by exact name and prevents 404 after eating.
     useEffect(() => {
       setLoadingWindow(true);
-      const p = instances?.[0] ?? null;
-      setProduct(p);
+      setProduct(instances?.[0] ?? null);
       setLoadingWindow(false);
     }, [instances]);
 
@@ -497,15 +369,12 @@ export default function PantryTab({
                 onPress={() => {
                   const instance = instances?.[0];
                   if (!instance) return;
-                  // Close immediately so UI doesn't look like it "switches" to the next date.
                   close?.();
-                  (async () => {
-                    await handleRemoveMealBox(
-                      instance.id,
-                      instance.productId,
-                      instance,
-                    );
-                  })();
+                  handleRemoveMealBox(
+                    instance.id,
+                    instance.productId,
+                    instance,
+                  );
                 }}
                 style={styles.pantryEatenBtn}
               >
@@ -532,9 +401,7 @@ export default function PantryTab({
         onRequestClose={closeWindow}
       >
         <MealBoxWindow
-          productName={activeGroup?.box?.name}
           count={activeGroup?.count}
-          email={email}
           instances={activeGroup?.instances ?? []}
           close={closeWindow}
         />
@@ -542,6 +409,9 @@ export default function PantryTab({
 
       <ScrollView style={styles.pantryMealContainer}>
         <Text style={styles.pantrySectionTitle}>Naskenované položky</Text>
+        {groupedMealBoxes.length === 0 && (
+          <Text style={styles.pantryEmptyMessage}>Nemáš naskenované položky.</Text>
+        )}
         <View style={styles.pantryRow}>
           {groupedMealBoxes.map((group) => (
             <MealBoxItem key={group.key} group={group} />

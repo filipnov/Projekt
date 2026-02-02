@@ -2,18 +2,9 @@
 // ResetPass.js
 // Obrazovka na reset hesla cez token z e‑mailu (deep link)
 import React, { useState, useEffect } from "react";
-import {
-  Text,
-  View,
-  Image,
-  TextInput,
-  Pressable,
-  Alert,
-  ScrollView,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, View, Image, TextInput, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import logo from "./assets/logo.png";
+import logo from "./assets/logo_name.png";
 import arrow from "./assets/left_arrow.png";
 import * as Linking from "expo-linking";
 import styles from "./styles";
@@ -113,50 +104,43 @@ export default function ResetPasswordScreen({ route }) {
   };
 
   return (
-    <KeyboardWrapper style={styles.resetMainLayout}>
-      <SafeAreaView style={styles.resetSafeArea} edges={["top", "bottom"]}>
-        <ScrollView contentContainerStyle={styles.resetScrollContent}>
-          {/* Hlavná karta resetu hesla */}
-          <View style={styles.resetCardContainer}>
-            <Text style={styles.resetTitleText}>Reset hesla</Text>
-            <Text style={styles.resetInfoText}>
-              Zadaj nové heslo a potvrď.
-            </Text>
+    <KeyboardWrapper style={styles.authMainLayout}>
+      <Image style={styles.authProfileAvatar} source={logo} />
 
-            {/* Vstup pre nové heslo */}
-            <TextInput
-              placeholder="Nové heslo"
-              secureTextEntry
-              value={newPassword}
-              onChangeText={setNewPassword}
-              style={styles.resetTextInput}
-            />
-            {/* Tlačidlo na odoslanie resetu */}
-            <Pressable
-              onPress={handleReset}
-              style={({ pressed }) =>
-                pressed
-                  ? styles.resetActionButtonPressed
-                  : styles.resetActionButton
-              }
-            >
-              <Text style={styles.resetActionButtonText}>Resetovať heslo</Text>
-            </Pressable>
-          </View>
+      <View style={styles.authCardContainer}>
+        <Text style={styles.authTitleText}>Reset hesla</Text>
+        <Text style={styles.authText}>Zadaj nové heslo a potvrď.</Text>
 
-          {/* Návrat späť na HomeScreen */}
+        <TextInput
+          placeholder="Nové heslo"
+          secureTextEntry
+          value={newPassword}
+          onChangeText={setNewPassword}
+          style={styles.authTextInput}
+        />
+
+        <View style={styles.buttonLayout}>
+          <Pressable
+            onPress={handleReset}
+            style={({ pressed }) =>
+              pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
+            }
+          >
+            <Text style={styles.authRegLogBtnText}>Resetovať heslo</Text>
+          </Pressable>
+
           <Pressable
             style={({ pressed }) =>
               pressed
-                ? styles.resetBackArrowPressed
-                : styles.resetBackArrowContainer
+                ? styles.authBackArrowPressed
+                : styles.authBackArrowContainer
             }
             onPress={() => navigation.navigate("HomeScreen")}
           >
-            <Image source={arrow} style={styles.resetBackArrow} />
+            <Image source={arrow} style={styles.authBackArrow} />
           </Pressable>
-        </ScrollView>
-      </SafeAreaView>
+        </View>
+      </View>
     </KeyboardWrapper>
   );
 }

@@ -21,7 +21,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 
+const SERVER_URL = "https://app.bitewise.it.com";
+const API_URL = "https://world.openfoodfacts.org/api/v0/product";
+
 export default function CameraScreen() {
+  const getTodayKey = (date = new Date()) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
   const navigation = useNavigation();
   const [permission, requestPermission] = useCameraPermissions();
   const [showContent, setShowContent] = useState(false);
@@ -30,7 +39,7 @@ export default function CameraScreen() {
   const [productData, setProductData] = useState(null);
   const [quantityInput, setQuantityInput] = useState("");
   const [awaitingQuantity, setAwaitingQuantity] = useState(false);
-  const [showNutriValues] = useState(true);
+  const showNutriValues = true;
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [expiration, setExpiration] = useState();
@@ -42,41 +51,16 @@ export default function CameraScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [awaitingExpirationDate, setAwaitingExpirationDate] = useState(false);
   useEffect(() => {
-    (async () => {
-      try {
-        const storedValue = await AsyncStorage.getItem("isPer100g");
-        if (storedValue !== null) {
-          setIsPer100g(JSON.parse(storedValue));
-        }
-      } catch (err) {
-        console.error("Chyba pri načítaní nastavení:", err);
-      }
-    })();
+    AsyncStorage.getItem("isPer100g").then((storedValue) => {
+      if (storedValue !== null) setIsPer100g(JSON.parse(storedValue));
+    });
   }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const storedValue = await AsyncStorage.getItem("expiration");
-        if (storedValue !== null) {
-          setExpiration(JSON.parse(storedValue));
-        }
-      } catch (err) {
-        console.error("Chyba pri načítaní nastavení:", err);
-      }
-    })();
+    AsyncStorage.getItem("expiration").then((storedValue) => {
+      if (storedValue !== null) setExpiration(JSON.parse(storedValue));
+    });
   }, []);
-
-  const SERVER_URL = "https://app.bitewise.it.com";
-
-  const API_URL = "https://world.openfoodfacts.org/api/v0/product";
-
-  async function debugFetch(url, options = {}) {
-    console.log("🌐 FETCH →", url, options);
-    const response = await fetch(url, options);
-    console.log("📥 RESPONSE STATUS:", response.status);
-    return response;
-  }
 
   async function handleAddProduct(
     productName,
@@ -99,16 +83,7 @@ export default function CameraScreen() {
   ) {
     try {
       const email = await AsyncStorage.getItem("userEmail");
-      console.log(
-        "📤 Sending product to backend:",
-        productName,
-        "Calories:",
-        totalCalories,
-        "Email:",
-        email,
-      );
-
-      const response = await debugFetch(`${SERVER_URL}/api/addProduct`, {
+      const response = await fetch(`${SERVER_URL}/api/addProduct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -134,16 +109,11 @@ export default function CameraScreen() {
       });
 
       const data = await response.json();
-      console.log("📥 Server response:", data);
 
       if (data.success && Array.isArray(data.products)) {
-        // 🔁 ulož celý nový stav produktov
         await AsyncStorage.setItem("products", JSON.stringify(data.products));
-        console.log("✅ AsyncStorage(products) updated");
       }
-    } catch (err) {
-      console.error("❌ Error sending product:", err);
-    }
+    } catch {}
   }
 
   function calculateTotals(product, weight) {
@@ -170,7 +140,7 @@ export default function CameraScreen() {
     setAwaitingExpirationDate(false);
     setSelectedExpirationDate(new Date());
     try {
-      const response = await debugFetch(`${API_URL}/${barcode}.json`);
+      const response = await fetch(`${API_URL}/${barcode}.json`);
       const data = await response.json();
 
       if (data.status === 1) {
@@ -209,8 +179,7 @@ export default function CameraScreen() {
           setScanned(false);
         }, 2000);
       }
-    } catch (err) {
-      console.error("❌ Chyba pri načítaní produktu:", err);
+    } catch {
 
       setNotFound(true);
 
@@ -229,8 +198,6 @@ export default function CameraScreen() {
     setScanned(true);
     fetchProductData(data);
   }
-
-  const handleShowContent = () => setShowContent(!showContent);
 
   const renderContent = () => {
     if (!showContent || productData) return null;
@@ -326,6 +293,7 @@ export default function CameraScreen() {
       };
 
       await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
+      await AsyncStorage.setItem("eatenTotalsDate", getTodayKey());
 
       setProductData(null);
       setScanned(false); // 🔁 znovu skenovať
@@ -381,7 +349,10 @@ export default function CameraScreen() {
         {renderContent()}
 
         {!productData && (
-          <Pressable style={styles.manualAddButton} onPress={handleShowContent}>
+          <Pressable
+            style={styles.manualAddButton}
+            onPress={() => setShowContent((prev) => !prev)}
+          >
             <Text style={styles.manualAddButtonText}>Zadať manuálne</Text>
           </Pressable>
         )}
@@ -463,59 +434,58 @@ export default function CameraScreen() {
             )}
 
             {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g
-                  ? `Kalórie (100g): ${productData.calories ?? "N/A"} kcal`
-                  : `Kalórie: ${productData.totalCalories ?? "N/A"} kcal`}
-              </Text>
-            )}
-
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g
-                  ? `Tuky (100g): ${productData.fat ?? "N/A"} g`
-                  : `Tuky: ${productData.totalFat ?? "N/A"} g`}
-              </Text>
-            )}
-
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g
-                  ? `Bielkoviny (100g): ${productData.proteins ?? "N/A"} g`
-                  : `Bielkoviny: ${productData.totalProteins ?? "N/A"} g`}
-              </Text>
-            )}
-
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g
-                  ? `Sacharidy (100g): ${productData.carbs ?? "N/A"} g`
-                  : `Sacharidy: ${productData.totalCarbs ?? "N/A"} g`}
-              </Text>
-            )}
-
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g
-                  ? `Cukry (100g): ${productData.sugar ?? "N/A"} g`
-                  : `Cukry: ${productData.totalSugar ?? "N/A"} g`}
-              </Text>
-            )}
-
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g
-                  ? `Soľ (100g): ${productData.salt ?? "N/A"} g`
-                  : `Soľ: ${productData.totalSalt ?? "N/A"} g`}
-              </Text>
-            )}
-
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <Text>
-                {showNutriValues && isPer100g
-                  ? `Vláknina (100g): ${productData.fiber ?? "N/A"} g`
-                  : `Vláknina: ${productData.totalFiber ?? "N/A"} g`}
-              </Text>
+              <>
+                {[
+                  {
+                    label: "Kalórie",
+                    per100: productData.calories,
+                    total: productData.totalCalories,
+                    unit: "kcal",
+                  },
+                  {
+                    label: "Tuky",
+                    per100: productData.fat,
+                    total: productData.totalFat,
+                    unit: "g",
+                  },
+                  {
+                    label: "Bielkoviny",
+                    per100: productData.proteins,
+                    total: productData.totalProteins,
+                    unit: "g",
+                  },
+                  {
+                    label: "Sacharidy",
+                    per100: productData.carbs,
+                    total: productData.totalCarbs,
+                    unit: "g",
+                  },
+                  {
+                    label: "Cukry",
+                    per100: productData.sugar,
+                    total: productData.totalSugar,
+                    unit: "g",
+                  },
+                  {
+                    label: "Soľ",
+                    per100: productData.salt,
+                    total: productData.totalSalt,
+                    unit: "g",
+                  },
+                  {
+                    label: "Vláknina",
+                    per100: productData.fiber,
+                    total: productData.totalFiber,
+                    unit: "g",
+                  },
+                ].map((row) => (
+                  <Text key={row.label}>
+                    {showNutriValues && isPer100g
+                      ? `${row.label} (100g): ${row.per100 ?? "N/A"} ${row.unit}`
+                      : `${row.label}: ${row.total ?? "N/A"} ${row.unit}`}
+                  </Text>
+                ))}
+              </>
             )}
 
             {!awaitingQuantity && !awaitingExpirationDate && (

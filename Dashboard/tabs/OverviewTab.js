@@ -25,16 +25,16 @@ export default function OverviewTab({
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [overviewData, setOverviewData] = useState({});
-  const [currentDate] = useState(() => {
+  const currentDate = (() => {
     const d = new Date();
     return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
-  });
+  })();
 
   const options = [
-    { label: "Malý pohár / šálka ", description: "150 ml" },
-    { label: "Stredný pohár / šálka", description: "250 ml" },
-    { label: "Veľký pohár / hrnček", description: "350 ml" },
-    { label: "Fľaša", description: "500 ml" },
+    { label: "Malý pohár / šálka ", description: "150 ml", ml: 150 },
+    { label: "Stredný pohár / šálka", description: "250 ml", ml: 250 },
+    { label: "Veľký pohár / hrnček", description: "350 ml", ml: 350 },
+    { label: "Fľaša", description: "500 ml", ml: 500 },
   ];
 
   const renderNutriItem = (label, valueConsumed, valueGoal, barPercent) => (
@@ -58,23 +58,8 @@ export default function OverviewTab({
   );
 
   const addWater = () => {
-    let water = 0;
-    switch (selectedOption) {
-      case "Malý pohár / šálka ":
-        water = 150;
-        break;
-      case "Stredný pohár / šálka":
-        water = 250;
-        break;
-      case "Veľký pohár / hrnček":
-        water = 350;
-        break;
-      case "Fľaša":
-        water = 500;
-        break;
-      default:
-        water = 0;
-    }
+    const picked = options.find((opt) => opt.label === selectedOption);
+    const water = picked?.ml || 0;
 
     setEatenTotals((prev) => ({
       ...prev,
@@ -104,17 +89,16 @@ export default function OverviewTab({
     else cal = (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
 
     if (goal === "lose") cal -= 500;
-    else if (goal === "gain") cal += 500;
+    if (goal === "gain") cal += 500;
 
     const progressBar = Math.min((calories / cal) * 100, 100);
     const barColor = progressBar >= 100 ? "#FF3B30" : "#4CAF50";
 
-    let eatOutput;
+    let eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
     if (calories < cal)
       eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
-    else if (calories === cal)
+    if (calories === cal)
       eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
-    else eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
 
     const proteinGoal = ((cal * 0.13) / 4).toFixed(0);
     const carbGoal = ((cal * 0.65) / 4).toFixed(0);
@@ -133,8 +117,8 @@ export default function OverviewTab({
     const waterBar = (drunkWater / waterGoal) * 100;
 
     const bmiValue = ((weight / (height * height)) * 10000).toFixed(1);
-    let bmiOutput = "",
-      bmiBarColor = "#4CAF50";
+    let bmiOutput = "";
+    let bmiBarColor = "#4CAF50";
     if (bmiValue < 18.5) {
       bmiOutput = `BMI: ${bmiValue}\nPodváha`;
       bmiBarColor = "#2196F3";
@@ -216,6 +200,48 @@ export default function OverviewTab({
     );
   }
 
+  const topNutri = [
+    {
+      label: "Bielkoviny",
+      consumed: overviewData.proteinConsumed,
+      goal: overviewData.proteinGoal,
+      bar: overviewData.proteinBar,
+    },
+    {
+      label: "Sacharidy",
+      consumed: overviewData.carbConsumed,
+      goal: overviewData.carbGoal,
+      bar: overviewData.carbBar,
+    },
+    {
+      label: "Tuky",
+      consumed: overviewData.fatConsumed,
+      goal: overviewData.fatGoal,
+      bar: overviewData.fatBar,
+    },
+  ];
+
+  const bottomNutri = [
+    {
+      label: "Vláknina",
+      consumed: overviewData.fiberConsumed,
+      goal: overviewData.fiberGoal,
+      bar: overviewData.fiberBar,
+    },
+    {
+      label: "Soľ",
+      consumed: overviewData.saltConsumed,
+      goal: overviewData.saltGoal,
+      bar: overviewData.saltBar,
+    },
+    {
+      label: "Cukry",
+      consumed: overviewData.sugarConsumed,
+      goal: overviewData.sugarGoal,
+      bar: overviewData.sugarBar,
+    },
+  ];
+
   return (
     <>
       <View style={styles.dashCaloriesDisplay}>
@@ -242,44 +268,18 @@ export default function OverviewTab({
 
       <View style={styles.dashNutriDisplay_container}>
         <View style={{ flexDirection: "row" }}>
-          {renderNutriItem(
-            "Bielkoviny",
-            overviewData.proteinConsumed,
-            overviewData.proteinGoal,
-            overviewData.proteinBar,
-          )}
-          {renderNutriItem(
-            "Sacharidy",
-            overviewData.carbConsumed,
-            overviewData.carbGoal,
-            overviewData.carbBar,
-          )}
-          {renderNutriItem(
-            "Tuky",
-            overviewData.fatConsumed,
-            overviewData.fatGoal,
-            overviewData.fatBar,
-          )}
+          {topNutri.map((item) => (
+            <React.Fragment key={item.label}>
+              {renderNutriItem(item.label, item.consumed, item.goal, item.bar)}
+            </React.Fragment>
+          ))}
         </View>
         <View style={{ flexDirection: "row" }}>
-          {renderNutriItem(
-            "Vláknina",
-            overviewData.fiberConsumed,
-            overviewData.fiberGoal,
-            overviewData.fiberBar,
-          )}
-          {renderNutriItem(
-            "Soľ",
-            overviewData.saltConsumed,
-            overviewData.saltGoal,
-            overviewData.saltBar,
-          )}
-          {renderNutriItem(
-            "Cukry",
-            overviewData.sugarConsumed,
-            overviewData.sugarGoal,
-            overviewData.sugarBar,
-          )}
+          {bottomNutri.map((item) => (
+            <React.Fragment key={item.label}>
+              {renderNutriItem(item.label, item.consumed, item.goal, item.bar)}
+            </React.Fragment>
+          ))}
         </View>
       </View>
 

@@ -12,7 +12,7 @@ const vs = (size) => (SCREEN_HEIGHT / AUTH_BASE_HEIGHT) * size;
 const ms = (size, factor = 0.5) => size + (s(size) - size) * factor;
 
 // Welcome screen logo size (responsive but capped)
-const WELCOME_LOGO_SIZE = Math.min(SCREEN_WIDTH * 0.7, 220);
+const WELCOME_LOGO_SIZE = Math.min(SCREEN_WIDTH * 0.4, 220);
 
 export default StyleSheet.create({
   forgotText: {
@@ -594,6 +594,19 @@ export default StyleSheet.create({
     fontSize: 14,
     color: "#333",
   },
+  pantryEmptyMessage: {
+    alignSelf: "flex-start",
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#333",
+    backgroundColor: "#f5f5f5",
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    width: "95%",
+    height: 45,
+    textAlignVertical: "center"
+  },
   pantryToggleRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -670,6 +683,12 @@ export default StyleSheet.create({
     fontWeight: "900",
     marginVertical: 10,
     marginLeft: 15,
+  },
+  emptyListText: {
+    color: "#777",
+    textAlign: "center",
+    marginVertical: 8,
+    width: "100%",
   },
   recipeModalImage: {
     width: "100%",
@@ -860,7 +879,7 @@ export default StyleSheet.create({
   modalModalButtonClose: {
     flex: 1,
     marginRight: 5,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    backgroundColor: "grey",
     paddingVertical: 12,
     borderRadius: 12,
   },
@@ -1757,6 +1776,7 @@ export default StyleSheet.create({
   resetSafeArea: {
     flex: 1,
     width: "100%",
+    height: 900,
   },
   resetScrollContent: {
     flexGrow: 1,
