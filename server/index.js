@@ -1,68 +1,87 @@
 // server/index.js
-import express from "express";
-import cors from "cors";
-import { MongoClient } from "mongodb";
-import bcrypt from "bcryptjs";
-import dotenv from "dotenv";
-import nodemailer from "nodemailer";
-import crypto from "crypto";
-import path from "path";
-import OpenAI from "openai";
+// Hlavný backend pre aplikáciu Bitewise
+// - Express API
+// - MongoDB databáza
+// - Reset hesla cez e‑mail
+// - Generovanie receptov cez OpenAI
+import express from "express"; // web framework pre API
+import cors from "cors"; // povolenie CORS pre klienta
+import { MongoClient } from "mongodb"; // MongoDB klient
+import bcrypt from "bcryptjs"; // hashovanie hesiel
+import dotenv from "dotenv"; // načítanie .env súboru
+import nodemailer from "nodemailer"; // odosielanie emailov
+import crypto from "crypto"; // generovanie tokenov
+import path from "path"; // práca s cestami
+import OpenAI from "openai"; // OpenAI SDK
 
-dotenv.config({ path: path.resolve("./server/.env") });
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
-console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+// Načítanie .env (kľúče, heslá, URL)
+dotenv.config({ path: path.resolve("./server/.env") }); // načítanie env premenných
+// Rýchla kontrola, či .env premenné existujú
+console.log("EMAIL_USER:", process.env.EMAIL_USER); // kontrola email user
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING"); // kontrola hesla
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL); // kontrola FE URL
 
 
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+// Express aplikácia + základné middleware
+const app = express(); // vytvorenie Express aplikácie
+app.use(cors()); // povolí volania z mobilného klienta
+app.use(express.json()); // parsovanie JSON v requestoch (body -> objekt)
 
-const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017";
-const client = new MongoClient(MONGO_URI);
+// Konfigurácia servera a MongoDB klienta
+const PORT = process.env.PORT || 3000; // port, kde server počúva
+const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017"; // MongoDB URL
+const client = new MongoClient(MONGO_URI); // MongoDB klient
 
-// SERVE .well-known ASSETLINKS
+// Servovanie .well-known (Android app links / assetlinks)
 app.use(
-  "/.well-known",
-  express.static(path.join(path.resolve(), ".well-known"))
+  "/.well-known", // URL prefix pre assetlinks
+  express.static(path.join(path.resolve(), ".well-known")) // statické súbory
 );
 
 // ------------------- GPT CONFIG -------------------
+// OpenAI klient + jednoduchý limit requestov
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY, // kľúč pre OpenAI API
 });
 
-const GPT_REQUEST_LIMIT = 50;
-let gptRequestCount = 0;
+// Jednoduchý limit volaní na generovanie receptov (ochrana pred spamom)
+const GPT_REQUEST_LIMIT = 50; // max počet GPT requestov
+let gptRequestCount = 0; // aktuálny počet requestov
+// Hlavný štart servera: pripojenie k DB a definícia endpointov
 async function start() {
-  await client.connect();
-  console.log("✅ Connected to MongoDB");
+  await client.connect(); // pripojenie k DB
+  console.log("✅ Connected to MongoDB"); // log úspechu
 
-  const db = client.db("userdb");
-  const users = db.collection("users");
+  const db = client.db("userdb"); // vybraná databáza
+  const users = db.collection("users"); // kolekcia používateľov
 
-  await users.createIndex({ email: 1 }, { unique: true });
+  // Unikátny index pre email (bez duplicitných účtov)
+  await users.createIndex({ email: 1 }, { unique: true }); // index pre email
 
   // ------------------- REGISTER -------------------
-  app.post("/api/register", async (req, res) => {
+  // Vytvorí nového používateľa:
+  // - validuje vstupy
+  // - kontroluje GDPR súhlas
+  // - hashne heslo
+  // - uloží do DB
+  app.post("/api/register", async (req, res) => { // POST /register
   try {
-    const { email, password, nick, gdprConsent, gdprConsentAt, gdprPolicyVersion } = req.body;
+    const { email, password, nick, gdprConsent, gdprConsentAt, gdprPolicyVersion } = req.body; // údaje z klienta
 
-    if (!email || !password || !nick) {
-      return res.status(400).json({ error: "Missing fields" });
+    if (!email || !password || !nick) { // základná validácia
+      return res.status(400).json({ error: "Missing fields" }); // chyba vstupov
     }
 
     // GDPR kontrola
-    if (!gdprConsent) {
-      return res.status(400).json({ error: "GDPR súhlas je povinný." });
+    if (!gdprConsent) { // GDPR je povinný
+      return res.status(400).json({ error: "GDPR súhlas je povinný." }); // odmietnutie
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash hesla pred uložením
+    const hashedPassword = await bcrypt.hash(password, 10); // hash hesla
 
-    const result = await users.insertOne({
+    const result = await users.insertOne({ // vloží nový dokument do DB
       email,
       password: hashedPassword,
       nick,
@@ -72,66 +91,69 @@ async function start() {
       gdprPolicyVersion: gdprPolicyVersion || "1.0",
     });
 
-    return res.status(201).json({ ok: true, id: result.insertedId });
+    return res.status(201).json({ ok: true, id: result.insertedId }); // úspech
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(409).json({ error: "Email already exists" });
+    if (err.code === 11000) { // duplicitný email
+      return res.status(409).json({ error: "Email already exists" }); // konflikt
     }
-    console.error("Register error:", err);
-    return res.status(500).json({ error: "Server error" });
+    console.error("Register error:", err); // log chyby
+    return res.status(500).json({ error: "Server error" }); // serverová chyba
   }
 });
 
   // ------------------- LOGIN -------------------
-  app.post("/api/login", async (req, res) => {
+  // Overenie prihlásenia pomocou emailu a hesla
+  app.post("/api/login", async (req, res) => { // POST /login
     try {
-      const { email, password } = req.body;
+      const { email, password } = req.body; // prihlásovacie údaje
 
-      if (!email || !password) {
-        return res.status(400).json({ error: "Missing fields" });
+      if (!email || !password) { // validácia vstupov
+        return res.status(400).json({ error: "Missing fields" }); // chyba
       }
 
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // nájde používateľa podľa emailu
       if (!user) {
-        return res.status(401).json({ error: "Invalid email or password" });
+        return res.status(401).json({ error: "Invalid email or password" }); // neexistuje
       }
 
-      // Compare hashed password
-      const isMatch = await bcrypt.compare(password, user.password);
+      // Porovnanie hesla s hashom v DB
+      const isMatch = await bcrypt.compare(password, user.password); // porovná heslo s hashom
       if (!isMatch) {
-        return res.status(401).json({ error: "Invalid email or password" });
+        return res.status(401).json({ error: "Invalid email or password" }); // zlé heslo
       }
 
-      // Return user data
-      return res.json({
+      // Do klienta posielame len základné info
+      return res.json({ // odpoveď pre klienta
         ok: true,
         message: "Login successful",
         user: { email: user.email, nick: user.nick },
       });
     } catch (err) {
-      console.error("Login error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("Login error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
   // ------------------- UPDATE NICK -------------------
-  app.post("/api/updateNick", async (req, res) => {
+  // Zmena prezývky používateľa
+  app.post("/api/updateNick", async (req, res) => { // POST /updateNick
     try {
-      const { email, nick } = req.body;
+      const { email, nick } = req.body; // nové hodnoty z klienta
 
-      if (!email || typeof nick !== "string") {
-        return res.status(400).json({ error: "Missing fields" });
+      if (!email || typeof nick !== "string") { // validácia vstupov
+        return res.status(400).json({ error: "Missing fields" }); // chyba
       }
 
-      const trimmedNick = nick.trim();
+      const trimmedNick = nick.trim(); // odstráni medzery
       if (!trimmedNick) {
-        return res.status(400).json({ error: "Nick cannot be empty" });
+        return res.status(400).json({ error: "Nick cannot be empty" }); // prázdny nick
       }
       if (trimmedNick.length > 40) {
-        return res.status(400).json({ error: "Nick is too long" });
+        return res.status(400).json({ error: "Nick is too long" }); // príliš dlhý nick
       }
 
-      const result = await users.updateOne(
+      // Uloženie novej prezývky
+      const result = await users.updateOne( // uloží novú prezývku
         { email },
         {
           $set: {
@@ -142,31 +164,33 @@ async function start() {
       );
 
       if (result.matchedCount === 0) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" }); // nenájdený user
       }
 
-      return res.json({ ok: true, nick: trimmedNick });
+      return res.json({ ok: true, nick: trimmedNick }); // úspech
     } catch (err) {
-      console.error("Update nick error:", err);
-      return res.status(500).json({ error: "Server error" });
+      console.error("Update nick error:", err); // log chyby
+      return res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
   // ------------------- UPDATE PROFILE -------------------
-  app.post("/api/updateProfile", async (req, res) => {
-    console.log("REQ BODY:", req.body);
+  // Uloží profilové údaje (váha, výška, vek, cieľ, aktivita)
+  app.post("/api/updateProfile", async (req, res) => { // POST /updateProfile
+    console.log("REQ BODY:", req.body); // debug vstupy
     try {
       const { email, weight, height, age, gender, activityLevel, goal } =
         req.body;
 
       if (!email || isNaN(weight) || isNaN(height) || isNaN(age) || !gender) {
-        return res.status(400).json({ error: "Invalid or missing fields" });
+        return res.status(400).json({ error: "Invalid or missing fields" }); // chyba vstupov
       }
 
+      // Kolekcia používateľov
       const db = client.db("userdb");
       const users = db.collection("users");
 
-      const result = await users.updateOne(
+      const result = await users.updateOne( // uloží profilové údaje
         { email },
         {
           $set: {
@@ -182,28 +206,29 @@ async function start() {
       );
 
       if (result.matchedCount === 0) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" }); // user neexistuje
       }
 
-      return res.json({ ok: true, message: "Profile updated" });
+      return res.json({ ok: true, message: "Profile updated" }); // úspech
     } catch (err) {
-      console.error("Update profile error >>>", err);
-      return res.status(500).json({ error: "Server error" });
+      console.error("Update profile error >>>", err); // log chyby
+      return res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
-  app.get("/api/userProfile", async (req, res) => {
+  // Načíta uložený profil používateľa
+  app.get("/api/userProfile", async (req, res) => { // GET /userProfile
     try {
-      const { email } = req.query;
-      if (!email) return res.status(400).json({ error: "Missing email" });
+      const { email } = req.query; // email z query stringu
+      if (!email) return res.status(400).json({ error: "Missing email" }); // povinný parameter
 
       const db = client.db("userdb");
       const users = db.collection("users");
 
-      const user = await users.findOne({ email });
-      if (!user) return res.status(404).json({ error: "User not found" });
+      const user = await users.findOne({ email }); // vyhľadanie používateľa
+      if (!user) return res.status(404).json({ error: "User not found" }); // neexistuje
 
-      res.json({
+      res.json({ // návrat profilu
         age: user.age,
         weight: user.weight,
         height: user.height,
@@ -212,57 +237,59 @@ async function start() {
         activityLevel: user.activityLevel,
       });
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: "Server error" });
+      console.error(err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
    // ------------------ APP LINK DUMMY ROUTE ------------------
+  // Endpoint pre app‑linking (overenie, že link existuje)
   app.get("/reset-password", (req, res) => {
-    res.status(200).send("OK");
+    res.status(200).send("OK"); // jednoduchá odpoveď pre app link
   });
 
-  // ------------------FORGOT PASSWORD ------------------
+  // ------------------ FORGOT PASSWORD ------------------
+  // Vytvorí reset token a pošle ho e‑mailom
   app.post("/api/forgot-password", async (req, res) => {
     try {
-      const { email } = req.body;
+      const { email } = req.body; // email používateľa
       if (!email) {
-        return res.status(400).json({ error: "Email required!" });
+        return res.status(400).json({ error: "Email required!" }); // email je povinný
       }
 
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // hľadanie používateľa
       if (!user) {
-        return res.status(404).json({ error: "User not found!" });
+        return res.status(404).json({ error: "User not found!" }); // neexistuje
       }
 
-      //Generate reset token
-      const token = crypto.randomBytes(32).toString("hex");
-      const expiresAt = Date.now() + 15 * 60 * 1000;
+      // Generovanie reset tokenu (platnosť 15 min)
+      const token = crypto.randomBytes(32).toString("hex"); // náhodný reset token
+      const expiresAt = Date.now() + 15 * 60 * 1000; // expirácia tokenu
 
-      //Save token to user document
-      await users.updateOne(
+      // Uloženie tokenu do DB
+      await users.updateOne( // uloženie tokenu a expirácie
         { email },
         { $set: { resetToken: token, resetTokenExpires: expiresAt } },
       );
 
-      console.log("EMAIL_USER:", process.env.EMAIL_USER);
-      console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING");
-      //Setup nodemailer
-      const transporter = nodemailer.createTransport({
+      console.log("EMAIL_USER:", process.env.EMAIL_USER); // debug
+      console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING"); // debug
+      // Nastavenie e‑mailového klienta
+      const transporter = nodemailer.createTransport({ // SMTP klient
         host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
+        port: 465, // SSL port
+        secure: true, // šifrované pripojenie
         auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
+          user: process.env.EMAIL_USER, // email účet
+          pass: process.env.EMAIL_PASS, // heslo / app password
         },
       });
 
-      //Build reset link
+      // Reset link (otvorí appku s tokenom)
       const resetLink = `https://app.bitewise.it.com/reset-password?token=${token}`;
 
-      //Send email
-      await transporter.sendMail({
+      // Odoslanie e‑mailu
+      await transporter.sendMail({ // odoslanie reset e‑mailu
   from: `"Socka" <${process.env.EMAIL_USER}>`,
   to: email,
   subject: "Password Reset Request",
@@ -275,56 +302,60 @@ async function start() {
   `,
 });
 
-      res.json({ ok: true, message: "Reset link sent to email. " });
+      res.json({ ok: true, message: "Reset link sent to email. " }); // odpoveď pre klienta
     } catch (err) {
-      console.error("Forgot password error: ", err);
-      res.status(500).json({ error: "Server error " });
+      console.error("Forgot password error: ", err); // log chyby
+      res.status(500).json({ error: "Server error " }); // serverová chyba
     }
   });
 
-  // ------------------RESET PASSWORD ------------------
+  // ------------------ RESET PASSWORD ------------------
+  // Overí token a uloží nové heslo
   app.post("/api/reset-password", async (req, res) => {
     try {
-      const { token, newPassword } = req.body;
+      const { token, newPassword } = req.body; // token + nové heslo
 
-      console.log("🔹 Reset Password Request Body:", req.body);
+      console.log("🔹 Reset Password Request Body:", req.body); // debug
 
       if (!token || !newPassword) {
-        console.warn("⚠️ Missing token or password");
+        console.warn("⚠️ Missing token or password"); // chýbajú údaje
         return res.status(400).json({ error: "Missing token or password " });
       }
 
-      const user = await users.findOne({
+      // Nájde používateľa s platným tokenom
+      const user = await users.findOne({ // používateľ s platným tokenom
         resetToken: token,
         resetTokenExpires: { $gt: Date.now() },
       });
 
-      console.log("🔹 User found with token:", user);
+      console.log("🔹 User found with token:", user); // debug
       if (!user) {
-        console.warn("⚠️ Invalid or expired token");
+        console.warn("⚠️ Invalid or expired token"); // token neplatný
         return res.status(400).json({ error: "Invalid or expired token" });
       }
 
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      // Hash nového hesla
+      const hashedPassword = await bcrypt.hash(newPassword, 10); // hash hesla
 
-      await users.updateOne(
+      await users.updateOne( // uloží nové heslo a zmaže token
         { email: user.email },
         {
           $set: { password: hashedPassword },
           $unset: { resetToken: "", resetTokenExpires: "" },
         },
       );
-      console.log("✅ Password reset successful for user:", user.email);
-      res.json({ ok: true, message: "Password reset succesful." });
+      console.log("✅ Password reset successful for user:", user.email); // log úspechu
+      res.json({ ok: true, message: "Password reset succesful." }); // odpoveď
     } catch (err) {
-      console.error("Reset password error: ", err);
-      res.status(500).json({ error: "Server error " });
+      console.error("Reset password error: ", err); // log chyby
+      res.status(500).json({ error: "Server error " }); // serverová chyba
     }
   });
 
-  //-----------------SEND PRODUCTS TO DATABASE ---------------
-  app.post("/api/addProduct", async (req, res) => {
-    console.log("📩 Incoming /api/addProduct request:", req.body);
+  //----------------- SEND PRODUCTS TO DATABASE ---------------
+  // Pridanie produktu do špajze (skener)
+  app.post("/api/addProduct", async (req, res) => { // POST /addProduct
+    console.log("📩 Incoming /api/addProduct request:", req.body); // debug
     const {
       email,
       image,
@@ -344,24 +375,26 @@ async function start() {
       fiber,
       salt,
       sugar,
-    } = req.body;
+    } = req.body; // údaje o produkte zo skenera
 
     try {
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // používateľ v DB
       console.log("👤 Found user:", user ? user.email : "NOT FOUND");
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" }); // neexistuje
       }
 
+      // Bezpečné parsovanie dátumu spotreby
       let expirationDateValue = null;
-      if (expirationDate) {
+      if (expirationDate) { // ak prišiel dátum spotreby
         const parsed = new Date(expirationDate);
         if (!Number.isNaN(parsed.getTime())) {
           expirationDateValue = parsed;
         }
       }
 
-      const productObj = {
+      // Objekt produktu, ktorý sa uloží do DB
+      const productObj = { // objekt produktu uložený do DB
         productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: product,
         image: image ?? null,
@@ -383,7 +416,8 @@ async function start() {
         sugar: sugar ?? null,
       };
 
-      if (!user.products || user.products.length === 0) {
+      // Prvý produkt -> vytvorí nové pole
+      if (!user.products || user.products.length === 0) { // prvý produkt
         console.log(" Creating first product array");
         await users.updateOne({ email }, { $set: { products: [productObj] } });
       } else if (user.products.length >= 100) {
@@ -394,60 +428,62 @@ async function start() {
         await users.updateOne({ email }, { $push: { products: productObj } });
       }
 
-      const updatedUser = await users.findOne({ email });
+      const updatedUser = await users.findOne({ email }); // načítanie nového stavu
       console.log("✅ Updated user products:", updatedUser.products);
       res.json({ success: true, products: updatedUser.products });
     } catch (err) {
-      console.error("❌ Add product error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Add product error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
-  //REMOVE PRODUCTS FROM DB
-  app.post("/api/removeProduct", async (req, res) => {
+  // REMOVE PRODUCTS FROM DB
+  // Vymazanie produktu podľa productId
+  app.post("/api/removeProduct", async (req, res) => { // POST /removeProduct
     try {
-      const { email, productId } = req.body;
+      const { email, productId } = req.body; // identifikátory
 
       if (!email || !productId) {
-        return res.status(400).json({ error: "Missing email or product ID" });
+        return res.status(400).json({ error: "Missing email or product ID" }); // validácia
       }
 
-      const result = await users.updateOne(
+      const result = await users.updateOne( // odstráni produkt z poľa
         { email },
         { $pull: { products: { productId: productId } } },
       );
 
       if (result.modifiedCount === 0) {
-        return res.status(404).json({ error: "Product not found" });
+        return res.status(404).json({ error: "Product not found" }); // nič neodstránené
       }
 
-      const updatedUser = await users.findOne({ email });
+      const updatedUser = await users.findOne({ email }); // nové produkty
 
       res.json({
-        succes: true,
-        products: updatedUser.products,
+        succes: true, // úspech
+        products: updatedUser.products, // vrátené produkty
       });
     } catch (err) {
-      console.error("❌ Remove product error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Remove product error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
-  //ADD CUSTOM PRODUCT TO DB
-  app.post("/api/addCustomProduct", async (req, res) => {
+  // ADD CUSTOM PRODUCT TO DB
+  // Vlastný produkt bez nutričných dát
+  app.post("/api/addCustomProduct", async (req, res) => { // POST /addCustomProduct
     try {
-      const { email, name } = req.body;
+      const { email, name } = req.body; // vstupy
 
       if (!email || !name) {
-        return res.status(400).json({ error: "Missing email or name" });
+        return res.status(400).json({ error: "Missing email or name" }); // validácia
       }
 
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // nájdi používateľa
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" }); // neexistuje
       }
 
-      const customProduct = {
+      const customProduct = { // vlastný produkt
         productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: String(name).trim(),
         isCustom: true,
@@ -455,7 +491,7 @@ async function start() {
         createdAt: new Date(),
       };
 
-      if (!user.products || user.products.length === 0) {
+      if (!user.products || user.products.length === 0) { // prvý produkt
         await users.updateOne({ email }, { $set: { products: [customProduct] } });
       } else if (user.products.length >= 200) {
         return res.status(400).json({ error: "Too many products" });
@@ -463,90 +499,93 @@ async function start() {
         await users.updateOne({ email }, { $push: { products: customProduct } });
       }
 
-      const updatedUser = await users.findOne({ email });
+      const updatedUser = await users.findOne({ email }); // nové produkty
 
-      res.json({ success: true, product: customProduct, products: updatedUser.products || [] });
+      res.json({ success: true, product: customProduct, products: updatedUser.products || [] }); // odpoveď
     } catch (err) {
-      console.error("❌ Add custom product error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Add custom product error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
-  //PULL from DB
-  app.get("/api/getProducts", async (req, res) => {
-    console.log("📥 Incoming /api/getProducts request:", req.query);
+  // PULL from DB
+  // Načítanie všetkých produktov používateľa
+  app.get("/api/getProducts", async (req, res) => { // GET /getProducts
+    console.log("📥 Incoming /api/getProducts request:", req.query); // debug
 
-    const { email } = req.query;
+    const { email } = req.query; // email z query
 
     try {
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // nájdi používateľa
       console.log("👤 Found user:", user ? user.email : "NOT FOUND");
 
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" }); // neexistuje
       }
 
-      const products = user.products || [];
+      const products = user.products || []; // všetky produkty
 
-      console.log("📤 Returning products:", products);
-      res.json({ success: true, products });
+      console.log("📤 Returning products:", products); // debug
+      res.json({ success: true, products }); // odpoveď
     } catch (err) {
-      console.error("❌ Get products error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Get products error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
-  //--------------CONSUMED PUSH--------------------------
-
+  //-------------- CONSUMED PUSH --------------------------
+  // Uloží denný súhrn (kalórie + makrá) pod kľúčom dátumu
   app.post("/api/updateDailyConsumption", async (req, res) => {
-    const { email, date, totals } = req.body;
+    const { email, date, totals } = req.body; // email + dátum + súhrn
     if (!email || !date || !totals)
       return res.status(400).json({ error: "Missing fields" });
 
     try {
-      const user = await users.findOne({ email });
-      if (!user) return res.status(404).json({ error: "User not found" });
+      const user = await users.findOne({ email }); // nájdi používateľa
+      if (!user) return res.status(404).json({ error: "User not found" }); // neexistuje
 
-      // uloženie do DB
-      await users.updateOne(
+      // Uloženie do DB (každý deň pod vlastným kľúčom)
+      await users.updateOne( // uloženie súhrnov do DB
         { email },
         { $set: { [`dailyConsumption.${date}`]: totals } }, // každý deň pod vlastným kľúčom
       );
 
-      res.json({ ok: true, message: "Daily consumption updated" });
+      res.json({ ok: true, message: "Daily consumption updated" }); // odpoveď
     } catch (err) {
-      console.error("❌ Update daily consumption error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Update daily consumption error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
-  //--------------CONSUMED PULL--------------------------
+  //-------------- CONSUMED PULL --------------------------
+  // Vráti súhrn pre konkrétny deň
   app.get("/api/getDailyConsumption", async (req, res) => {
-    const { email, date } = req.query;
+    const { email, date } = req.query; // email + dátum z query
 
     if (!email || !date)
-      return res.status(400).json({ error: "Missing email or date" });
+      return res.status(400).json({ error: "Missing email or date" }); // validácia
 
     try {
-      const user = await users.findOne({ email });
-      if (!user) return res.status(404).json({ error: "User not found" });
+      const user = await users.findOne({ email }); // nájdi používateľa
+      if (!user) return res.status(404).json({ error: "User not found" }); // neexistuje
 
-      const totals = user.dailyConsumption?.[date] || null;
+      const totals = user.dailyConsumption?.[date] || null; // súhrn pre daný deň
 
-      if (!totals) {
+      if (!totals) { // žiadne dáta pre deň
         return res
           .status(404)
           .json({ error: "No daily consumption found for this date" });
       }
 
-      res.json({ totals });
+      res.json({ totals }); // odpoveď
     } catch (err) {
-      console.error("❌ Get daily consumption error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Get daily consumption error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
   //------------ FIND PRODUCT INFO BY NAME ------------------
+  // Pomocný endpoint pre vyhľadanie produktu podľa názvu
   app.get("/api/getProductByName", async (req, res) => {
     console.log("📥 Incoming /api/getProductByName request:", req.query);
 
@@ -581,27 +620,28 @@ async function start() {
   });
 
   //------------ CONSUME RECIPE (add to daily consumption) ------------------
+  // Pripočíta nutričné hodnoty receptu do dnešných súhrnov
   app.post("/api/consumeRecipe", async (req, res) => {
-    console.log("📩 Incoming /api/consumeRecipe request:", req.body);
+    console.log("📩 Incoming /api/consumeRecipe request:", req.body); // debug
     
-    const { email, nutrition, date } = req.body;
+    const { email, nutrition } = req.body; // email + výživové hodnoty receptu
 
     if (!email || !nutrition) {
-      return res.status(400).json({ error: "Missing email or nutrition data" });
+      return res.status(400).json({ error: "Missing email or nutrition data" }); // validácia
     }
 
     try {
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // nájdi používateľa
       console.log("👤 Found user:", user ? user.email : "NOT FOUND");
 
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" }); // neexistuje
       }
 
-      // Get today's date in format YYYY-MM-DD
-      const today = date || new Date().toISOString().slice(0, 10);
+      // Dnešný dátum (server time)
+      const today = new Date().toISOString().slice(0, 10); // dnešný dátum (YYYY-MM-DD)
 
-      // Get current daily consumption for today
+      // Aktuálne súhrny pre dnešný deň
       const currentTotals = user.dailyConsumption?.[today] || {
         calories: 0,
         proteins: 0,
@@ -613,8 +653,8 @@ async function start() {
         drunkWater: 0,
       };
 
-      // Add recipe nutrition to current totals
-      const updatedTotals = {
+      // Pripočítanie nutričných hodnôt
+      const updatedTotals = { // nové súhrny po pripočítaní receptu
         calories: (currentTotals.calories || 0) + (nutrition.calories || 0),
         proteins: (currentTotals.proteins || 0) + (nutrition.proteins || 0),
         carbs: (currentTotals.carbs || 0) + (nutrition.carbohydrates || 0),
@@ -625,22 +665,25 @@ async function start() {
         drunkWater: currentTotals.drunkWater || 0,
       };
 
-      // Update daily consumption in database
-      await users.updateOne(
+      // Uloženie späť do DB
+      await users.updateOne( // uloženie súhrnov
         { email },
         { $set: { [`dailyConsumption.${today}`]: updatedTotals } },
       );
 
-      console.log("✅ Recipe consumed, totals updated:", updatedTotals);
-      res.json({ ok: true, message: "Recipe consumed", totals: updatedTotals });
+      console.log("✅ Recipe consumed, totals updated:", updatedTotals); // log úspechu
+      res.json({ ok: true, message: "Recipe consumed", totals: updatedTotals }); // odpoveď
     } catch (err) {
-      console.error("❌ Consume recipe error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Consume recipe error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
+  // ------------------ GENERATE RECIPE (OpenAI) ------------------
+  // Vygeneruje recept podľa preferencií a cieľov
   app.post("/api/generateRecipe", async (req, res) => {
     try {
+      // Ochrana pred príliš veľa požiadavkami
       if (gptRequestCount >= GPT_REQUEST_LIMIT) {
         return res
           .status(429)
@@ -656,14 +699,14 @@ async function start() {
         useFitnessGoal,
         maxCookingTime,
       } = req.body;
-      if (!userPrompt) return res.status(400).json({ error: "Missing prompt" });
-      if (!email) return res.status(400).json({ error: "Missing user email" });
+      if (!userPrompt) return res.status(400).json({ error: "Missing prompt" }); // prompt je povinný
+      if (!email) return res.status(400).json({ error: "Missing user email" }); // email je povinný
 
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // načítanie používateľa
       if (!user) return res.status(404).json({ error: "User not found" });
 
       // --- Získaj produkty zo špajze ---
-      let pantryText = "";
+      let pantryText = ""; // text s ingredienciami zo špajze
       if (Array.isArray(pantryItems) && pantryItems.length > 0) {
   pantryText = `
 Použi tieto ingrediencie zo špajze:
@@ -672,8 +715,8 @@ ${pantryItems.join(", ")}
 }
 
       // --- Získaj fitness cieľ používateľa ---
-      let goalText = "";
-      let calorieGuideline = "";
+      let goalText = ""; // text s fitness cieľom
+      let calorieGuideline = ""; // kalorické pravidlo
       if (useFitnessGoal && user.goal) {
         goalText = `Zohľadni fitness cieľ používateľa: ${user.goal}.`;
 
@@ -689,7 +732,7 @@ ${pantryItems.join(", ")}
         }
       }
 
-      // --- SYSTEM PROMPT (nový kompletný) ---
+      // --- SYSTEM PROMPT (pravidlá pre AI) ---
       const systemPrompt = `
 Si profesionálny AI šéfkuchár a nutričný analytik.
 
@@ -750,21 +793,21 @@ JSON ŠTRUKTÚRA:
 }
 `;
 
-      // --- Skombinuj userPrompt s pantryText, goalText a calorieGuideline ---
+      // --- Finálny prompt pre AI ---
       const finalPrompt = `${userPrompt}
 ${pantryText ? pantryText : ""}
 ${goalText ? goalText : ""}
 ${calorieGuideline ? calorieGuideline : ""}
 ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime} minút.` : ""}`;
 
-      // --- RETRY pri nevalidnom JSON ---
-      let parsedJSON = null;
-      let attempts = 0;
-      const MAX_ATTEMPTS = 3;
+      // --- Retry ak AI vráti nevalidný JSON ---
+      let parsedJSON = null; // sem sa uloží výsledok
+      let attempts = 0; // počítadlo pokusov
+      const MAX_ATTEMPTS = 3; // max počet pokusov
 
       while (!parsedJSON && attempts < MAX_ATTEMPTS) {
         attempts++;
-        const completion = await openai.chat.completions.create({
+        const completion = await openai.chat.completions.create({ // volanie OpenAI
           model: "gpt-4o",
           messages: [
             { role: "system", content: systemPrompt },
@@ -774,10 +817,10 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
           temperature: 0.9,
         });
 
-        const rawResponse = completion.choices[0].message.content;
+        const rawResponse = completion.choices[0].message.content; // text odpovede
 
         try {
-          parsedJSON = JSON.parse(rawResponse);
+          parsedJSON = JSON.parse(rawResponse); // pokus o JSON parse
         } catch (err) {
           console.warn(`⚠️ GPT vrátil nevalidný JSON, retry ${attempts}...`);
         }
@@ -797,24 +840,25 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
   });
 
   // ------------------ SAVE RECIPE TO DB ------------------
-  app.post("/api/addRecipe", async (req, res) => {
+  // Uloženie receptu do používateľského profilu
+  app.post("/api/addRecipe", async (req, res) => { // POST /addRecipe
     console.log("📩 Incoming /api/addRecipe request:", req.body);
 
-    const { email, recipe } = req.body;
+    const { email, recipe } = req.body; // email + recept z klienta
 
     if (!email || !recipe) {
-      return res.status(400).json({ error: "Missing email or recipe" });
+      return res.status(400).json({ error: "Missing email or recipe" }); // validácia
     }
 
     try {
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // používateľ v DB
       console.log("👤 Found user:", user ? user.email : "NOT FOUND");
 
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
 
-      const recipeObj = {
+      const recipeObj = { // objekt receptu uložený do DB
         recipeId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: recipe.name,
         estimatedCookingTime: recipe.estimatedCookingTime,
@@ -825,7 +869,7 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
         createdAt: new Date(),
       };
 
-      if (!user.recipes || user.recipes.length === 0) {
+      if (!user.recipes || user.recipes.length === 0) { // prvý recept
         console.log("🍳 Creating first recipes array");
         await users.updateOne({ email }, { $set: { recipes: [recipeObj] } });
       } else if (user.recipes.length >= 100) {
@@ -836,75 +880,79 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
         await users.updateOne({ email }, { $push: { recipes: recipeObj } });
       }
 
-      const updatedUser = await users.findOne({ email });
+      const updatedUser = await users.findOne({ email }); // nové recepty
       console.log("✅ Updated user recipes:", updatedUser.recipes);
 
       res.json({
         success: true,
         recipes: updatedUser.recipes,
-      });
+      }); // odpoveď
     } catch (err) {
-      console.error("❌ Add recipe error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Add recipe error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
   // ------------------ GET USER RECIPES ------------------
-  app.get("/api/getRecipes", async (req, res) => {
-    const { email } = req.query;
+  // Načítanie uložených receptov
+  app.get("/api/getRecipes", async (req, res) => { // GET /getRecipes
+    const { email } = req.query; // email z query stringu
 
     if (!email) {
-      return res.status(400).json({ error: "Missing email" });
+      return res.status(400).json({ error: "Missing email" }); // validácia
     }
 
     try {
-      const user = await users.findOne({ email });
+      const user = await users.findOne({ email }); // nájdi používateľa
 
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" }); // neexistuje
       }
 
       res.json({
         success: true,
         recipes: user.recipes || [],
-      });
+      }); // odpoveď
     } catch (err) {
-      console.error("❌ Get recipes error:", err);
-      res.status(500).json({ error: "Server error" });
+      console.error("❌ Get recipes error:", err); // log chyby
+      res.status(500).json({ error: "Server error" }); // serverová chyba
     }
   });
 
   //DELETE RECIPE FROM SERVER//
-  app.delete("/api/deleteRecipe", async (req, res) => {
-    const { email, recipeId } = req.body;
+  // Vymazanie receptu podľa recipeId
+  app.delete("/api/deleteRecipe", async (req, res) => { // DELETE /deleteRecipe
+    const { email, recipeId } = req.body; // email + id receptu
 
     if (!email || !recipeId) {
-      return res.status(400).json({ success: false });
+      return res.status(400).json({ success: false }); // validácia
     }
 
     try {
-      const result = await users.updateOne(
+      const result = await users.updateOne( // vymaže recept z poľa
         { email },
         { $pull: { recipes: { recipeId } } },
       );
 
       if (result.modifiedCount === 0) {
-        return res.json({ success: false });
+        return res.json({ success: false }); // nič sa nezmazalo
       }
 
-      res.json({ success: true });
+      res.json({ success: true }); // odpoveď
     } catch (err) {
-      console.error("❌ Delete recipe error:", err);
-      res.status(500).json({ success: false });
+      console.error("❌ Delete recipe error:", err); // log chyby
+      res.status(500).json({ success: false }); // serverová chyba
     }
   });
 
   // ------------------- START SERVER -------------------
-  app.listen(PORT, () =>
+  // Spustenie HTTP servera
+  app.listen(PORT, () => // server začne počúvať
     console.log(`🚀 Server running on http://localhost:${PORT}`),
   );
 }
 
+// Štart servera + bezpečné ukončenie pri chybe
 start().catch((e) => {
   console.error("Failed to start server:", e);
   process.exit(1);

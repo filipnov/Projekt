@@ -1,15 +1,16 @@
 // HomeScreen.js
 // Úvodná obrazovka prihlásenia a automatického prihlásenia
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Text,
   View,
   Image,
-  TextInput,
   Pressable,
   Alert,
   Modal,
   ActivityIndicator,
+  StyleSheet,
+  TextInput,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo_name.png";
@@ -35,6 +36,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
   // Jednoduchý UI stav
   const [email, setEmail] = useState(""); // zadaný e‑mail
   const [password, setPassword] = useState(""); // zadané heslo
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // spinner pri načítaní
 
   // Stiahne a uloží všetky používateľské dáta po prihlásení
@@ -267,21 +269,35 @@ export default function HomeScreen({ setIsLoggedIn }) {
           <Text style={styles.authInfoLabel}>Tu vyplň svoje údaje:</Text>
 
         {/* Vstup pre e‑mail */}
-        <TextInput
+        <AutoShrinkTextInput
           placeholder="e-mail"
           style={styles.authTextInput}
           value={email}
           onChangeText={setEmail}
+          minFontSize={12}
+          maxFontSize={18}
         />
 
         {/* Vstup pre heslo */}
-        <TextInput
-          placeholder="heslo"
-          style={styles.authTextInput}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={localStyles.passwordRow}>
+          <AutoShrinkTextInput
+            placeholder="heslo"
+            style={[styles.authTextInput, localStyles.passwordInput]}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            minFontSize={12}
+            maxFontSize={18}
+          />
+          <Pressable
+            onPress={() => setShowPassword((prev) => !prev)}
+            style={localStyles.passwordToggle}
+          >
+            <Text style={localStyles.passwordToggleText}>
+              {showPassword ? "🙈" : "👁"}
+            </Text>
+          </Pressable>
+        </View>
 
         {/* Odkaz na zabudnuté heslo */}
         <Text
@@ -316,3 +332,98 @@ export default function HomeScreen({ setIsLoggedIn }) {
     </KeyboardWrapper>
   );
 }
+
+function AutoShrinkTextInput({
+  style,
+  value,
+  minFontSize = 12,
+  maxFontSize = 18,
+  numberOfLines = 1,
+  onLayout,
+  ...props
+}) {
+  const [fontSize, setFontSize] = useState(maxFontSize);
+  const [inputWidth, setInputWidth] = useState(null);
+
+  const flattenedStyle = useMemo(() => StyleSheet.flatten(style) || {}, [style]);
+
+  const horizontalPadding =
+    (flattenedStyle.paddingLeft ?? flattenedStyle.paddingHorizontal ?? flattenedStyle.padding ?? 0) +
+    (flattenedStyle.paddingRight ?? flattenedStyle.paddingHorizontal ?? flattenedStyle.padding ?? 0);
+
+  useEffect(() => {
+    setFontSize(maxFontSize);
+  }, [value, maxFontSize]);
+
+  const handleTextLayout = (event) => {
+    if (!inputWidth) return;
+
+    const lines = event.nativeEvent?.lines || [];
+    if (!lines.length) return;
+
+    const lineWidth = lines[0].width;
+    const availableWidth = Math.max(0, inputWidth - horizontalPadding);
+
+    if (lineWidth > availableWidth && fontSize > minFontSize) {
+      setFontSize((prev) => Math.max(minFontSize, prev - 1));
+    }
+  };
+
+  const handleLayout = (event) => {
+    setInputWidth(event.nativeEvent.layout.width);
+    if (onLayout) {
+      onLayout(event);
+    }
+  };
+
+  return (
+    <View style={localStyles.container}>
+      <TextInput
+        {...props}
+        value={value}
+        numberOfLines={numberOfLines}
+        onLayout={handleLayout}
+        style={[style, { fontSize }]}
+      />
+      <Text
+        style={[style, localStyles.hiddenText, { fontSize }]}
+        numberOfLines={numberOfLines}
+        onTextLayout={handleTextLayout}
+        pointerEvents="none"
+      >
+        {value || ""}
+      </Text>
+    </View>
+  );
+}
+
+const localStyles = StyleSheet.create({
+  container: {
+    position: "relative",
+  },
+  hiddenText: {
+    position: "absolute",
+    opacity: 0,
+    height: 0,
+    width: "100%",
+  },
+  passwordRow: {
+    position: "relative",
+    justifyContent: "center",
+  },
+  passwordInput: {
+    paddingRight: 42,
+  },
+  passwordToggle: {
+    position: "absolute",
+    right: 10,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+  passwordToggleText: {
+    fontSize: 16,
+  },
+});

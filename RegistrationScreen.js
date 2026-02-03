@@ -2,17 +2,18 @@
 // Obrazovka registrácie používateľa.
 // - Obsahuje základné validácie a volanie API.
 // - Po úspešnej registrácii uloží prezývku a vráti používateľa na Home.
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Text,
   View,
   Image,
-  TextInput,
   Pressable,
   Alert,
   ActivityIndicator,
   Switch,
-  Modal
+  Modal,
+  StyleSheet,
+  TextInput
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo_name.png";
@@ -30,6 +31,8 @@ export default function RegistrationScreen() {
   const [nick, setNick] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   // Stav spínajúci loading počas registrácie
   const [loading, setLoading] = useState(false);
   // GDPR súhlas
@@ -138,7 +141,7 @@ export default function RegistrationScreen() {
 
         {/* Vstup pre e‑mail */}
         <Text style={styles.authInfoLabel}>Zadaj email:</Text>
-        <TextInput
+        <AutoShrinkTextInput
           placeholder="e-mail"
           style={styles.authTextInput}
           value={email}
@@ -146,36 +149,64 @@ export default function RegistrationScreen() {
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
+          minFontSize={12}
+          maxFontSize={18}
         />
         {/* Vstup pre prezývku */}
         <Text style={styles.authInfoLabel}>Zadaj ako ťa máme volať:</Text>
-        <TextInput
+        <AutoShrinkTextInput
           placeholder="prezývka"
           style={styles.authTextInput}
           value={nick}
           onChangeText={setNick}
           autoCapitalize="words"
+          minFontSize={12}
+          maxFontSize={18}
         />
         {/* Vstup pre heslo */}
         <Text style={styles.authInfoLabel}>Zadaj svoje heslo:</Text>
-        <TextInput
-          placeholder="heslo"
-          style={styles.authTextInput}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoCapitalize="none"
-        />
+        <View style={localStyles.passwordRow}>
+          <AutoShrinkTextInput
+            placeholder="heslo"
+            style={[styles.authTextInput, localStyles.passwordInput]}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            minFontSize={12}
+            maxFontSize={18}
+          />
+          <Pressable
+            onPress={() => setShowPassword((prev) => !prev)}
+            style={localStyles.passwordToggle}
+          >
+            <Text style={localStyles.passwordToggleText}>
+              {showPassword ? "🙈" : "👁"}
+            </Text>
+          </Pressable>
+        </View>
         {/* Opakované zadanie hesla */}
         <Text style={styles.authInfoLabel}>Zopakuj heslo:</Text>
-        <TextInput
-          placeholder="heslo znova"
-          style={styles.authTextInput}
-          value={passwordConfirm}
-          onChangeText={setPasswordConfirm}
-          secureTextEntry
-          autoCapitalize="none"
-        />
+        <View style={localStyles.passwordRow}>
+          <AutoShrinkTextInput
+            placeholder="heslo znova"
+            style={[styles.authTextInput, localStyles.passwordInput]}
+            value={passwordConfirm}
+            onChangeText={setPasswordConfirm}
+            secureTextEntry={!showPasswordConfirm}
+            autoCapitalize="none"
+            minFontSize={12}
+            maxFontSize={18}
+          />
+          <Pressable
+            onPress={() => setShowPasswordConfirm((prev) => !prev)}
+            style={localStyles.passwordToggle}
+          >
+            <Text style={localStyles.passwordToggleText}>
+              {showPasswordConfirm ? "🙈" : "👁"}
+            </Text>
+          </Pressable>
+        </View>
         {/* GDPR súhlas */}
         <View
           style={{
@@ -225,4 +256,100 @@ export default function RegistrationScreen() {
         </View>
       </View>
     </KeyboardWrapper>
-  );}
+  );
+}
+
+function AutoShrinkTextInput({
+  style,
+  value,
+  minFontSize = 12,
+  maxFontSize = 18,
+  numberOfLines = 1,
+  onLayout,
+  ...props
+}) {
+  const [fontSize, setFontSize] = useState(maxFontSize);
+  const [inputWidth, setInputWidth] = useState(null);
+
+  const flattenedStyle = useMemo(() => StyleSheet.flatten(style) || {}, [style]);
+
+  const horizontalPadding =
+    (flattenedStyle.paddingLeft ?? flattenedStyle.paddingHorizontal ?? flattenedStyle.padding ?? 0) +
+    (flattenedStyle.paddingRight ?? flattenedStyle.paddingHorizontal ?? flattenedStyle.padding ?? 0);
+
+  useEffect(() => {
+    setFontSize(maxFontSize);
+  }, [value, maxFontSize]);
+
+  const handleTextLayout = (event) => {
+    if (!inputWidth) return;
+
+    const lines = event.nativeEvent?.lines || [];
+    if (!lines.length) return;
+
+    const lineWidth = lines[0].width;
+    const availableWidth = Math.max(0, inputWidth - horizontalPadding);
+
+    if (lineWidth > availableWidth && fontSize > minFontSize) {
+      setFontSize((prev) => Math.max(minFontSize, prev - 1));
+    }
+  };
+
+  const handleLayout = (event) => {
+    setInputWidth(event.nativeEvent.layout.width);
+    if (onLayout) {
+      onLayout(event);
+    }
+  };
+
+  return (
+    <View style={localStyles.container}>
+      <TextInput
+        {...props}
+        value={value}
+        numberOfLines={numberOfLines}
+        onLayout={handleLayout}
+        style={[style, { fontSize }]}
+      />
+      <Text
+        style={[style, localStyles.hiddenText, { fontSize }]}
+        numberOfLines={numberOfLines}
+        onTextLayout={handleTextLayout}
+        pointerEvents="none"
+      >
+        {value || ""}
+      </Text>
+    </View>
+  );
+}
+
+const localStyles = StyleSheet.create({
+  container: {
+    position: "relative",
+  },
+  hiddenText: {
+    position: "absolute",
+    opacity: 0,
+    height: 0,
+    width: "100%",
+  },
+  passwordRow: {
+    position: "relative",
+    justifyContent: "center",
+  },
+  passwordInput: {
+    paddingRight: 42,
+  },
+  passwordToggle: {
+    position: "absolute",
+    right: 10,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+  passwordToggleText: {
+    fontSize: 16,
+  },
+});
