@@ -53,22 +53,16 @@ export default function WelcomeScreen() {
       {/* Safe area zabráni, aby content vošiel do výrezu/notchu */}
       <SafeAreaView style={styles.welcomeSafeArea} edges={["top", "bottom"]}>
         {/* ScrollView zabezpečí, že na menších obrazovkách nič neodtečie mimo */}
-        <ScrollView
-          contentContainerStyle={styles.welcomeScrollContent}
-        >
+        <ScrollView contentContainerStyle={styles.welcomeScrollContent}>
           {/* Logo aplikácie */}
           <Image
             source={logo}
             resizeMode="contain"
-            style={[
-              styles.logo_slogan,
-              styles.welcomeLogoSized,
-              styles.welcomeLogo,
-            ]}
+            style={styles.welcomeLogo}
           />
 
           {/* Karta s textom a tlačidlami */}
-          <View style={[styles.cardContainer, styles.welcomeCardContainer]}>
+          <View style={styles.welcomeCardContainer}>
             {/* Nadpis */}
             <Text style={styles.welcomeTitle}>Vitaj u nás!</Text>
 
@@ -80,7 +74,7 @@ export default function WelcomeScreen() {
               sleduj svoje výživové ciele – jednoducho a prehľadne.
               {"\n\n"}
               Zníž plýtvanie potravín, sleduj kalórie, živiny aj pitný režim,
-              všetko na jednom mieste.
+              všetko na jednom mieste.{"\n"}
             </Text>
 
             {/* Tlačidlo pre prihlásenie */}

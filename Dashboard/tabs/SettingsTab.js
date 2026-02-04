@@ -80,7 +80,6 @@ export default function SettingsTab({
         "Nenašiel som email používateľa. Skús sa prosím odhlásiť a prihlásiť znova.",
       );
       return;
-
     }
 
     setNickSaving(true);
@@ -126,14 +125,14 @@ export default function SettingsTab({
 
   return (
     <>
-      <View>
+      <View style={styles.settingLayout}>
         <Pressable
           style={({ pressed }) =>
             pressed ? styles.logout_button_pressed : styles.logout_button
           }
           onPress={() => navigation.navigate("ProfileCompletition")}
         >
-          <Text>Profil</Text>
+          <Text style={styles.logout_button_text}>Profil</Text>
         </Pressable>
 
         <Pressable
@@ -142,7 +141,7 @@ export default function SettingsTab({
           }
           onPress={openNickModal}
         >
-          <Text>Zmeniť prezývku</Text>
+          <Text style={styles.logout_button_text}>Zmeniť prezývku</Text>
         </Pressable>
       </View>
 
@@ -190,7 +189,7 @@ export default function SettingsTab({
 
       <View style={{ padding: 20 }}>
         <View
-          style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}
+          style={{ flexDirection: "row", alignItems: "center", marginTop: 20, margin: "auto" }}
         >
           <Switch
             value={checked100g}
@@ -198,11 +197,11 @@ export default function SettingsTab({
             trackColor={{ false: "#767577", true: "#4CAF50" }}
             thumbColor={checked100g ? "#fff" : "#f4f3f4"}
           />
-          <Text style={{ marginLeft: 8 }}>Zobraziť hodnoty na 100 g</Text>
+          <Text style={{ marginLeft: 8 }}>Hodnoty na 100 g</Text>
         </View>
 
         <View
-          style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}
+          style={{ flexDirection: "row", alignItems: "center", marginTop: 20, margin: "auto" }}
         >
           <Switch
             value={checkedExpiration}
@@ -210,7 +209,7 @@ export default function SettingsTab({
             trackColor={{ false: "#767577", true: "#4CAF50" }}
             thumbColor={checkedExpiration ? "#fff" : "#f4f3f4"}
           />
-          <Text style={{ marginLeft: 8 }}>Zobraziť dátumy spotreby</Text>
+          <Text style={{ marginLeft: 8 }}>Dátumy spotreby</Text>
         </View>
 
         <Pressable

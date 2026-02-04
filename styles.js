@@ -11,348 +11,613 @@ const s = (size) => (SCREEN_WIDTH / AUTH_BASE_WIDTH) * size;
 const vs = (size) => (SCREEN_HEIGHT / AUTH_BASE_HEIGHT) * size;
 const ms = (size, factor = 0.5) => size + (s(size) - size) * factor;
 
+const COLORS = {
+  buttonColor: "hsla(129, 56%, 43%, 1)",
+  buttonColorPressed: "hsla(129, 56%, 43%, 0.8)",
+  redButtonColor: "hsla(0, 73%, 60%, 0.96)",
+  appBackground: "#618a335d",
+  white: "white",
+  black: "black",
+  lightSurface: "hsl(0, 0%, 95%)",
+  darkSurface: "#1E1E1E",
+  gray: "grey",
+};
+
+const baseButton = {
+  alignItems: "center",
+  justifyContent: "center",
+  elevation: 6,
+};
+
+const baseButtonSmall = {
+  ...baseButton,
+  width: Math.round(clamp(ms(160), 140, 180)),
+  height: Math.round(clamp(vs(35), 30, 40)),
+  borderRadius: Math.round(clamp(ms(10), 8, 12)),
+};
+
+const baseButtonMedium = {
+  ...baseButton,
+  width: Math.round(clamp(ms(185), 165, 205)),
+  height: Math.round(clamp(vs(45), 40, 50)),
+  borderRadius: Math.round(clamp(ms(10), 8, 12)),
+};
+
+const baseButtonLarge = {
+  ...baseButton,
+  width: Math.round(clamp(ms(200), 180, 220)),
+  height: Math.round(clamp(vs(55), 50, 60)),
+  borderRadius: Math.round(clamp(ms(10), 8, 12)),
+};
+
+const baseButtonTextSmall = {
+  color: COLORS.white,
+  fontSize: Math.round(clamp(ms(18), 16, 20)),
+  fontWeight: "600",
+};
+
+const baseButtonTextMedium = {
+  color: COLORS.white,
+  fontSize: Math.round(clamp(ms(19), 17, 21)),
+  fontWeight: "600",
+};
+
+const baseButtonTextLarge = {
+  color: COLORS.white,
+  fontSize: Math.round(clamp(ms(22), 20, 24)),
+  fontWeight: "900",
+};
+
+const baseButtonPrimary = {
+  backgroundColor: COLORS.buttonColor,
+};
+
+const baseButtonPrimaryPressed = {
+  backgroundColor: COLORS.buttonColorPressed,
+};
+
+const baseCard = {
+  backgroundColor: "hsla(0, 0%, 100%, 0.65)",
+  padding: 10,
+  borderRadius: 20,
+  borderWidth: 2,
+  borderColor: "white",
+  alignItems: "center",
+};
+
+const title = {
+  fontSize: 45,
+  fontWeight: "900",
+  color: "hsla(0, 0%, 15%, 1.00)",
+};
+
+const textMedium = {
+  fontWeight: "600",
+  fontSize: Math.round(clamp(ms(18), 16, 20)),
+  color: "hsla(0, 0%, 15%, 1.00)",
+};
+
+const label = {
+  fontWeight: "800",
+  fontSize: Math.round(clamp(ms(15), 13, 17)),
+  marginTop: Math.round(clamp(vs(5), 3, 8)),
+  alignSelf: "flex-start",
+  marginLeft: Math.round(clamp(ms(40), 28, 48)),
+  color: "hsla(0, 0%, 15%, 1.00)",
+};
+
+const textInput = {
+  backgroundColor: "white",
+  fontSize: Math.round(clamp(ms(20), 17, 22)),
+  fontWeight: "400",
+  width: Math.round(clamp(ms(260), 220, 300)),
+  height: Math.round(clamp(vs(50), 44, 56)),
+  borderRadius: Math.round(clamp(ms(15), 12, 18)),
+  borderColor: "black",
+  borderWidth: 1,
+  margin: Math.round(clamp(ms(7), 5, 9)),
+  textAlign: "center",
+  elevation: 6,
+};
+
 // Welcome screen logo size (responsive but capped)
 const WELCOME_LOGO_SIZE = Math.min(SCREEN_WIDTH * 0.4, 220);
 
 export default StyleSheet.create({
-  forgotText: {
-    fontWeight: "900",
-    fontStyle: "italic",
-    fontSize: 18,
-    marginTop: 5,
-    alignSelf: "flex-start",
-    marginLeft: 40,
-    textDecorationLine: "underline",
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
+  // _______WelcomeScreen_______
   regLogBtn: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 225,
-    height: 55,
-    borderRadius: 10,
+    ...baseButtonLarge,
+    backgroundColor: COLORS.buttonColor,
     marginTop: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
   },
   regLogBtnPressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: 225,
-    height: 55,
-    borderRadius: 10,
+    ...baseButtonLarge,
+    backgroundColor: COLORS.buttonColorPressed,
     marginTop: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
   },
   regLogBtnText: {
-    color: "white",
-    fontSize: 25,
-    fontWeight: "900",
+    ...baseButtonTextLarge,
   },
-  orText: {
-    fontSize: 18,
-    fontWeight: "900",
-    marginTop: 10,
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-  //HOMESCREEN
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    height: "auto",
-  },
-  // WELCOME SCREEN (layout helpers)
   welcomeSafeArea: {
     flex: 1,
-    width: "100%",
   },
   welcomeScrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
     paddingVertical: 20,
     paddingHorizontal: 20,
   },
   welcomeLogo: {
-    marginTop: 0,
-    marginBottom: 12,
-  },
-  welcomeLogoSized: {
     width: WELCOME_LOGO_SIZE,
     height: WELCOME_LOGO_SIZE,
+    marginBottom: 20,
+    borderRadius: 20,
+    alignSelf: "center",
   },
   welcomeCardContainer: {
-    width: "90%",
-    maxWidth: 360,
+    ...baseCard,
   },
-  topBar: {
-    backgroundColor: "hsl(0, 0%, 95%)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingBottom: 20,
-    elevation: 10,
-    borderBottomRightRadius: 25,
-    borderColor: "black",
-    borderWidth: 1,
-  },
-  topBar_text: {
-    marginTop: 50,
-    fontSize: 30,
-    fontWeight: "bold",
-  },
-  topBar_img: {
-    height: 60,
-    width: 60,
-    marginTop: 50,
-    backgroundColor: "white",
-    borderRadius: 10,
-  },
-  navBar: {
-    alignSelf: "center",
-    verticalAlign: "bottom",
-    height: "auto",
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  navBar_tabs: {
-    height: 90,
-    width: 82.5,
-    alignItems: "center",
-    flexDirection: "column",
-    justifyContent: "center",
-    backgroundColor: "hsl(0, 0%, 95%)",
-    borderTopColor: "black",
-    borderTopWidth: 1,
-    opacity: 0.7,
-  },
-  navBar_tab_Add: {
-    height: 90,
-    width: 82.5,
-    alignItems: "center",
-    flexDirection: "column",
-    justifyContent: "center",
-    backgroundColor: "hsl(0, 0%, 95%)",
-    borderTopColor: "black",
-    borderTopWidth: 1,
-    transform: [{ translateY: -10 }],
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    borderLeftColor: "black",
-    borderLeftWidth: 1,
-    borderRightColor: "black",
-    borderRightWidth: 1,
-  },
-  navBar_tabs_pressed: {
-    height: 90,
-    width: 82.5,
-    alignItems: "center",
-    flexDirection: "column",
-    justifyContent: "center",
-    backgroundColor: "hsl(0, 0%, 95%)",
-    borderTopColor: "black",
-    borderTopWidth: 1,
-    opacity: 1,
-  },
-  navBar_img: {
-    width: 30,
-    height: 30,
-  },
-  navBar_Add: {
-    width: 20,
-    height: 20,
-  },
-  navBar_Add_container: {
-    width: 45,
-    height: 45,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    borderRadius: 25,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navBar_text: {
-    fontSize: 10,
-    color: "black",
-  },
-  navBar_text_pressed: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "black",
-  },
-  navBar_text_Add: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "black",
-  },
-  contentContainer: {
+  mainLayout: {
     flex: 1,
-    justifyContent: "space-between",
+    backgroundColor: COLORS.appBackground,
+  },
+  welcomeTitle: {
+    ...title,
+    marginBottom: 20,
+  },
+  welcomeText: {
+    ...textMedium,
+    textAlign: "center",
   },
 
-  dateText: {
-    color: "white",
-    alignSelf: "flex-start",
-    marginLeft: 20,
-    // marginTop: 27,
-  },
-  caloriesBarContainer: {
-    backgroundColor: "white",
-    overflow: "hidden",
-    width: "90%",
-    height: 12,
+  // _______RegistrationScreen_______
+  buttonLayout: {
+    flexDirection: "row-reverse",
     alignItems: "center",
-    marginBottom: 15,
-    borderRadius: 10,
-    margin: 10,
+    gap: 20,
   },
-  caloriesBar: {
+  authRegLogBtn: {
+    ...baseButtonLarge,
+    backgroundColor: COLORS.buttonColor,
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+  },
+  authRegLogBtnPressed: {
+    ...baseButtonLarge,
+    backgroundColor: COLORS.buttonColorPressed,
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+  },
+  authRegLogBtnText: {
+    ...baseButtonTextLarge,
+  },
+  authMainLayout: {
+    flex: 1,
+    backgroundColor: COLORS.appBackground,
+    alignItems: "center",
+  },
+  authProfileAvatarReg: {
+    height: Math.round(clamp(ms(110), 80, 150)),
+    width: Math.round(clamp(ms(110), 80, 150)),
+    marginBottom: Math.round(clamp(vs(10), 2, 16)),
+    marginTop: Math.round(clamp(vs(55), 30, 80)),
+    borderRadius: Math.round(clamp(ms(20), 16, 24)),
+    alignSelf: "center",
+  },
+  authCardContainer: {
+    ...baseCard,
+    width: Math.round(clamp(ms(340), 280, 380)),
+  },
+
+  authProfileAvatar: {
+    height: Math.round(clamp(ms(180), 150, 220)),
+    width: Math.round(clamp(ms(180), 150, 220)),
+    marginBottom: Math.round(clamp(vs(20), 12, 26)),
+    marginTop: Math.round(clamp(vs(65), 40, 90)),
+    borderRadius: Math.round(clamp(ms(20), 16, 24)),
+    alignSelf: "center",
+  },
+
+  authTitleText: {
+    ...title,
+    marginBottom: Math.round(clamp(vs(15), 10, 18)),
+  },
+  authInfoLabel: {
+    ...label,
+  },
+  authTextInput: {
+    ...textInput,
+  },
+  authForgotText: {
+    ...baseButtonTextMedium,
+    alignSelf: "flex-start",
+    marginLeft: Math.round(clamp(ms(40), 28, 48)),
+    fontStyle: "italic",
+    textDecorationLine: "underline",
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  authOrText: {
+    ...baseButtonTextMedium,
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  authText: {
+    ...baseButtonTextMedium,
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  authBackArrow: {
     height: "100%",
-    alignSelf: "flex-start",
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: Math.round(clamp(ms(50), 44, 56)),
+    marginTop: Math.round(clamp(vs(10), 8, 14)),
   },
-  caloriesDisplay: {
-    marginTop: 5,
-    backgroundColor: "#1E1E1E",
-    width: "90%",
-    paddingTop: 15,
-    paddingBottom: 15,
-    borderRadius: 15,
-    alignSelf: "center",
-    alignItems: "center",
-  },
-  nutriDisplay_container: {
-    width: "90%",
-    alignSelf: "center",
-    alignItems: "center",
-    marginTop: 2.5,
-  },
-  nutriDisplay: {
-    backgroundColor: "#1E1E1E",
-    height: 100,
-    width: "32.5%",
-    borderRadius: 15,
-    justifyContent: "center",
-    alignItems: "center",
-    margin: 2.5,
-  },
-  nutriDisplay_text: {
-    color: "white",
-    alignSelf: "center",
-    marginTop: 10,
-  },
-  bmiContainer: {
-    backgroundColor: "#1E1E1E",
-    width: "90%",
-    height: 100,
-    borderRadius: 15,
-    alignSelf: "center",
+  authBackArrowContainer: {
+    height: Math.round(clamp(ms(60), 52, 68)),
+    width: Math.round(clamp(ms(60), 52, 68)),
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 2.5,
+    alignSelf: "center",
+  },
+  authBackArrowPressed: {
+    height: Math.round(clamp(ms(55), 48, 64)),
+    width: Math.round(clamp(ms(55), 48, 64)),
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    opacity: 0.8,
+  },
+
+  // _______SharedModals_______
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  generatingModalContainer: {
+    backgroundColor: COLORS.white,
+    padding: 30,
+    borderRadius: 20,
+    alignItems: "center",
+    width: "80%",
+  },
+  generatingModalTitle: {
+    marginTop: 15,
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  generatingModalSubtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+
+  // _______SettingsTab_______
+  settingLayout: {
+    margin: "auto",
   },
   logout_button: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 160,
-    height: 45,
-    borderRadius: 10,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-    marginLeft: 15,
+    ...baseButtonLarge,
+    ...baseButtonPrimaryPressed,
+    marginTop: 10,
+    margin: "auto",
   },
   logout_button_pressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: 160,
-    height: 45,
-    borderRadius: 10,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-    marginLeft: 15,
+    ...baseButtonLarge,
+    ...baseButtonPrimaryPressed,
+    marginTop: 10,
+    margin: "auto",
   },
   logout_button_text: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "900",
+    ...baseButtonTextLarge,
   },
-  mealContainer: {
-    marginTop: 20,
-    width: "90%",
-    alignSelf: "center",
+
+  // _______ProfileCompletition_______
+  primaryButton: {
+    ...baseButtonMedium,
+    backgroundColor: COLORS.buttonColor,
+    marginTop: 10,
+    margin: "auto",
   },
-  row: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  primaryButtonText: {
+    ...baseButtonTextMedium,
   },
-  box: {
-    width: "48%",
-    height: 170,
-    backgroundColor: "hsla(96, 56%, 35%, 1.00)",
-    borderRadius: 10,
-    overflow: "hidden",
-    marginBottom: 12,
-  },
-  mealBoxText: {
-    backgroundColor: "black",
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "white",
-    textAlign: "center",
-  },
-  eatenButton: {
-    backgroundColor: "hsla(0, 73%, 60%, 0.96)",
-    padding: 8,
-    textAlign: "center",
-  },
-  mealBoxWindow: {
-    width: "90%",
-    height: 600,
-    backgroundColor: "hsla(96, 31%, 63%, 0.96)",
-    marginBottom: 10,
-    borderRadius: 5,
-    justifyContent: "space-around",
+  backButton: {
+    height: 60,
+    width: 60,
     alignItems: "center",
-    alignSelf: "center",
-    position: "absolute",
-    marginTop: "50",
-    zIndex: 50,
+    justifyContent: "center",
+    marginBottom: 15,
   },
-  windowContainer: {
-    marginTop: "40%",
-    marginHorizontal: 20,
+  backButtonPressed: {
+    height: 58,
+    width: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    opacity: 0.8,
+    marginBottom: 15,
+  },
+  optionButton: {
+    ...baseButtonMedium,
+    flex: 1,
+    marginRight: 10,
+  },
+  optionText: {
+    ...baseButtonTextSmall,
+  },
+  selectButton: {
+    ...baseButtonMedium,
+    ...baseButtonTextMedium,
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.black,
+    borderWidth: 1,
+    marginTop: 5,
+    elevation: 6,
+    margin: "auto",
+  },
+  textInput: {
+    ...textInput,
+  },
+  formContainer: {
+    marginTop: 50,
+    width: "85%",
+    alignSelf: "center",
+  },
+  screenTitle: {
+    fontSize: 25,
+    fontWeight: "900",
+    color: COLORS.black,
+  },
+  inputLabel: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "hsla(0, 0%, 15%, 1.00)",
+  },
+  backIcon: {
+    height: "100%",
+    width: "100%",
+    backgroundColor: COLORS.white,
+    borderRadius: 50,
+  },
+  optionRow: {
+    flexDirection: "row",
+    marginTop: 5,
+  },
+  modalCard: {
+    ...baseCard,
+    width: "90%",
+    backgroundColor: COLORS.white,
+    padding: 20,
+    alignItems: "stretch",
+  },
+  modalTitle: {
+    ...baseButtonTextLarge,
+    marginBottom: 15,
+    color: COLORS.black,
+  },
+  activityOption: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 15,
+  },
+  radioCircleOuter: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: COLORS.black,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    marginTop: 3,
+  },
+  radioCircleInner: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.black,
+  },
+  modalLabel: {
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  modalDescription: {
+    color: COLORS.black,
+    fontSize: 13,
+  },
+
+  // _______CameraScreen_______
+  manualAddButton: {
+    ...baseButtonMedium,
+    margin: "auto",
+    marginBottom: 50,
+    backgroundColor: "white",
+  },
+  manualAddButtonText: {
+    ...baseButtonTextMedium,
+    color: "black",
+  },
+  primaryActionButton: {
+    ...baseButtonMedium,
+    backgroundColor: COLORS.buttonColor,
+    marginTop: 15,
+    alignSelf: "center",
+  },
+  primaryActionButtonText: {
+    ...baseButtonTextMedium,
+  },
+  backArrowContainer: {
+    height: 60,
+    width: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+    alignSelf: "center",
+  },
+  backArrowImage: {
+    height: "100%",
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: 50,
+    marginBottom: 40,
+  },
+  backArrowPressed: {
+    height: 55,
+    width: 55,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: 12,
+    opacity: 0.8,
+  },
+  manualAddContainer: {
     backgroundColor: "white",
     borderRadius: 15,
-    padding: 20,
-    elevation: 10,
+    width: 250,
+    height: 270,
+    alignSelf: "center",
+    marginBottom: 120,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  //Recipe
+  manualAddText: {
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "500",
+  },
+  manualAddInput: {
+    backgroundColor: "white",
+    fontSize: 18,
+    width: 180,
+    height: 45,
+    borderRadius: 5,
+    borderColor: "black",
+    borderWidth: 1,
+    marginTop: 10,
+    alignSelf: "center",
+    textAlign: "center",
+  },
+
+  // _______RecipesTab_______
+  recipeButton: {
+    ...baseButtonLarge,
+    ...baseButtonPrimary,
+    margin: "auto",
+    marginTop: 10,
+  },
+  unitInfoCloseButton: {
+    ...baseButtonLarge,
+    marginTop: 10,
+    backgroundColor: COLORS.buttonColor,
+    margin: "auto",
+  },
+  unitInfoCloseButtonText: {
+    ...baseButtonTextLarge,
+  },
+  createRecipeText: {
+    ...baseButtonTextLarge,
+  },
+  generateErrorButton: {
+    alignSelf: "center",
+    backgroundColor: "#22c55e",
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+  },
+  generateErrorButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  resetButton: {
+    ...baseButtonMedium,
+    backgroundColor: "#f87171",
+    alignSelf: "center",
+    marginBottom: 15,
+  },
+  resetButtonText: {
+    ...baseButtonTextMedium,
+  },
+  modalButtonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  cancelButton: {
+    ...baseButtonMedium,
+    flex: 1,
+    marginRight: 5,
+    backgroundColor: "grey",
+  },
+  cancelButtonText: {
+    ...baseButtonTextMedium,
+  },
+  generateButton: {
+    ...baseButtonMedium,
+    flex: 1,
+    backgroundColor: COLORS.buttonColor,
+  },
+  generateButtonText: {
+    ...baseButtonTextMedium,
+  },
+  ingredientsInfoButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  ingredientsInfoButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+  modalButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 15,
+  },
+  modalModalButtonClose: {
+    ...baseButtonMedium,
+    flex: 1,
+    backgroundColor: "grey",
+    marginRight: 2,
+  },
+  modalButtonText: {
+    ...baseButtonTextMedium,
+  },
+  modalButtonSave: {
+    ...baseButtonMedium,
+    flex: 1,
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    marginLeft: 2,
+  },
+  modalButtonEat: {
+    ...baseButtonMedium,
+    flex: 1,
+    backgroundColor: "#ff9500",
+  },
+  modalButtonDelete: {
+    ...baseButtonMedium,
+    flex: 1,
+    backgroundColor: "#ff4d4d",
+    marginLeft: 2,
+  },
+  preferenceCloseButton: {
+    marginTop: 16,
+    backgroundColor: "#4ade80",
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  preferenceCloseButtonText: {
+    ...baseButtonTextMedium,
+  },
   recipesContainer: {
     margin: "auto",
     width: "95%",
   },
-  AiInput: {
-    height: 50,
-    margin: 12,
-    borderWidth: 1,
-    padding: 15,
-    borderRadius: 10,
-  },
-  recipeButton: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 160,
-    height: 50,
-    borderRadius: 10,
-    margin: "auto",
-    marginTop: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-
-  //Verified
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -362,6 +627,7 @@ export default StyleSheet.create({
     marginTop: 10,
   },
   card: {
+    ...baseCard,
     backgroundColor: "hsl(35, 54%, 35%)",
     width: "48%",
     height: 120,
@@ -380,7 +646,7 @@ export default StyleSheet.create({
   },
   imageBackground: {
     flex: 1,
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
   },
   image: {
     resizeMode: "cover",
@@ -392,36 +658,14 @@ export default StyleSheet.create({
     borderRadius: 10,
     padding: 16,
   },
-  modalContent: {
-    marginBottom: 16,
-  },
-  unitInfoCloseButton: {
-    marginTop: 20,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  unitInfoCloseButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  createRecipeText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
   generateModalContainer: {
     flex: 1,
     maxHeight: "90%",
     padding: 16,
   },
-
   scrollPaddingBottom: {
     paddingBottom: 20,
   },
-
   generateTitle: {
     fontSize: 22,
     fontWeight: "bold",
@@ -445,19 +689,6 @@ export default StyleSheet.create({
     lineHeight: 22,
     marginBottom: 18,
   },
-  generateErrorButton: {
-    alignSelf: "center",
-    backgroundColor: "#22c55e",
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: 10,
-  },
-  generateErrorButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-
   selectedPreferencesBox: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -467,19 +698,16 @@ export default StyleSheet.create({
     marginBottom: 15,
     minHeight: 50,
   },
-
   preferencesHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 6,
   },
-
   preferencesTitle: {
     fontSize: 16,
     fontWeight: "bold",
     marginRight: 6,
   },
-
   infoCircleSmall: {
     width: 22,
     height: 22,
@@ -488,22 +716,18 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   infoCircleSmallText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 12,
   },
-
   emptyPreferencesText: {
     color: "#999",
   },
-
   preferencesWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
-
   selectedPreferenceChip: {
     flexDirection: "row",
     alignItems: "center",
@@ -513,11 +737,9 @@ export default StyleSheet.create({
     borderRadius: 20,
     margin: 4,
   },
-
   selectedPreferenceText: {
     marginRight: 6,
   },
-
   removePreferenceText: {
     fontWeight: "bold",
   },
@@ -526,7 +748,6 @@ export default StyleSheet.create({
     flexWrap: "wrap",
     marginBottom: 20,
   },
-
   availablePreferenceChip: {
     backgroundColor: "#d1fae5",
     paddingHorizontal: 12,
@@ -542,19 +763,16 @@ export default StyleSheet.create({
     marginBottom: 10,
     alignSelf: "flex-start",
   },
-
   additionalPreferencesButtonText: {
     fontWeight: "bold",
   },
   additionalPreferencesSection: {
     marginBottom: 12,
   },
-
   additionalPreferencesCategory: {
     fontWeight: "bold",
     marginBottom: 6,
   },
-
   additionalPreferencesWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -564,7 +782,6 @@ export default StyleSheet.create({
     alignItems: "center",
     marginBottom: 10,
   },
-
   switchLabel: {
     marginLeft: 8,
     fontSize: 14,
@@ -574,7 +791,6 @@ export default StyleSheet.create({
   pantryListContainer: {
     paddingLeft: 5,
   },
-
   pantryItemRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -584,11 +800,9 @@ export default StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 8,
   },
-
   pantrySwitch: {
     transform: [{ scale: 0.8 }],
   },
-
   pantryItemText: {
     marginLeft: 8,
     fontSize: 14,
@@ -605,38 +819,13 @@ export default StyleSheet.create({
     borderRadius: 8,
     width: "95%",
     height: 45,
-    textAlignVertical: "center"
-  },
-  pantryToggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  pantryToggleText: {
-    fontSize: 14,
-    color: "#333",
-    marginRight: 8,
+    textAlignVertical: "center",
   },
   cookingTimeContainer: {
     marginBottom: 20,
   },
-
   cookingTimeLabel: {
     marginBottom: 10,
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  resetButton: {
-    backgroundColor: "#f87171", // červené tlačidlo
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    alignSelf: "center",
-    marginBottom: 15,
-  },
-
-  resetButtonText: {
-    color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -645,50 +834,11 @@ export default StyleSheet.create({
     marginBottom: 20,
     fontSize: 20,
   },
-
-  modalButtonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  cancelButton: {
-    flex: 1,
-    marginRight: 5,
-    backgroundColor: "grey",
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-
-  cancelButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-
-  generateButton: {
-    flex: 1,
-    marginLeft: 5,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-
-  generateButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
   sectionTitle: {
     fontSize: 25,
     fontWeight: "900",
     marginVertical: 10,
     marginLeft: 15,
-  },
-  emptyListText: {
-    color: "#777",
-    textAlign: "center",
-    marginVertical: 8,
-    width: "100%",
   },
   recipeModalImage: {
     width: "100%",
@@ -696,7 +846,6 @@ export default StyleSheet.create({
     borderRadius: 50,
     marginBottom: 15,
   },
-
   recipeModalTitle: {
     fontSize: 26,
     fontWeight: "bold",
@@ -704,6 +853,7 @@ export default StyleSheet.create({
     marginBottom: 15,
   },
   recipeModalCard: {
+    ...baseCard,
     width: "92%",
     maxHeight: "90%",
     backgroundColor: "#ffffff",
@@ -754,6 +904,7 @@ export default StyleSheet.create({
     marginTop: 2,
   },
   recipeSectionCard: {
+    ...baseCard,
     backgroundColor: "#f8fafc",
     borderRadius: 16,
     padding: 12,
@@ -772,26 +923,6 @@ export default StyleSheet.create({
     color: "#111827",
     marginBottom: 4,
   },
-  staticText: {
-    fontSize: 18,
-    marginBottom: 8,
-  },
-  aiSectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginTop: 10,
-  },
-
-  aiSectionText: {
-    fontSize: 18,
-    marginBottom: 8,
-  },
-  nutritionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-
   nutritionContainer: {
     borderWidth: 1,
     borderColor: "#cfead7",
@@ -805,39 +936,21 @@ export default StyleSheet.create({
     alignItems: "center",
     marginBottom: 6,
   },
-
   ingredientsTitle: {
     fontSize: 20,
-    fontWeight: "bold",
-  },
-
-  ingredientsInfoButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
-
-  ingredientsInfoButtonText: {
-    color: "#fff",
     fontWeight: "bold",
   },
   unitInfoModal: {
     maxHeight: 300,
   },
-
   unitInfoTitle: {
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 10,
   },
-
   unitInfoText: {
     fontSize: 16,
-    marginBottom: 4, // pre medzeru medzi riadkami
+    marginBottom: 4,
   },
   stepsTitle: {
     fontSize: 20,
@@ -845,123 +958,39 @@ export default StyleSheet.create({
     marginTop: 10,
     marginBottom: 6,
   },
-
   stepContainer: {
     padding: 8,
     borderRadius: 15,
     marginBottom: 10,
     borderBottomColor: "hsla(129, 56%, 43%, 1)",
-    borderBottomWidth: 1
+    borderBottomWidth: 1,
   },
-
   stepText: {
     fontSize: 18,
-  },
-  modalButtonsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 15,
-  },
-  modalButtonEatContainer: {
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 10,
-  },
-
-  modalButtonClose: {
-    flex: 1,
-    marginRight: 5,
-    backgroundColor: "grey",
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-
-  modalModalButtonClose: {
-    flex: 1,
-    marginRight: 5,
-    backgroundColor: "grey",
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-
-  modalButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  modalButtonSave: {
-    flex: 1,
-    marginLeft: 5,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-
-  modalButtonEat: {
-    flex: 1,
-    marginLeft: 5,
-    backgroundColor: "#ff9500",
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-
-  modalButtonDelete: {
-    flex: 1,
-    marginLeft: 5,
-    backgroundColor: "#ff4d4d",
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  generatingModalContainer: {
-    backgroundColor: "#fff",
-    padding: 30,
-    borderRadius: 20,
-    alignItems: "center",
-    width: "80%",
-  },
-
-  generatingModalTitle: {
-    marginTop: 15,
-    fontSize: 18,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-
-  generatingModalSubtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
   },
   preferenceInfoModalContainer: {
     maxHeight: "85%",
   },
-
   preferenceInfoTitle: {
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 10,
   },
-
   preferenceCategoryTitle: {
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 6,
   },
-
   preferenceItem: {
     backgroundColor: "#f0fdf4",
     padding: 10,
     borderRadius: 10,
     marginBottom: 6,
   },
-
   preferenceItemLabel: {
     fontSize: 16,
     fontWeight: "600",
   },
-
   preferenceItemDescription: {
     fontSize: 14,
     color: "#555",
@@ -969,378 +998,6 @@ export default StyleSheet.create({
   },
   preferenceSection: {
     marginTop: 14,
-  },
-
-  preferenceCloseButton: {
-    marginTop: 16,
-    backgroundColor: "#4ade80",
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-
-  preferenceCloseButtonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-
-  mainLayout: {
-    flex: 1,
-    backgroundColor: "#618a335d",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-  },
-  profileAvatar: {
-    height: 180,
-    width: 180,
-    marginBottom: 20,
-    marginTop: 65,
-    backgroundColor: "white",
-    borderRadius: 20,
-    alignSelf: "center",
-  },
-  logo_slogan: {
-    height: 250,
-    width: 250,
-    marginBottom: 20,
-    marginTop: 90,
-    backgroundColor: "white",
-    borderRadius: 20,
-    alignSelf: "center",
-  },
-  backArrow: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: 50,
-    marginTop: 10,
-  },
-  titleText: {
-    fontSize: 35,
-    fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)",
-    marginBottom: 15,
-  },
-  welcomeTitle: {
-    fontSize: 45,
-    fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)",
-    marginBottom: 20,
-  },
-  cardContainer: {
-    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
-    padding: 10,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: "white",
-    width: 340,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  textInput: {
-    backgroundColor: "white",
-    fontSize: 20,
-    fontWeight: "200",
-    width: 260,
-    height: 50,
-    borderRadius: 15,
-    borderColor: "black",
-    borderWidth: 1,
-    margin: 7,
-    textAlign: "center",
-    elevation: 6,
-  },
-  infoLabel: {
-    fontWeight: "800",
-    fontSize: 15,
-    marginTop: 5,
-    alignSelf: "flex-start",
-    marginLeft: 40,
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-  welcomeText: {
-    fontWeight: "600",
-    fontSize: 18,
-    marginTop: 5,
-    paddingLeft: 35,
-    paddingRight: 35,
-    textAlign: "center",
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-  actionButton: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 225,
-    height: 55,
-    borderRadius: 10,
-    marginTop: 15,
-    marginBottom: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  actionButtonPressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: 225,
-    height: 55,
-    borderRadius: 10,
-    marginBottom: 20,
-    marginTop: 15,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  actionButtonText: {
-    color: "white",
-    fontSize: 28,
-    fontWeight: "900",
-  },
-  formContainer: {
-    marginTop: 50,
-    width: "85%",
-    alignSelf: "center",
-  },
-
-  screenTitle: {
-    fontSize: 25,
-    fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-
-  inputLabel: {
-    marginTop: 10,
-    fontSize: 16,
-    fontWeight: "700",
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-  primaryButton: {
-    backgroundColor: "#4CAF50",
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-
-  primaryButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    textAlign: "center",
-    fontSize: 16,
-  },
-
-  backButton: {
-    height: 60,
-    width: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 15,
-  },
-
-  backButtonPressed: {
-    height: 58,
-    width: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    opacity: 0.8,
-    marginBottom: 15,
-  },
-
-  backIcon: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: 50,
-  },
-
-  optionRow: {
-    flexDirection: "row",
-    width: "90%",
-    marginTop: 5,
-    alignSelf: "center",
-  },
-
-  optionButton: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    marginRight: 10,
-    alignItems: "center",
-  },
-
-  optionText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 15,
-  },
-
-  selectButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "white",
-    fontSize: 14,
-    fontWeight: "400",
-    width: 160,
-    height: 40,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 5,
-    elevation: 6,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  modalCard: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 20,
-  },
-
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 15,
-  },
-
-  activityOption: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 15,
-  },
-
-  radioCircleOuter: {
-    height: 20,
-    width: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: "#333",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-    marginTop: 3,
-  },
-
-  radioCircleInner: {
-    height: 10,
-    width: 10,
-    borderRadius: 5,
-    backgroundColor: "#333",
-  },
-
-  modalLabel: {
-    fontWeight: "500",
-    marginBottom: 2,
-  },
-
-  modalDescription: {
-    color: "#555",
-    fontSize: 13,
-  },
-  backArrowContainer: {
-    height: 60,
-    width: 60,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-    alignSelf: "center",
-  },
-  backArrowImage: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: 50,
-    marginBottom: 40,
-  },
-  backArrowPressed: {
-    height: 55,
-    width: 55,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginTop: 12,
-    opacity: 0.8,
-  },
-  manualAddButton: {
-    backgroundColor: "white",
-    padding: 5,
-    width: 160,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 10,
-    alignSelf: "center",
-    marginBottom: 50,
-  },
-  manualAddButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  manualAddContainer: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    width: 250,
-    height: 270,
-    alignSelf: "center",
-    marginBottom: 120,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  manualAddText: {
-    textAlign: "center",
-    fontSize: 18,
-    fontWeight: "500",
-  },
-  manualAddInput: {
-    backgroundColor: "white",
-    fontSize: 18,
-    width: 180,
-    height: 45,
-    borderRadius: 5,
-    borderColor: "black",
-    borderWidth: 1,
-    marginTop: 10,
-    alignSelf: "center",
-    textAlign: "center",
-  },
-  primaryActionButton: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: 180,
-    height: 35,
-    borderRadius: 5,
-    marginTop: 15,
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryActionButtonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "900",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  window: {
-    width: "90%",
-    maxHeight: "80%",
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    elevation: 10,
-  },
-  windowTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 12,
-    textAlign: "center",
   },
   nutritionRow: {
     flexDirection: "row",
@@ -1357,29 +1014,49 @@ export default StyleSheet.create({
     fontWeight: "700",
     color: "#111",
   },
-  closeButton: {
-    marginTop: 18,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  closeButtonText: {
-    color: "white",
-    fontWeight: "700",
-  },
-  title: {
-    fontSize: 18,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  errorText: {
-    color: "red",
-    textAlign: "center",
-    marginBottom: 10,
-  },
 
-  // --- PANTRY (PantryTab) responsive variants ---
+  // _______PantryTab_______
+  pantryCustomButton: {
+    backgroundColor: COLORS.buttonColor,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  pantryCustomButtonText: {
+    color: "white",
+    fontWeight: "800",
+  },
+  pantryCustomRemove: {
+    backgroundColor: COLORS.redButtonColor,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  pantryCustomRemoveText: {
+    color: "white",
+    fontWeight: "800",
+  },
+  pantryEatenButton: {
+    backgroundColor: COLORS.redButtonColor,
+    textAlign: "center",
+  },
+  pantryCloseButton: {
+    ...baseButtonMedium,
+    backgroundColor: COLORS.buttonColor,
+    marginTop: Math.round(clamp(ms(8), 4, 12)),
+    alignSelf: "center",
+    width: "85%",
+  },
+  pantryEatenBtn: {
+    ...baseButtonMedium,
+    backgroundColor: COLORS.redButtonColor,
+    marginTop: Math.round(clamp(ms(18), 14, 22)),
+    alignSelf: "center",
+    width: "85%",
+  },
+  pantryCloseButtonText: {
+    ...baseButtonTextMedium,
+  },
   pantryRoot: {},
   pantryMealContainer: {
     marginTop: Math.round(clamp(vs(20), 16, 28)),
@@ -1415,16 +1092,6 @@ export default StyleSheet.create({
     paddingHorizontal: 12,
     fontSize: 16,
   },
-  pantryCustomButton: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-  },
-  pantryCustomButtonText: {
-    color: "white",
-    fontWeight: "800",
-  },
   pantryCustomList: {
     backgroundColor: "#f7f7f7",
     borderRadius: 12,
@@ -1443,16 +1110,6 @@ export default StyleSheet.create({
     fontWeight: "600",
     color: "#111827",
   },
-  pantryCustomRemove: {
-    backgroundColor: "#ff4d4d",
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  pantryCustomRemoveText: {
-    color: "white",
-    fontWeight: "800",
-  },
   pantryBox: {
     width: "48%",
     height: Math.round(clamp(vs(130), 100, 170)),
@@ -1463,7 +1120,6 @@ export default StyleSheet.create({
   },
   pantryImageBackground: {
     flex: 1,
-    // justifyContent: "space-between",
   },
   pantryMealBoxText: {
     backgroundColor: "rgba(180, 215, 171, 0.9)",
@@ -1477,15 +1133,7 @@ export default StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  pantryEatenButton: {
-    backgroundColor: "hsla(0, 73%, 60%, 0.96)",
-    // padding: Math.round(clamp(ms(8), 6, 10)),
-    textAlign: "center",
-  },
   pantryCountBadge: {
-    // position: "absolute",
-    // top: Math.round(clamp(ms(4), 2, 6)),
-    // right: Math.round(clamp(ms(115), 111, 119)),
     width: "30%",
     margin: Math.round(clamp(ms(4), 2, 6)),
     alignItems: "center",
@@ -1507,7 +1155,6 @@ export default StyleSheet.create({
   },
   pantryWindow: {
     width: "90%",
-    // maxHeight: "100%",
     backgroundColor: "white",
     borderRadius: Math.round(clamp(ms(12), 10, 14)),
     padding: Math.round(clamp(ms(16), 12, 18)),
@@ -1519,9 +1166,7 @@ export default StyleSheet.create({
     marginBottom: Math.round(clamp(ms(12), 10, 14)),
     textAlign: "center",
   },
-
   pantryModalImage: {
-    //width: "100%",
     height: Math.round(clamp(vs(200), 160, 240)),
     borderRadius: Math.round(clamp(ms(8), 6, 10)),
     marginBottom: Math.round(clamp(ms(6), 4, 8)),
@@ -1534,20 +1179,11 @@ export default StyleSheet.create({
   pantryNutritionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    // paddingVertical: Math.round(clamp(ms(7), 6, 10)),
-    // borderBottomWidth: 0.5,
-    // borderBottomColor: "#ddd",
   },
   pantryNutritionLabel: {
     fontWeight: "600",
     color: "#333",
   },
-  pantryNutritionValue: {
-    fontWeight: "700",
-    color: "#111",
-  },
-
-  // Pantry modal reusable blocks (moved from inline styles)
   pantryInfoRowBase: {
     justifyContent: "space-between",
     alignSelf: "center",
@@ -1567,6 +1203,7 @@ export default StyleSheet.create({
     margin: Math.round(clamp(ms(3), 2, 4)),
   },
   pantryNutritionCard: {
+    ...baseCard,
     backgroundColor: "hsla(136, 100%, 50%, 0.2)",
     width: "80%",
     borderRadius: Math.round(clamp(ms(8), 7, 10)),
@@ -1587,291 +1224,13 @@ export default StyleSheet.create({
   pantryNutritionValueRowGap1: {
     gap: 1,
   },
-  pantryCloseButton: {
-    marginTop: Math.round(clamp(ms(8), 4, 12)),
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    paddingVertical: Math.round(clamp(ms(10), 8, 12)),
-    borderRadius: Math.round(clamp(ms(8), 6, 10)),
-    alignItems: "center",
-    alignSelf: "center",
-    width: "85%",
-  },
-  pantryEatenBtn: {
-    marginTop: Math.round(clamp(ms(18), 14, 22)),
-    backgroundColor: "hsla(0, 73%, 60%, 0.96)",
-    paddingVertical: Math.round(clamp(ms(10), 8, 12)),
-    borderRadius: Math.round(clamp(ms(8), 6, 10)),
-    alignItems: "center",
-    alignSelf: "center",
-    width: "85%",
-  },
-  pantryCloseButtonText: {
-    color: "white",
-    fontWeight: "700",
-  },
   pantryTitle: {
     fontSize: Math.round(clamp(ms(18), 16, 22)),
     textAlign: "center",
     marginBottom: Math.round(clamp(ms(12), 10, 14)),
   },
-  pantryErrorText: {
-    color: "red",
-    textAlign: "center",
-    marginBottom: Math.round(clamp(ms(10), 8, 12)),
-  },
-  pantrySimpleErrorText: {
-    color: "red",
-  },
 
-  // --- AUTH (HomeScreen + RegistrationScreen) responsive variants ---
-  // These are screen-specific clones so we don't affect other screens that
-  // still use the original shared style keys.
-  authMainLayout: {
-    flex: 1,
-    backgroundColor: "#618a335d",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-  },
-  authProfileAvatar: {
-    height: Math.round(clamp(ms(180), 150, 220)),
-    width: Math.round(clamp(ms(180), 150, 220)),
-    marginBottom: Math.round(clamp(vs(20), 12, 26)),
-    marginTop: Math.round(clamp(vs(65), 40, 90)),
-    backgroundColor: "white",
-    borderRadius: Math.round(clamp(ms(20), 16, 24)),
-    alignSelf: "center",
-  },
-  authProfileAvatarReg: {
-    height: Math.round(clamp(ms(110), 80, 150)),
-    width: Math.round(clamp(ms(110), 80, 150)),
-    marginBottom: Math.round(clamp(vs(10), 2, 16)),
-    marginTop: Math.round(clamp(vs(55), 30, 80)),
-    backgroundColor: "white",
-    borderRadius: Math.round(clamp(ms(20), 16, 24)),
-    alignSelf: "center",
-  },
-  authCardContainer: {
-    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
-    padding: Math.round(clamp(ms(10), 8, 14)),
-    borderRadius: Math.round(clamp(ms(20), 16, 24)),
-    borderWidth: 2,
-    borderColor: "white",
-    width: Math.round(clamp(ms(340), 280, 380)),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  authTitleText: {
-    fontSize: Math.round(clamp(ms(30), 25, 35)),
-    fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)",
-    marginBottom: Math.round(clamp(vs(15), 10, 18)),
-  },
-  authInfoLabel: {
-    fontWeight: "800",
-    fontSize: Math.round(clamp(ms(15), 13, 17)),
-    marginTop: Math.round(clamp(vs(5), 3, 8)),
-    alignSelf: "flex-start",
-    marginLeft: Math.round(clamp(ms(40), 28, 48)),
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-  authTextInput: {
-    backgroundColor: "white",
-    fontSize: Math.round(clamp(ms(20), 17, 22)),
-    fontWeight: "200",
-    width: Math.round(clamp(ms(260), 220, 300)),
-    height: Math.round(clamp(vs(50), 44, 56)),
-    borderRadius: Math.round(clamp(ms(15), 12, 18)),
-    borderColor: "black",
-    borderWidth: 1,
-    margin: Math.round(clamp(ms(7), 5, 9)),
-    textAlign: "center",
-    elevation: 6,
-  },
-  authForgotText: {
-    fontWeight: "900",
-    fontStyle: "italic",
-    fontSize: Math.round(clamp(ms(18), 16, 20)),
-    marginTop: Math.round(clamp(vs(5), 3, 8)),
-    alignSelf: "flex-start",
-    marginLeft: Math.round(clamp(ms(40), 28, 48)),
-    textDecorationLine: "underline",
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-  authRegLogBtn: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: Math.round(clamp(ms(225), 190, 250)),
-    height: Math.round(clamp(vs(55), 48, 60)),
-    borderRadius: Math.round(clamp(ms(10), 8, 12)),
-    marginTop: Math.round(clamp(vs(10), 8, 14)),
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  authRegLogBtnPressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: Math.round(clamp(ms(225), 190, 250)),
-    height: Math.round(clamp(vs(55), 48, 60)),
-    borderRadius: Math.round(clamp(ms(10), 8, 12)),
-    marginTop: Math.round(clamp(vs(10), 8, 14)),
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  authRegLogBtnText: {
-    color: "white",
-    fontSize: Math.round(clamp(ms(25), 22, 28)),
-    fontWeight: "900",
-  },
-  authOrText: {
-    fontSize: Math.round(clamp(ms(18), 16, 20)),
-    fontWeight: "900",
-    marginTop: Math.round(clamp(vs(10), 8, 14)),
-    color: "hsla(0, 0%, 15%, 1.00)",
-  },
-  authText: {
-    fontSize: Math.round(clamp(ms(18), 16, 20)),
-    marginTop: Math.round(clamp(vs(10), 8, 14)),
-    color: "hsla(0, 0%, 15%, 1.00)",
-    textAlign: "center",
-  },
-  authBackArrow: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: Math.round(clamp(ms(50), 44, 56)),
-    marginTop: Math.round(clamp(vs(10), 8, 14)),
-  },
-  buttonLayout: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: 20,
-  },
-  authBackArrowContainer: {
-    height: Math.round(clamp(ms(60), 52, 68)),
-    width: Math.round(clamp(ms(60), 52, 68)),
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-  },
-  authBackArrowPressed: {
-    height: Math.round(clamp(ms(55), 48, 64)),
-    width: Math.round(clamp(ms(55), 48, 64)),
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    opacity: 0.8,
-  },
-
-  // --- RESET PASSWORD responsive variants (ResetPass.js) ---
-  resetMainLayout: {
-    flex: 1,
-    backgroundColor: "#618a335d",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: Math.round(clamp(ms(16), 12, 22)),
-  },
-  resetSafeArea: {
-    flex: 1,
-    width: "100%",
-    height: 900,
-  },
-  resetScrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-  },
-  resetCardContainer: {
-    backgroundColor: "hsla(0, 0%, 100%, 0.65)",
-    padding: Math.round(clamp(ms(12), 10, 16)),
-    borderRadius: Math.round(clamp(ms(20), 16, 24)),
-    borderWidth: 2,
-    borderColor: "white",
-    width: Math.round(clamp(ms(340), 280, 380)),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  resetTitleText: {
-    fontSize: Math.round(clamp(ms(28), 24, 32)),
-    fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1.00)",
-    marginBottom: Math.round(clamp(vs(10), 8, 14)),
-    textAlign: "center",
-  },
-  resetInfoText: {
-    fontSize: Math.round(clamp(ms(15), 13, 17)),
-    fontWeight: "700",
-    color: "hsla(0, 0%, 15%, 1.00)",
-    marginBottom: Math.round(clamp(vs(6), 4, 10)),
-    textAlign: "center",
-  },
-  resetTextInput: {
-    backgroundColor: "white",
-    fontSize: Math.round(clamp(ms(18), 16, 20)),
-    fontWeight: "300",
-    width: Math.round(clamp(ms(260), 220, 300)),
-    height: Math.round(clamp(vs(50), 44, 56)),
-    borderRadius: Math.round(clamp(ms(15), 12, 18)),
-    borderColor: "black",
-    borderWidth: 1,
-    margin: Math.round(clamp(ms(7), 5, 9)),
-    textAlign: "center",
-    elevation: 6,
-  },
-  resetActionButton: {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
-    width: Math.round(clamp(ms(225), 190, 250)),
-    height: Math.round(clamp(vs(55), 48, 60)),
-    borderRadius: Math.round(clamp(ms(10), 8, 12)),
-    marginTop: Math.round(clamp(vs(12), 10, 16)),
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  resetActionButtonPressed: {
-    backgroundColor: "hsla(129, 56%, 43%, 0.8)",
-    width: Math.round(clamp(ms(225), 190, 250)),
-    height: Math.round(clamp(vs(55), 48, 60)),
-    borderRadius: Math.round(clamp(ms(10), 8, 12)),
-    marginTop: Math.round(clamp(vs(12), 10, 16)),
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 6,
-  },
-  resetActionButtonText: {
-    color: "white",
-    fontSize: Math.round(clamp(ms(22), 20, 26)),
-    fontWeight: "900",
-  },
-  resetBackArrowContainer: {
-    height: Math.round(clamp(ms(60), 52, 68)),
-    width: Math.round(clamp(ms(60), 52, 68)),
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginTop: Math.round(clamp(vs(16), 12, 20)),
-  },
-  resetBackArrowPressed: {
-    height: Math.round(clamp(ms(55), 48, 64)),
-    width: Math.round(clamp(ms(55), 48, 64)),
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    opacity: 0.8,
-    marginTop: Math.round(clamp(vs(16), 12, 20)),
-  },
-  resetBackArrow: {
-    height: "100%",
-    width: "100%",
-    backgroundColor: "white",
-    borderRadius: Math.round(clamp(ms(50), 44, 56)),
-  },
-
-  // --- DASHBOARD responsive variants (Dashboard/Dashboard.js) ---
+  // _______Dashboard_______
   dashTopBar: {
     backgroundColor: "hsl(0, 0%, 95%)",
     flexDirection: "row",
@@ -1895,140 +1254,35 @@ export default StyleSheet.create({
     backgroundColor: "white",
     borderRadius: Math.round(clamp(ms(10), 8, 14)),
   },
-
   dashContentContainer: {
     flex: 1,
-    //backgroundColor: "#618a335d",
     justifyContent: "space-between",
   },
-
-  dashCaloriesDisplay: {
-    marginTop: Math.round(clamp(vs(5), 4, 10)),
-    backgroundColor: "#1E1E1E",
-    width: "90%",
-    paddingTop: Math.round(clamp(vs(15), 12, 20)),
-    paddingBottom: Math.round(clamp(vs(15), 12, 20)),
-    borderRadius: Math.round(clamp(ms(15), 12, 18)),
-    alignSelf: "center",
-    alignItems: "center",
-  },
-  dashDateText: {
-    color: "white",
-    alignSelf: "flex-start",
-    marginLeft: Math.round(clamp(ms(20), 14, 28)),
-  },
-  dashCaloriesBarContainer: {
-    backgroundColor: "white",
-    overflow: "hidden",
-    width: "90%",
-    height: Math.round(clamp(vs(12), 10, 14)),
-    alignItems: "center",
-    marginBottom: Math.round(clamp(vs(15), 12, 18)),
-    borderRadius: Math.round(clamp(ms(10), 8, 12)),
-    margin: Math.round(clamp(ms(10), 8, 12)),
-  },
-  dashCaloriesBar: {
-    height: "100%",
-    alignSelf: "flex-start",
-  },
-
-  dashNutriDisplay_container: {
-    width: "90%",
-    alignSelf: "center",
-    alignItems: "center",
-    marginTop: Math.round(clamp(vs(2.5), 2, 6)),
-  },
-  dashNutriDisplay: {
-    backgroundColor: "#1E1E1E",
-    height: Math.round(clamp(vs(100), 84, 120)),
-    width: "32.5%",
-    borderRadius: Math.round(clamp(ms(15), 12, 18)),
-    justifyContent: "center",
-    alignItems: "center",
-    margin: Math.round(clamp(ms(2.5), 2, 6)),
-  },
-  dashNutriDisplay_text: {
-    color: "white",
-    alignSelf: "center",
-    marginTop: Math.round(clamp(vs(10), 8, 12)),
-  },
-
-  dashBmiContainer: {
-    backgroundColor: "#1E1E1E",
-    width: "90%",
-    height: Math.round(clamp(vs(100), 86, 120)),
-    borderRadius: Math.round(clamp(ms(15), 12, 18)),
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: Math.round(clamp(vs(2.5), 2, 6)),
-  },
-
   dashNavBar: {
     width: "100%",
-    // paddingTop: 100,
-    //alignSelf: "center",
     justifyContent: "center",
-    // verticalAlign: "bottom",
-    //height: "auto",
     flexDirection: "row",
-    //backgroundColor: "hsl(0, 0%, 0%)",
-    //justifyContent: "space-between",
-    //backgroundColor: "hsl(0, 2%, 75%)",
   },
   dashNavBar_tabs: {
-    // height: Math.round(clamp(vs(40), 58, 84)),
     width: Math.round(clamp(s(73), 60.5, 86.5)),
-    // width: Math.round(clamp(s(82.5), 70, 96)),
     alignItems: "center",
-    // flexDirection: "column",
     justifyContent: "center",
     backgroundColor: "hsl(0, 0%, 95%)",
-    //backgroundColor: "hsl(0, 2%, 75%)",
-
-    // backgroundColor: "black",
-
     borderTopColor: "black",
     borderTopWidth: 1,
     paddingTop: Math.round(clamp(vs(10), 8, 14)),
-    //marginTop: 50,
-    // opacity: 0.7,
-    // borderBottomColor: "black",
-    //borderBottomWidth: 1,
-    //elevation: 10,
   },
   dashNavBar_tabs_pressed: {
-    // height: Math.round(clamp(vs(90), 78, 104)),
     width: Math.round(clamp(s(73), 60.5, 86.5)),
     alignItems: "center",
     flexDirection: "column",
     justifyContent: "center",
     backgroundColor: "hsl(0, 0%, 95%)",
-    // backgroundColor: "hsl(0, 2%, 90%)",
-
     borderTopColor: "black",
     borderTopWidth: 1,
     paddingTop: Math.round(clamp(vs(10), 8, 14)),
     opacity: 1,
   },
-  /*dashNavBar_tab_Add: {
-    height: Math.round(clamp(vs(70), 68, 94)),
-    width: Math.round(clamp(s(82.5), 70, 96)),
-    alignItems: "center",
-    flexDirection: "column",
-    justifyContent: "center",
-    backgroundColor: "hsl(0, 0%, 95%)",
-    //backgroundColor: "black",
-    //borderTopColor: "black",
-    borderTopWidth: 1,
-    //transform: [{ translateY: -Math.round(clamp(vs(10), 8, 14)) }],
-    //borderTopLeftRadius: Math.round(clamp(ms(10), 8, 12)),
-    //borderTopRightRadius: Math.round(clamp(ms(10), 8, 12)),
-    /*borderLeftColor: "black",
-    borderLeftWidth: 1,
-    borderRightColor: "black",
-    borderRightWidth: 1,
-  },*/
   dashNavBar_img: {
     width: Math.round(clamp(ms(35), 28, 44)),
     height: Math.round(clamp(ms(35), 28, 44)),
@@ -2059,5 +1313,66 @@ export default StyleSheet.create({
     color: "black",
     fontWeight: "900",
     color: "black",
+  },
+
+  // _______OverviewTab_______
+  dashCaloriesDisplay: {
+    marginTop: Math.round(clamp(vs(5), 4, 10)),
+    backgroundColor: "#1E1E1E",
+    width: "90%",
+    paddingTop: Math.round(clamp(vs(15), 12, 20)),
+    paddingBottom: Math.round(clamp(vs(15), 12, 20)),
+    borderRadius: Math.round(clamp(ms(15), 12, 18)),
+    alignSelf: "center",
+    alignItems: "center",
+  },
+  dashDateText: {
+    color: "white",
+    alignSelf: "flex-start",
+    marginLeft: Math.round(clamp(ms(20), 14, 28)),
+  },
+  dashCaloriesBarContainer: {
+    backgroundColor: "white",
+    overflow: "hidden",
+    width: "90%",
+    height: Math.round(clamp(vs(12), 10, 14)),
+    alignItems: "center",
+    marginBottom: Math.round(clamp(vs(15), 12, 18)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    margin: Math.round(clamp(ms(10), 8, 12)),
+  },
+  dashCaloriesBar: {
+    height: "100%",
+    alignSelf: "flex-start",
+  },
+  dashNutriDisplay_container: {
+    width: "90%",
+    alignSelf: "center",
+    alignItems: "center",
+    marginTop: Math.round(clamp(vs(2.5), 2, 6)),
+  },
+  dashNutriDisplay: {
+    backgroundColor: "#1E1E1E",
+    height: Math.round(clamp(vs(100), 84, 120)),
+    width: "32.5%",
+    borderRadius: Math.round(clamp(ms(15), 12, 18)),
+    justifyContent: "center",
+    alignItems: "center",
+    margin: Math.round(clamp(ms(2.5), 2, 6)),
+  },
+  dashNutriDisplay_text: {
+    color: "white",
+    alignSelf: "center",
+    marginTop: Math.round(clamp(vs(10), 8, 12)),
+  },
+  dashBmiContainer: {
+    backgroundColor: "#1E1E1E",
+    width: "90%",
+    height: Math.round(clamp(vs(100), 86, 120)),
+    borderRadius: Math.round(clamp(ms(15), 12, 18)),
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: Math.round(clamp(vs(2.5), 2, 6)),
   },
 });

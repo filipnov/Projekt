@@ -13,7 +13,7 @@ import {
   Switch,
   Modal,
   StyleSheet,
-  TextInput
+  TextInput,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo_name.png";
@@ -48,7 +48,10 @@ export default function RegistrationScreen() {
   async function handleRegistration() {
     // Jednoduchá kontrola povinného súhlasu
     if (!gdprConsent) {
-      Alert.alert("Súhlas je povinný", "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov.");
+      Alert.alert(
+        "Súhlas je povinný",
+        "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov.",
+      );
       return;
     }
 
@@ -138,8 +141,6 @@ export default function RegistrationScreen() {
 
       <View style={styles.authCardContainer}>
         <Text style={styles.authTitleText}>Registrácia!</Text>
-
-        {/* Vstup pre e‑mail */}
         <Text style={styles.authInfoLabel}>Zadaj email:</Text>
         <AutoShrinkTextInput
           placeholder="e-mail"
@@ -271,11 +272,20 @@ function AutoShrinkTextInput({
   const [fontSize, setFontSize] = useState(maxFontSize);
   const [inputWidth, setInputWidth] = useState(null);
 
-  const flattenedStyle = useMemo(() => StyleSheet.flatten(style) || {}, [style]);
+  const flattenedStyle = useMemo(
+    () => StyleSheet.flatten(style) || {},
+    [style],
+  );
 
   const horizontalPadding =
-    (flattenedStyle.paddingLeft ?? flattenedStyle.paddingHorizontal ?? flattenedStyle.padding ?? 0) +
-    (flattenedStyle.paddingRight ?? flattenedStyle.paddingHorizontal ?? flattenedStyle.padding ?? 0);
+    (flattenedStyle.paddingLeft ??
+      flattenedStyle.paddingHorizontal ??
+      flattenedStyle.padding ??
+      0) +
+    (flattenedStyle.paddingRight ??
+      flattenedStyle.paddingHorizontal ??
+      flattenedStyle.padding ??
+      0);
 
   useEffect(() => {
     setFontSize(maxFontSize);
