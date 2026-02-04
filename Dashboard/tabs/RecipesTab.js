@@ -1049,7 +1049,6 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
             <ImageBackground
               source={getRecipeImage(item.category)}
               style={styles.imageBackground}
-              imageStyle={styles.image}
             >
               <Text style={styles.cardText}>{item.name}</Text>
             </ImageBackground>

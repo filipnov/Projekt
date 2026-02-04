@@ -158,10 +158,10 @@ export default function SettingsTab({
               editable={!nickSaving}
             />
 
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+            <View style={styles.nickModalButtonRow}>
               <Pressable
                 style={({ pressed }) =>
-                  pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
+                  pressed ? styles.nickModalButtonPressed : styles.nickModalButton
                 }
                 onPress={() => !nickSaving && saveNick()}
                 disabled={nickSaving}
@@ -169,18 +169,18 @@ export default function SettingsTab({
                 {nickSaving ? (
                   <ActivityIndicator size="small" />
                 ) : (
-                  <Text style={styles.authRegLogBtnText}>Uložiť</Text>
+                  <Text style={styles.nickModalButtonText}>Uložiť</Text>
                 )}
               </Pressable>
 
               <Pressable
                 style={({ pressed }) =>
-                  pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
+                  pressed ? styles.nickModalButtonPressed : styles.nickModalButton
                 }
                 onPress={() => !nickSaving && setNickModalVisible(false)}
                 disabled={nickSaving}
               >
-                <Text style={styles.authRegLogBtnText}>Zrušiť</Text>
+                <Text style={styles.nickModalButtonText}>Zrušiť</Text>
               </Pressable>
             </View>
           </View>

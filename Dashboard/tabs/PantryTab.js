@@ -393,17 +393,6 @@ export default function PantryTab({
               <Text style={styles.pantryCountBadgeText}>{count} ks</Text>
             </View>
           )}
-          {/* <View>
-            <Pressable
-              onPress={() => {
-                const instance = group.instances[0];
-                if (!instance) return;
-                handleRemoveMealBox(instance.id, instance.productId, instance);
-              }}
-            >
-              <Text style={styles.pantryEatenButton}>Zjedené ✅</Text>
-            </Pressable>
-          </View>*/}
         </ImageBackground>
       </Pressable>
     );

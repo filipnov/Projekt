@@ -81,7 +81,7 @@ const baseCard = {
   padding: 10,
   borderRadius: 20,
   borderWidth: 2,
-  borderColor: "white",
+  borderColor: COLORS.white,
   alignItems: "center",
 };
 
@@ -107,13 +107,13 @@ const label = {
 };
 
 const textInput = {
-  backgroundColor: "white",
+  backgroundColor: COLORS.white,
   fontSize: Math.round(clamp(ms(20), 17, 22)),
   fontWeight: "400",
   width: Math.round(clamp(ms(260), 220, 300)),
   height: Math.round(clamp(vs(50), 44, 56)),
   borderRadius: Math.round(clamp(ms(15), 12, 18)),
-  borderColor: "black",
+  borderColor: COLORS.black,
   borderWidth: 1,
   margin: Math.round(clamp(ms(7), 5, 9)),
   textAlign: "center",
@@ -184,6 +184,7 @@ export default StyleSheet.create({
     ...baseButtonLarge,
     backgroundColor: COLORS.buttonColorPressed,
     marginTop: Math.round(clamp(vs(10), 8, 14)),
+    elevation: 0
   },
   authRegLogBtnText: {
     ...baseButtonTextLarge,
@@ -246,7 +247,7 @@ export default StyleSheet.create({
   authBackArrow: {
     height: "100%",
     width: "100%",
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     borderRadius: Math.round(clamp(ms(50), 44, 56)),
     marginTop: Math.round(clamp(vs(10), 8, 14)),
   },
@@ -300,17 +301,39 @@ export default StyleSheet.create({
   logout_button: {
     ...baseButtonLarge,
     ...baseButtonPrimaryPressed,
+    backgroundColor: COLORS.buttonColor,
     marginTop: 10,
     margin: "auto",
   },
   logout_button_pressed: {
     ...baseButtonLarge,
     ...baseButtonPrimaryPressed,
+    elevation: 0,
     marginTop: 10,
     margin: "auto",
   },
   logout_button_text: {
     ...baseButtonTextLarge,
+  },
+  nickModalButton: {
+    ...baseButtonSmall,
+    width: "48%",
+    backgroundColor: COLORS.buttonColor,
+  },
+  nickModalButtonPressed: {
+    ...baseButtonSmall,
+    width: "48%",
+    backgroundColor: COLORS.buttonColorPressed,
+    elevation: 0
+  },
+  nickModalButtonText: {
+    ...baseButtonTextMedium,
+  },
+  nickModalButtonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+    width: "100%",
   },
 
   // _______ProfileCompletition_______
@@ -353,7 +376,6 @@ export default StyleSheet.create({
     borderColor: COLORS.black,
     borderWidth: 1,
     marginTop: 5,
-    elevation: 6,
     margin: "auto",
   },
   textInput: {
@@ -433,11 +455,11 @@ export default StyleSheet.create({
     ...baseButtonMedium,
     margin: "auto",
     marginBottom: 50,
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
   },
   manualAddButtonText: {
     ...baseButtonTextMedium,
-    color: "black",
+    color: COLORS.black,
   },
   primaryActionButton: {
     ...baseButtonMedium,
@@ -459,7 +481,7 @@ export default StyleSheet.create({
   backArrowImage: {
     height: "100%",
     width: "100%",
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     borderRadius: 50,
     marginBottom: 40,
   },
@@ -473,7 +495,7 @@ export default StyleSheet.create({
     opacity: 0.8,
   },
   manualAddContainer: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     borderRadius: 15,
     width: 250,
     height: 270,
@@ -488,12 +510,12 @@ export default StyleSheet.create({
     fontWeight: "500",
   },
   manualAddInput: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     fontSize: 18,
     width: 180,
     height: 45,
     borderRadius: 5,
-    borderColor: "black",
+    borderColor: COLORS.black,
     borderWidth: 1,
     marginTop: 10,
     alignSelf: "center",
@@ -527,7 +549,7 @@ export default StyleSheet.create({
     borderRadius: 10,
   },
   generateErrorButtonText: {
-    color: "#fff",
+    color: COLORS.white,
     fontWeight: "bold",
     fontSize: 16,
   },
@@ -548,7 +570,7 @@ export default StyleSheet.create({
     ...baseButtonMedium,
     flex: 1,
     marginRight: 5,
-    backgroundColor: "grey",
+    backgroundColor: COLORS.gray,
   },
   cancelButtonText: {
     ...baseButtonTextMedium,
@@ -565,13 +587,13 @@ export default StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    backgroundColor: COLORS.buttonColor,
     alignItems: "center",
     justifyContent: "center",
     marginLeft: 8,
   },
   ingredientsInfoButtonText: {
-    color: "#fff",
+    color: COLORS.white,
     fontWeight: "bold",
   },
   modalButtonsContainer: {
@@ -582,7 +604,7 @@ export default StyleSheet.create({
   modalModalButtonClose: {
     ...baseButtonMedium,
     flex: 1,
-    backgroundColor: "grey",
+    backgroundColor: COLORS.gray,
     marginRight: 2,
   },
   modalButtonText: {
@@ -591,7 +613,7 @@ export default StyleSheet.create({
   modalButtonSave: {
     ...baseButtonMedium,
     flex: 1,
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    backgroundColor: COLORS.buttonColor,
     marginLeft: 2,
   },
   modalButtonEat: {
@@ -607,12 +629,13 @@ export default StyleSheet.create({
   },
   preferenceCloseButton: {
     marginTop: 16,
-    backgroundColor: "#4ade80",
+    backgroundColor: COLORS.buttonColor,
     paddingVertical: 10,
     borderRadius: 10,
   },
   preferenceCloseButtonText: {
     ...baseButtonTextMedium,
+    textAlign: "center"
   },
   recipesContainer: {
     margin: "auto",
@@ -628,6 +651,7 @@ export default StyleSheet.create({
   },
   card: {
     ...baseCard,
+    padding: 0,
     backgroundColor: "hsl(35, 54%, 35%)",
     width: "48%",
     height: 120,
@@ -635,9 +659,10 @@ export default StyleSheet.create({
     borderRadius: 10,
     overflow: "hidden",
     elevation: 3,
+    alignItems: ""
   },
   cardText: {
-    color: "white",
+    color: COLORS.white,
     fontSize: 16,
     fontWeight: "bold",
     textAlign: "center",
@@ -647,14 +672,12 @@ export default StyleSheet.create({
   imageBackground: {
     flex: 1,
     justifyContent: "flex-end",
-  },
-  image: {
-    resizeMode: "cover",
+    resizeMode: "cover"
   },
   modalContainer: {
     width: "95%",
     maxHeight: "95%",
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     borderRadius: 10,
     padding: 16,
   },
@@ -712,12 +735,12 @@ export default StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#4ade80",
+    backgroundColor: COLORS.buttonColor,
     alignItems: "center",
     justifyContent: "center",
   },
   infoCircleSmallText: {
-    color: "#fff",
+    color: COLORS.white,
     fontWeight: "bold",
     fontSize: 12,
   },
@@ -856,11 +879,11 @@ export default StyleSheet.create({
     ...baseCard,
     width: "92%",
     maxHeight: "90%",
-    backgroundColor: "#ffffff",
+    backgroundColor: COLORS.white,
     borderRadius: 22,
     padding: 18,
     elevation: 8,
-    shadowColor: "#000",
+    shadowColor: COLORS.black,
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -911,6 +934,7 @@ export default StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#e5e7eb",
+    alignItems: "flex-start"
   },
   recipeSectionTitle: {
     fontSize: 18,
@@ -924,6 +948,7 @@ export default StyleSheet.create({
     marginBottom: 4,
   },
   nutritionContainer: {
+    width: "95%",
     borderWidth: 1,
     borderColor: "#cfead7",
     borderRadius: 12,
@@ -962,7 +987,7 @@ export default StyleSheet.create({
     padding: 8,
     borderRadius: 15,
     marginBottom: 10,
-    borderBottomColor: "hsla(129, 56%, 43%, 1)",
+    borderBottomColor: COLORS.buttonColor,
     borderBottomWidth: 1,
   },
   stepText: {
@@ -1023,7 +1048,7 @@ export default StyleSheet.create({
     borderRadius: 10,
   },
   pantryCustomButtonText: {
-    color: "white",
+    color: COLORS.white,
     fontWeight: "800",
   },
   pantryCustomRemove: {
@@ -1033,7 +1058,7 @@ export default StyleSheet.create({
     borderRadius: 8,
   },
   pantryCustomRemoveText: {
-    color: "white",
+    color: COLORS.white,
     fontWeight: "800",
   },
   pantryEatenButton: {
@@ -1084,7 +1109,7 @@ export default StyleSheet.create({
   },
   pantryCustomInput: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     borderWidth: 1,
     borderColor: "#d1d5db",
     borderRadius: 10,
@@ -1126,7 +1151,7 @@ export default StyleSheet.create({
     fontSize: Math.round(clamp(ms(16), 12, 20)),
     fontWeight: "bold",
     padding: Math.round(clamp(ms(4), 2, 6)),
-    color: "black",
+    color: COLORS.black,
     textAlign: "center",
     position: "absolute",
     left: 0,
@@ -1144,7 +1169,7 @@ export default StyleSheet.create({
     paddingVertical: Math.round(clamp(ms(2), 2, 3)),
   },
   pantryCountBadgeText: {
-    color: "white",
+    color: COLORS.white,
     fontWeight: "bold",
   },
   pantryOverlay: {
@@ -1155,7 +1180,7 @@ export default StyleSheet.create({
   },
   pantryWindow: {
     width: "90%",
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     borderRadius: Math.round(clamp(ms(12), 10, 14)),
     padding: Math.round(clamp(ms(16), 12, 18)),
     elevation: 10,
@@ -1232,14 +1257,14 @@ export default StyleSheet.create({
 
   // _______Dashboard_______
   dashTopBar: {
-    backgroundColor: "hsl(0, 0%, 95%)",
+    backgroundColor: COLORS.lightSurface,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-evenly",
     paddingBottom: Math.round(clamp(vs(20), 14, 26)),
     elevation: 10,
     borderBottomRightRadius: Math.round(clamp(ms(25), 18, 32)),
-    borderColor: "black",
+    borderColor: COLORS.black,
     borderWidth: 1,
   },
   dashTopBar_text: {
@@ -1251,7 +1276,7 @@ export default StyleSheet.create({
     height: Math.round(clamp(ms(60), 48, 72)),
     width: Math.round(clamp(ms(60), 48, 72)),
     marginTop: Math.round(clamp(vs(50), 36, 64)),
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     borderRadius: Math.round(clamp(ms(10), 8, 14)),
   },
   dashContentContainer: {
@@ -1267,8 +1292,8 @@ export default StyleSheet.create({
     width: Math.round(clamp(s(73), 60.5, 86.5)),
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "hsl(0, 0%, 95%)",
-    borderTopColor: "black",
+    backgroundColor: COLORS.lightSurface,
+    borderTopColor: COLORS.black,
     borderTopWidth: 1,
     paddingTop: Math.round(clamp(vs(10), 8, 14)),
   },
@@ -1277,8 +1302,8 @@ export default StyleSheet.create({
     alignItems: "center",
     flexDirection: "column",
     justifyContent: "center",
-    backgroundColor: "hsl(0, 0%, 95%)",
-    borderTopColor: "black",
+    backgroundColor: COLORS.lightSurface,
+    borderTopColor: COLORS.black,
     borderTopWidth: 1,
     paddingTop: Math.round(clamp(vs(10), 8, 14)),
     opacity: 1,
@@ -1294,31 +1319,30 @@ export default StyleSheet.create({
   dashNavBar_Add_container: {
     width: Math.round(clamp(ms(35), 28, 44)),
     height: Math.round(clamp(ms(35), 28, 44)),
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    backgroundColor: COLORS.buttonColor,
     borderRadius: Math.round(clamp(ms(25), 20, 30)),
     alignItems: "center",
     justifyContent: "center",
   },
   dashNavBar_text: {
     fontSize: Math.round(clamp(ms(10), 9, 12)),
-    color: "black",
+    color: COLORS.black,
   },
   dashNavBar_text_pressed: {
     fontSize: Math.round(clamp(ms(10), 9, 12)),
     fontWeight: "700",
-    color: "black",
+    color: COLORS.black,
   },
   dashNavBar_text_Add: {
     fontSize: Math.round(clamp(ms(10), 9, 12)),
-    color: "black",
+    color: COLORS.black,
     fontWeight: "900",
-    color: "black",
   },
 
   // _______OverviewTab_______
   dashCaloriesDisplay: {
     marginTop: Math.round(clamp(vs(5), 4, 10)),
-    backgroundColor: "#1E1E1E",
+    backgroundColor: COLORS.darkSurface,
     width: "90%",
     paddingTop: Math.round(clamp(vs(15), 12, 20)),
     paddingBottom: Math.round(clamp(vs(15), 12, 20)),
@@ -1327,12 +1351,12 @@ export default StyleSheet.create({
     alignItems: "center",
   },
   dashDateText: {
-    color: "white",
+    color: COLORS.white,
     alignSelf: "flex-start",
     marginLeft: Math.round(clamp(ms(20), 14, 28)),
   },
   dashCaloriesBarContainer: {
-    backgroundColor: "white",
+    backgroundColor: COLORS.white,
     overflow: "hidden",
     width: "90%",
     height: Math.round(clamp(vs(12), 10, 14)),
@@ -1352,7 +1376,7 @@ export default StyleSheet.create({
     marginTop: Math.round(clamp(vs(2.5), 2, 6)),
   },
   dashNutriDisplay: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: COLORS.darkSurface,
     height: Math.round(clamp(vs(100), 84, 120)),
     width: "32.5%",
     borderRadius: Math.round(clamp(ms(15), 12, 18)),
@@ -1361,12 +1385,12 @@ export default StyleSheet.create({
     margin: Math.round(clamp(ms(2.5), 2, 6)),
   },
   dashNutriDisplay_text: {
-    color: "white",
+    color: COLORS.white,
     alignSelf: "center",
     marginTop: Math.round(clamp(vs(10), 8, 12)),
   },
   dashBmiContainer: {
-    backgroundColor: "#1E1E1E",
+    backgroundColor: COLORS.darkSurface,
     width: "90%",
     height: Math.round(clamp(vs(100), 86, 120)),
     borderRadius: Math.round(clamp(ms(15), 12, 18)),

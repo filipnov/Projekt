@@ -17,8 +17,8 @@ import logo from "./assets/logo_name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
-// Funkcie pre notifikácie (aktuálne vypnuté v logike)
-import { requestPermissions, scheduleDailyNotifications } from "./notifications";
+// Funkcie pre notifikácie
+import { ensureNotificationsSetup } from "./notifications";
 
 export default function HomeScreen({ setIsLoggedIn }) {
   // URL backendu
@@ -137,7 +137,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
             console.log("✅ Autologin success, pulling user data");
             await pullAllUserData(storedEmail);
             // plánovanie notifikácií (po prípadnom súhlase)
-            //await setupNotifications();
+            await ensureNotificationsSetup();
             console.log("✅ Data pulled, navigating to Dashboard");
             setIsLoggedIn(true);
 
@@ -196,7 +196,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
       // stiahneme zvyšok používateľských dát (produkty, recepty, história)
       await pullAllUserData(data.user.email);
-      // await setupNotifications();
+      await ensureNotificationsSetup();
 
       // Určíme počiatočné eatenTotals (čo zobrazí Dashboard):
       // - najprv lokálna cache 'eatenTotals' (rýchle)
