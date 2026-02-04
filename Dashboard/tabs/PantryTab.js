@@ -1,4 +1,6 @@
+// Hlavné React importy: hooky pre stav, memoizáciu a side‑efekty.
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+// Základné RN komponenty pre UI, vstup, obrázky, modal a loader.
 import {
   View,
   Text,
@@ -10,67 +12,123 @@ import {
   ImageBackground,
   ActivityIndicator,
 } from "react-native";
+// Perzistentné úložisko na zariadení (cache produktov, preferencie).
 import AsyncStorage from "@react-native-async-storage/async-storage";
+// Hook, ktorý spúšťa logiku pri fokusnutí tabu.
 import { useFocusEffect } from "@react-navigation/native";
+// Centrálne štýly aplikácie.
 import styles from "../../styles";
 
+// Základná URL servera – všetky API volania idú cez tento hostname.
 const SERVER_URL = "https://app.bitewise.it.com";
 
 export default function PantryTab({
+  // Funkcia z rodičovskej obrazovky, ktorá odstráni produkt zo servera.
   removeMealBox,
 }) {
+  // Email prihláseného používateľa (načítaný z AsyncStorage).
   const [email, setEmail] = useState(null);
+  // Lokálny zoznam všetkých produktov v špajzi.
   const [mealBoxes, setMealBoxes] = useState([]);
+  // Kľúč aktívnej skupiny (otvorená modálka).
   const [activeKey, setActiveKey] = useState(null);
+  // Text z inputu pre vlastnú položku.
   const [customName, setCustomName] = useState("");
+  // Flag, či práve prebieha ukladanie vlastnej položky.
   const [savingCustom, setSavingCustom] = useState(false);
 
-  const getExpirationMs = useCallback((p) => {
-    const time = new Date(p?.expirationDate).getTime();
-    return Number.isNaN(time) ? Infinity : time;
+  // Vráti čas exspirácie v ms; ak je dátum neplatný, hodnota je Infinity.
+  const getExpirationMs = useCallback((product) => {
+    // Vytiahneme uloženú hodnotu exspirácie (môže byť string/Date/undefined).
+    const expirationValue = product?.expirationDate;
+    // Prevedieme na Date objekt (invalid dátum dá NaN time).
+    const expirationDate = new Date(expirationValue);
+    // Date.getTime() vracia čas v ms od epochy (NaN pri invalid).
+    const expirationMs = expirationDate.getTime();
+
+    // Ak je NaN alebo 0, vrátime Infinity, aby sa zoradilo až na koniec.
+    return expirationMs || Infinity;
   }, []);
 
-  const scannedMealBoxes = useMemo(
-    () => mealBoxes.filter((p) => !p?.isCustom),
-    [mealBoxes],
-  );
+  // Rozdelí všetky položky na naskenované a vlastné.
+  const scannedMealBoxes = useMemo(() => {
+    // Všetky produkty v jednej premennej kvôli čitateľnosti.
+    const allProducts = mealBoxes;
+    // Naskenované položky: tie, ktoré nemajú isCustom = true.
+    const scannedOnly = allProducts.filter((product) => {
+      return !product?.isCustom;
+    });
 
-  const customMealBoxes = useMemo(
-    () => mealBoxes.filter((p) => p?.isCustom),
-    [mealBoxes],
-  );
+    // Memoizovaná návratová hodnota.
+    return scannedOnly;
+  }, [mealBoxes]);
+
+  const customMealBoxes = useMemo(() => {
+    // Všetky produkty v jednej premennej kvôli čitateľnosti.
+    const allProducts = mealBoxes;
+    // Vlastné položky: tie, ktoré majú isCustom = true.
+    const customOnly = allProducts.filter((product) => {
+      return product?.isCustom;
+    });
+
+    // Memoizovaná návratová hodnota.
+    return customOnly;
+  }, [mealBoxes]);
 
   const groupedMealBoxes = useMemo(() => {
-    const map = new Map();
+    // Map pre efektívne zhlukovanie podľa názvu alebo ID.
+    const groupedMap = new Map();
 
     for (const box of scannedMealBoxes) {
-      const name = typeof box?.name === "string" ? box.name.trim() : "";
-      const normalized = name ? name.toLowerCase() : null;
+      // Normalizácia názvu (trim + lowercase) pre stabilné zoskupenie.
+      const nameValue = typeof box?.name === "string" ? box.name.trim() : "";
+      const normalizedName = nameValue ? nameValue.toLowerCase() : null;
+      // Fallback ID ak názov nie je dostupný.
       const idKey = box?.productId ?? box?.id ?? "unknown";
-      const key = normalized ? `name:${normalized}` : String(idKey);
+      // Kľúč skupiny – preferujeme názov (ľudskejšie), inak ID.
+      const groupKey = normalizedName ? `name:${normalizedName}` : String(idKey);
 
-      const existing = map.get(key);
-      if (existing) {
-        existing.count += 1;
-        existing.instances.push(box);
+      // Skúsime nájsť už existujúcu skupinu.
+      const existingGroup = groupedMap.get(groupKey);
+
+      if (existingGroup) {
+        // Ak existuje, zvýšime počet a pridáme ďalšiu inštanciu.
+        existingGroup.count += 1;
+        existingGroup.instances.push(box);
       } else {
-        map.set(key, { key, box, count: 1, instances: [box] });
+        // Inak vytvoríme novú skupinu so základnými dátami.
+        groupedMap.set(groupKey, {
+          key: groupKey,
+          box,
+          count: 1,
+          instances: [box],
+        });
       }
     }
 
-    const values = Array.from(map.values());
+    // Prevod Map -> Array pre jednoduché renderovanie.
+    const groupedValues = Array.from(groupedMap.values());
 
-    for (const group of values) {
-      group.instances.sort((a, b) => getExpirationMs(a) - getExpirationMs(b));
-      group.box = group.instances[0] ?? group.box;
+    for (const group of groupedValues) {
+      // Zoradenie inštancií podľa najbližšej exspirácie.
+      const sortedInstances = group.instances.sort((a, b) => {
+        return getExpirationMs(a) - getExpirationMs(b);
+      });
+
+      // Najskôr sa zobrazí produkt s najbližšou exspiráciou.
+      group.instances = sortedInstances;
+      group.box = sortedInstances[0] ?? group.box;
     }
 
-    return values;
+    // Memoizovaná návratová hodnota.
+    return groupedValues;
   }, [scannedMealBoxes, getExpirationMs]);
 
   // --- Load email from AsyncStorage ---
   useEffect(() => {
+    // Po prvom renderi sa načíta email z cache.
     AsyncStorage.getItem("userEmail").then((storedEmail) => {
+      // Ak existuje, uložíme ho do state.
       if (storedEmail) setEmail(storedEmail);
     });
   }, []);
@@ -78,24 +136,38 @@ export default function PantryTab({
   // --- Fetch mealBoxes with AsyncStorage first, server fallback ---
   const loadMealBoxes = useCallback(
     async ({ forceServer = false } = {}) => {
+      // Bez emailu nevieme filtrovať produkty pre používateľa.
       if (!email) return;
 
+      // Lokálna premenna na výsledné produkty.
       let boxes = [];
 
       if (!forceServer) {
+        // Skúsime najprv cache (rýchlejšie a offline-friendly).
         const storedMealBox = await AsyncStorage.getItem("products");
-        if (storedMealBox) boxes = JSON.parse(storedMealBox);
+
+        if (storedMealBox) {
+          // JSON -> JS array.
+          boxes = JSON.parse(storedMealBox);
+        }
       }
 
       if (!boxes.length) {
-        const res = await fetch(
-          `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(email)}`,
-        );
-        const data = await res.json();
+        // Keď cache neobsahuje dáta, ideme na server.
+        const requestUrl = `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(
+          email,
+        )}`;
+        const response = await fetch(requestUrl);
+        const data = await response.json();
+
+        // Bezpečný fallback na prázdny array.
         boxes = data.products || [];
+
+        // Uložíme výsledok do cache pre budúce rýchle načítanie.
         await AsyncStorage.setItem("products", JSON.stringify(boxes));
       }
 
+      // Aktualizujeme stav v UI.
       setMealBoxes(boxes);
     },
     [email],
@@ -104,178 +176,349 @@ export default function PantryTab({
   // --- Auto fetch on tab focus ---
   useFocusEffect(
     useCallback(() => {
-      if (email) loadMealBoxes();
+      // Kontrola, či máme email (používateľ je prihlásený).
+      const hasEmail = Boolean(email);
+
+      if (hasEmail) {
+        // Pri focusnutí tabu načítame produkty.
+        loadMealBoxes();
+      }
     }, [email, loadMealBoxes]),
   );
 
-  const openWindow = (group) => setActiveKey(group?.key ?? null);
-  const closeWindow = () => setActiveKey(null);
+  const openWindow = (group) => {
+    // Otvorenie modálu – nastavíme kľúč aktívnej skupiny.
+    const nextKey = group?.key ?? null;
+    setActiveKey(nextKey);
+  };
+
+  const closeWindow = () => {
+    // Zatvorenie modálu.
+    setActiveKey(null);
+  };
 
   const formatExpiration = (value) => {
+    // Ak nemáme hodnotu, nič nezobrazíme.
     if (!value) return null;
-    const d = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(d.getTime())) return null;
-    return d.toLocaleDateString("sk-SK");
+
+    // Normalizujeme na Date.
+    const dateValue = value instanceof Date ? value : new Date(value);
+    // Overíme validitu dátumu.
+    const isInvalid = Number.isNaN(dateValue.getTime());
+
+    // Pri invalidnom dátume nič nezobrazíme.
+    if (isInvalid) return null;
+
+    // Lokalizované SK formátovanie.
+    return dateValue.toLocaleDateString("sk-SK");
   };
 
   const activeGroup = useMemo(() => {
+    // Bez aktívneho kľúča nie je čo hľadať.
     if (!activeKey) return null;
-    return groupedMealBoxes.find((g) => g.key === activeKey) ?? null;
+
+    // Nájdeme skupinu zodpovedajúcu aktívnemu kľúču.
+    const foundGroup = groupedMealBoxes.find((group) => {
+      return group.key === activeKey;
+    });
+
+    // Ak sa nenašla, vrátime null.
+    return foundGroup ?? null;
   }, [groupedMealBoxes, activeKey]);
 
   // If the active product disappears (eaten/removed), close the modal.
   useEffect(() => {
-    if (activeKey && !activeGroup) setActiveKey(null);
+    // Ak je modál otvorený, ale skupina zmizla (produkt odstránený), zatvoríme.
+    const hasActiveKey = Boolean(activeKey);
+    const activeGroupMissing = !activeGroup;
+
+    if (hasActiveKey && activeGroupMissing) {
+      setActiveKey(null);
+    }
   }, [activeKey, activeGroup]);
 
   const handleRemoveMealBox = async (id, productId, box) => {
+    // Ak zlyhá serverové odstránenie, spravíme následný refresh.
     let shouldForceRefresh = false;
 
     try {
+      // Voláme parent funkciu – obvykle server request.
       await removeMealBox(id, productId, box);
     } catch {
+      // Pri chybe vynútime neskôr fetch zo servera.
       shouldForceRefresh = true;
     }
 
+    // Najprv upravíme lokálnu cache.
     const stored = await AsyncStorage.getItem("products");
     const allProducts = stored ? JSON.parse(stored) : [];
-    const boxExp = box?.expirationDate;
+    const boxExpiration = box?.expirationDate;
 
-    const idx = allProducts.findIndex((p) => {
-      if (id && p?.id === id) return true;
-      if (productId && p?.productId === productId) {
-        return boxExp
-          ? String(p?.expirationDate ?? "") === String(boxExp)
-          : true;
+    const removeIndex = allProducts.findIndex((item) => {
+      // Najpresnejší match je podľa interného `id`.
+      const matchesId = id && item?.id === id;
+
+      // Ak je k dispozícii `productId`, použijeme ho.
+      const matchesProductId = productId && item?.productId === productId;
+      // Pri `productId` ešte porovnáme exspiráciu (aby sme odstránili správnu inštanciu).
+      const matchesExpirationForProductId = boxExpiration
+        ? String(item?.expirationDate ?? "") === String(boxExpiration)
+        : true;
+
+      // Ak `productId` nie je k dispozícii, skúšame podľa názvu.
+      const matchesNameOnly = !productId && box?.name && item?.name === box.name;
+      // Aj tu kontrolujeme exspiráciu pre presnosť.
+      const matchesExpirationForName = boxExpiration
+        ? String(item?.expirationDate ?? "") === String(boxExpiration)
+        : true;
+
+      if (matchesId) return true;
+
+      if (matchesProductId) {
+        return matchesExpirationForProductId;
       }
-      if (!productId && box?.name && p?.name === box.name) {
-        return boxExp
-          ? String(p?.expirationDate ?? "") === String(boxExp)
-          : true;
+
+      if (matchesNameOnly) {
+        return matchesExpirationForName;
       }
+
       return false;
     });
 
-    if (idx !== -1) allProducts.splice(idx, 1);
+    if (removeIndex !== -1) {
+      // Odstránime prvý nájdený výskyt.
+      allProducts.splice(removeIndex, 1);
+    }
+
+    // Uložíme novú cache a prepíšeme state.
     await AsyncStorage.setItem("products", JSON.stringify(allProducts));
     setMealBoxes(allProducts);
 
-    if (shouldForceRefresh) await loadMealBoxes({ forceServer: true });
+    if (shouldForceRefresh) {
+      // Ak bol problém na serveri, zosynchronizujeme so serverom.
+      await loadMealBoxes({ forceServer: true });
+    }
   };
 
   const addCustomMealBox = async () => {
-    const name = customName.trim();
-    if (!name || !email) return;
+    // Očistíme text (trim), aby nevznikali prázdne názvy.
+    const trimmedName = customName.trim();
+    const hasName = Boolean(trimmedName);
+    const hasEmail = Boolean(email);
 
+    // Bez názvu alebo emailu nič nerobíme.
+    if (!hasName || !hasEmail) return;
+
+    // Spustíme loading state pre tlačidlo.
     setSavingCustom(true);
-    const res = await fetch(`${SERVER_URL}/api/addCustomProduct`, {
+
+    // Pripravíme telo requestu.
+    const requestBody = { email, name: trimmedName };
+    // Volanie API na pridanie vlastnej položky.
+    const response = await fetch(`${SERVER_URL}/api/addCustomProduct`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, name }),
+      body: JSON.stringify(requestBody),
     });
 
-    const data = await res.json();
+    // Parse JSON odpovede.
+    const data = await response.json();
+    // Server vráti celý zoznam produktov.
     const nextProducts = data.products || [];
 
+    // Cache update.
     await AsyncStorage.setItem("products", JSON.stringify(nextProducts));
+
+    // UI update + reset inputu.
     setMealBoxes(nextProducts);
     setCustomName("");
     setSavingCustom(false);
   };
 
   const removeCustomMealBox = async (productId) => {
-    if (!email || !productId) return;
+    // Validácia vstupov.
+    const hasEmail = Boolean(email);
+    const hasProductId = Boolean(productId);
 
+    // Bez týchto hodnôt nič nerobíme.
+    if (!hasEmail || !hasProductId) return;
+
+    // Pripravíme payload.
+    const requestBody = { email, productId };
+
+    // Serverový delete.
     await fetch(`${SERVER_URL}/api/removeProduct`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, productId }),
+      body: JSON.stringify(requestBody),
     });
 
+    // Lokálna cache aktualizácia (odfiltrujeme produkt).
     const stored = await AsyncStorage.getItem("products");
     const allProducts = stored ? JSON.parse(stored) : [];
-    const filtered = allProducts.filter((p) => p.productId !== productId);
-    await AsyncStorage.setItem("products", JSON.stringify(filtered));
-    setMealBoxes(filtered);
+    const filteredProducts = allProducts.filter((item) => {
+      return item.productId !== productId;
+    });
+
+    // Uloženie a aktualizácia state.
+    await AsyncStorage.setItem("products", JSON.stringify(filteredProducts));
+    setMealBoxes(filteredProducts);
   };
 
   // --- MealBoxItem ---
-  const MealBoxItem = ({ group }) => (
-    <Pressable onPress={() => openWindow(group)} style={styles.pantryBox}>
-      <ImageBackground
-        source={{ uri: group.box.image }}
-        style={styles.pantryImageBackground}
-      >
-        <Text style={styles.pantryMealBoxText}>{group.box.name}</Text>
-        {group.count > 1 && (
-          <View style={styles.pantryCountBadge}>
-            <Text style={styles.pantryCountBadgeText}>{group.count} ks</Text>
-          </View>
-        )}
-        {/* <View>
-          <Pressable
-            onPress={() => {
-              const instance = group.instances[0];
-              if (!instance) return;
-              handleRemoveMealBox(instance.id, instance.productId, instance);
-            }}
-          >
-            <Text style={styles.pantryEatenButton}>Zjedené ✅</Text>
-          </Pressable>
-        </View>*/}
-      </ImageBackground>
-    </Pressable>
-  );
+  const MealBoxItem = ({ group }) => {
+    // Zástupný produkt skupiny (najbližšia exspirácia).
+    const box = group.box;
+    // URL obrázka.
+    const boxImage = box?.image;
+    // Názov produktu.
+    const boxName = box?.name;
+    // Počet rovnakých položiek.
+    const count = group.count;
+    // Zobraziť badge iba ak je viac kusov.
+    const hasMoreThanOne = count > 1;
+
+    return (
+      // Celý box je klikateľný – otvorí modál.
+      <Pressable onPress={() => openWindow(group)} style={styles.pantryBox}>
+        <ImageBackground
+          source={{ uri: boxImage }}
+          style={styles.pantryImageBackground}
+        >
+          {/* Názov položky */}
+          <Text style={styles.pantryMealBoxText}>{boxName}</Text>
+          {hasMoreThanOne && (
+            <View style={styles.pantryCountBadge}>
+              {/* Zobrazenie počtu kusov v skupine */}
+              <Text style={styles.pantryCountBadgeText}>{count} ks</Text>
+            </View>
+          )}
+          {/* <View>
+            <Pressable
+              onPress={() => {
+                const instance = group.instances[0];
+                if (!instance) return;
+                handleRemoveMealBox(instance.id, instance.productId, instance);
+              }}
+            >
+              <Text style={styles.pantryEatenButton}>Zjedené ✅</Text>
+            </Pressable>
+          </View>*/}
+        </ImageBackground>
+      </Pressable>
+    );
+  };
 
   // --- Modal window ---
   const MealBoxWindow = ({ count, close, instances }) => {
+    // Vybraný produkt (detail) – vezmeme z inštancií.
     const [product, setProduct] = useState(null);
+    // Lokálny loading pre modál.
     const [loadingWindow, setLoadingWindow] = useState(true);
+    // Nastavenie zobrazenia na 100 g alebo na celý produkt.
     const [isPer100g, setIsPer100g] = useState();
+    // Nastavenie, či sa má zobrazovať exspirácia.
     const [expiration, setExpiration] = useState();
 
     useEffect(() => {
+      // Preferencia zobrazovania exspirácie uložená v AsyncStorage.
       AsyncStorage.getItem("expiration").then((storedValue) => {
-        if (storedValue !== null) setExpiration(JSON.parse(storedValue));
+        const hasStoredValue = storedValue !== null;
+
+        if (hasStoredValue) {
+          // JSON -> boolean.
+          const parsedValue = JSON.parse(storedValue);
+          setExpiration(parsedValue);
+        }
       });
     }, []);
 
     const expirationLabel = useMemo(() => {
-      const candidates = (instances ?? [])
-        .map((p) => p?.expirationDate)
-        .filter(Boolean)
-        .map((v) => {
-          const d = new Date(v);
-          return Number.isNaN(d.getTime()) ? null : d;
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.getTime() - b.getTime());
+      // Zozbierame všetky exspirácie zo všetkých inštancií.
+      const expirationDates = (instances ?? []).map((item) => {
+        return item?.expirationDate;
+      });
 
-      return formatExpiration(candidates[0]);
+      // Prevod na Date objekty.
+      const parsedDates = expirationDates.map((value) => {
+        return new Date(value);
+      });
+
+      // Filtrujeme iba validné dátumy.
+      const validDates = parsedDates.filter((date) => {
+        return !Number.isNaN(date.getTime());
+      });
+
+      // Najskorší dátum exspirácie z listu.
+      const sortedDates = validDates.sort((a, b) => {
+        return a.getTime() - b.getTime();
+      });
+
+      const earliestDate = sortedDates[0];
+
+      // Finálny formát pre UI.
+      return formatExpiration(earliestDate);
     }, [instances]);
 
     useEffect(() => {
+      // Načítanie preferencie „na 100 g“.
       AsyncStorage.getItem("isPer100g").then((stored) => {
-        if (stored !== null) setIsPer100g(JSON.parse(stored));
+        const hasStoredValue = stored !== null;
+
+        if (hasStoredValue) {
+          // JSON -> boolean.
+          const parsedValue = JSON.parse(stored);
+          setIsPer100g(parsedValue);
+        }
       });
     }, []);
 
     // Product data already exists in pantry items (`instances`).
     // Using it avoids fragile DB lookup by exact name and prevents 404 after eating.
     useEffect(() => {
+      // Pri každej zmene inštancií obnovíme detail.
       setLoadingWindow(true);
-      setProduct(instances?.[0] ?? null);
+
+      // Zoberieme prvú inštanciu ako reprezentatívny produkt.
+      const nextProduct = instances?.[0] ?? null;
+      setProduct(nextProduct);
+
+      // Už máme dáta, loading vypneme.
       setLoadingWindow(false);
     }, [instances]);
+
+    const handleEatPress = () => {
+      // Odstráni prvú dostupnú inštanciu produktu.
+      const instance = instances?.[0];
+
+      if (!instance) return;
+
+      // Najprv zavrieme modál, potom odstránime položku.
+      close?.();
+      handleRemoveMealBox(instance.id, instance.productId, instance);
+    };
+
+    // Voľba výživových hodnôt podľa preferencie.
+    const caloriesValue = isPer100g ? product?.calories : product?.totalCalories;
+    const proteinsValue = isPer100g ? product?.proteins : product?.totalProteins;
+    const carbsValue = isPer100g ? product?.carbs : product?.totalCarbs;
+    const fatValue = isPer100g ? product?.fat : product?.totalFat;
+    const fiberValue = isPer100g ? product?.fiber : product?.totalFiber;
+    const sugarValue = isPer100g ? product?.sugar : product?.totalSugar;
+    const saltValue = isPer100g ? product?.salt : product?.totalSalt;
 
     //  if (loadingWindow) return <ActivityIndicator size="large" color="#0000ff" />;
 
     return (
+      // Polopriesvitné pozadie modálu.
       <View style={styles.pantryOverlay}>
+        {/* Samotné okno modálu */}
         <View style={styles.pantryWindow}>
           {loadingWindow ? (
+            // Loading stav.
             <ActivityIndicator size="large" />
           ) : !product ? (
+            // Keď produkt neexistuje (napr. vymazaný).
             <>
               <Text style={styles.pantryTitle}>Product not found</Text>
               <Pressable onPress={close} style={styles.pantryCloseButton}>
@@ -284,6 +527,7 @@ export default function PantryTab({
             </>
           ) : (
             <>
+              {/* Názov produktu */}
               <Text style={styles.pantryWindowTitle}>{product.name}</Text>
               <Image
                 source={{ uri: product.image }}
@@ -292,6 +536,7 @@ export default function PantryTab({
               />
 
               {expiration && (
+                // Blok exspirácie sa zobrazí iba ak je povolený.
                 <View
                   style={[
                     styles.pantryInfoRowBase,
@@ -306,10 +551,12 @@ export default function PantryTab({
               <View
                 style={[styles.pantryInfoRowBase, styles.pantryInfoRowCount]}
               >
+                {/* Počet kusov v špajzi */}
                 <Text style={styles.pantryNutritionLabel}>Počet v špajzi:</Text>
                 <Text>{count ?? 1}</Text>
               </View>
 
+              {/* Karta s výživovými hodnotami */}
               <View style={styles.pantryNutritionCard}>
                 <View style={styles.pantryNutritionRow}>
                   <Text style={styles.pantryNutritionHeaderText}>
@@ -323,9 +570,7 @@ export default function PantryTab({
                   ]}
                 >
                   <Text style={styles.pantryNutritionLabel}>Kalórie: {""}</Text>
-                  <Text>
-                    {isPer100g ? product.calories : product.totalCalories} kcal
-                  </Text>
+                  <Text>{caloriesValue} kcal</Text>
                 </View>
                 <View
                   style={[
@@ -334,53 +579,35 @@ export default function PantryTab({
                   ]}
                 >
                   <Text style={styles.pantryNutritionLabel}>Bielkoviny: </Text>
-                  <Text>
-                    {isPer100g ? product.proteins : product.totalProteins} g
-                  </Text>
+                  <Text>{proteinsValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
                   <Text style={styles.pantryNutritionLabel}>Sacharidy:</Text>
-                  <Text>
-                    {isPer100g ? product.carbs : product.totalCarbs} g
-                  </Text>
+                  <Text>{carbsValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
                   <Text style={styles.pantryNutritionLabel}>Tuky:</Text>
-                  <Text>{isPer100g ? product.fat : product.totalFat} g</Text>
+                  <Text>{fatValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
                   <Text style={styles.pantryNutritionLabel}>Vlákniny:</Text>
-                  <Text>
-                    {isPer100g ? product.fiber : product.totalFiber} g
-                  </Text>
+                  <Text>{fiberValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
                   <Text style={styles.pantryNutritionLabel}>Cukry:</Text>
-                  <Text>
-                    {isPer100g ? product.sugar : product.totalSugar} g
-                  </Text>
+                  <Text>{sugarValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
                   <Text style={styles.pantryNutritionLabel}>Soľ:</Text>
-                  <Text>{isPer100g ? product.salt : product.totalSalt} g</Text>
+                  <Text>{saltValue} g</Text>
                 </View>
               </View>
-              <Pressable
-                onPress={() => {
-                  const instance = instances?.[0];
-                  if (!instance) return;
-                  close?.();
-                  handleRemoveMealBox(
-                    instance.id,
-                    instance.productId,
-                    instance,
-                  );
-                }}
-                style={styles.pantryEatenBtn}
-              >
+              {/* Akcia: zjesť (odstrániť) */}
+              <Pressable onPress={handleEatPress} style={styles.pantryEatenBtn}>
                 <Text style={styles.pantryCloseButtonText}>Zjedené</Text>
               </Pressable>
 
+              {/* Zavrieť modál bez akcie */}
               <Pressable onPress={close} style={styles.pantryCloseButton}>
                 <Text style={styles.pantryCloseButtonText}>Zatvoriť</Text>
               </Pressable>
@@ -392,24 +619,35 @@ export default function PantryTab({
   };
 
   // ---------------------------
+  // Logické premenne pre UI (čitateľnosť a menej inline logiky v JSX).
+  const isModalVisible = Boolean(activeKey);
+  const activeInstances = activeGroup?.instances ?? [];
+  const hasScannedItems = groupedMealBoxes.length > 0;
+  const hasCustomItems = customMealBoxes.length > 0;
+  const addButtonLabel = savingCustom ? "..." : "Pridať";
+
   return (
+    // Root kontajner celej obrazovky.
     <View style={styles.pantryRoot}>
+      {/* Modál s detailom produktu */}
       <Modal
-        visible={!!activeKey}
+        visible={isModalVisible}
         animationType="slide"
         transparent={true}
         onRequestClose={closeWindow}
       >
         <MealBoxWindow
           count={activeGroup?.count}
-          instances={activeGroup?.instances ?? []}
+          instances={activeInstances}
           close={closeWindow}
         />
       </Modal>
 
+      {/* Hlavný scrollovateľný obsah */}
       <ScrollView style={styles.pantryMealContainer}>
+        {/* Sekcia naskenovaných položiek */}
         <Text style={styles.pantrySectionTitle}>Naskenované položky</Text>
-        {groupedMealBoxes.length === 0 && (
+        {!hasScannedItems && (
           <Text style={styles.pantryEmptyMessage}>Nemáš naskenované položky.</Text>
         )}
         <View style={styles.pantryRow}>
@@ -418,7 +656,9 @@ export default function PantryTab({
           ))}
         </View>
 
+        {/* Sekcia vlastných položiek */}
         <Text style={styles.pantrySectionTitle}>Vlastné položky</Text>
+        {/* Riadok s inputom a tlačidlom pridania */}
         <View style={styles.pantryCustomInputRow}>
           <TextInput
             placeholder="Názov potraviny"
@@ -431,14 +671,13 @@ export default function PantryTab({
             style={styles.pantryCustomButton}
             disabled={savingCustom}
           >
-            <Text style={styles.pantryCustomButtonText}>
-              {savingCustom ? "..." : "Pridať"}
-            </Text>
+            <Text style={styles.pantryCustomButtonText}>{addButtonLabel}</Text>
           </Pressable>
         </View>
 
+        {/* Zoznam vlastných položiek */}
         <View style={styles.pantryCustomList}>
-          {customMealBoxes.length === 0 ? (
+          {!hasCustomItems ? (
             <Text style={styles.pantryItemText}>
               Zatiaľ nemáš vlastné položky.
             </Text>
