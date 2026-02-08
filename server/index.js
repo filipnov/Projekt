@@ -289,7 +289,7 @@ async function start() {
       const resetLink = `https://app.bitewise.it.com/reset-password?token=${token}`;
 
       // Odoslanie e‑mailu
-      await transporter.sendMail({ // odoslanie reset e‑mailu
+      await transporter.sendMail({
   from: `"Socka" <${process.env.EMAIL_USER}>`,
   to: email,
   subject: "Password Reset Request",
@@ -749,7 +749,7 @@ PRAVIDLÁ:
 10. Ak je zvolená preferencia "Morské plody", použite rôzne druhy morských plodov a neobmedzujte sa len na jeden.
 11. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
 12. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
-13. Priraď každému receptu jednu kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé.
+13. Priraď každému receptu jednu z vymenovaných kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé. Žiadna iná kategória nesmie byť použitá
 14. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií – kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
 15. Nepoužívaj odhady typu "cca" alebo "približne".
 16. Ak nevieš presnú hodnotu, použi databázový priemer.
@@ -821,6 +821,44 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
 
         try {
           parsedJSON = JSON.parse(rawResponse); // pokus o JSON parse
+
+          const isPlainObject =
+            parsedJSON &&
+            typeof parsedJSON === "object" &&
+            !Array.isArray(parsedJSON);
+          const isEmptyObject = isPlainObject && !Object.keys(parsedJSON).length;
+
+          const hasText = (value) =>
+            typeof value === "string" && value.trim().length > 0;
+
+          const hasIngredients = Array.isArray(parsedJSON?.ingredients)
+            ? parsedJSON.ingredients.some(
+                (item) =>
+                  item &&
+                  hasText(item.name) &&
+                  Number.isFinite(Number(item.amountGrams)) &&
+                  Number(item.amountGrams) > 0,
+              )
+            : false;
+
+          const hasSteps = Array.isArray(parsedJSON?.steps)
+            ? parsedJSON.steps.some((step) => hasText(step))
+            : false;
+
+          const isRecipeShapeValid =
+            isPlainObject &&
+            hasText(parsedJSON?.name) &&
+            hasText(parsedJSON?.category) &&
+            hasText(parsedJSON?.estimatedCookingTime) &&
+            hasIngredients &&
+            hasSteps;
+
+          if (isEmptyObject || !isRecipeShapeValid) {
+            parsedJSON = null;
+            console.warn(
+              `⚠️ GPT vrátil prázdny alebo neplatný recept, retry ${attempts}...`,
+            );
+          }
         } catch (err) {
           console.warn(`⚠️ GPT vrátil nevalidný JSON, retry ${attempts}...`);
         }

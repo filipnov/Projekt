@@ -10,7 +10,7 @@ import * as Linking from "expo-linking";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 
-export default function ResetPasswordScreen({ route }) {
+export default function ResetPasswordScreen() {
   // URL backendu
   const SERVER_URL = "https://app.bitewise.it.com";
   // Navigácia medzi obrazovkami
@@ -41,20 +41,12 @@ export default function ResetPasswordScreen({ route }) {
   };
 
   useEffect(() => {
-    // 1) Skús token z route params (ak appka otvorila tento screen priamo)
-    //    Napr. keď navigácia poslala { token: "..." } v parametroch
-    const paramsToken = route?.params?.token || "";
-    if (paramsToken) {
-      applyToken(paramsToken);
-      return;
-    }
-
-    // 2) Skús token z deep linku (initial URL pri štarte appky)
+    // 1) Skús token z deep linku (initial URL pri štarte appky)
     //    Toto je dôležité, keď používateľ otvorí link z e‑mailu
     //    a appka sa spustí úplne od nuly
     Linking.getInitialURL().then((url) => applyToken(getTokenFromUrl(url)));
 
-    // 3) Počúvaj na nové deep linky, ak appka už beží
+    // 2) Počúvaj na nové deep linky, ak appka už beží
     //    Napr. keď je appka otvorená na pozadí a používateľ klikne na link
     const subscription = Linking.addEventListener("url", (event) => {
       applyToken(getTokenFromUrl(event?.url));
@@ -63,7 +55,7 @@ export default function ResetPasswordScreen({ route }) {
     // Upratanie listenera pri odchode zo screenu
     // Aby sme nepočúvali zbytočne a nevznikali memory leaky
     return () => subscription?.remove?.();
-  }, [route?.params]);
+  }, []);
 
   // Odoslanie novej hodnoty hesla na server
   const handleReset = async () => {

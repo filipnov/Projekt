@@ -18,7 +18,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 // Funkcie pre notifikácie
-import { ensureNotificationsSetup } from "./notifications";
+import {
+  ensureNotificationsSetup,
+  rescheduleExpirationNotifications,
+} from "./notifications";
 
 export default function HomeScreen({ setIsLoggedIn }) {
   // URL backendu
@@ -105,6 +108,12 @@ export default function HomeScreen({ setIsLoggedIn }) {
       console.error("❌ Error pulling user data:", err);
     }
   }
+
+  const refreshExpirationNotifications = async () => {
+    const storedProducts = await AsyncStorage.getItem("products");
+    const products = storedProducts ? JSON.parse(storedProducts) : [];
+    await rescheduleExpirationNotifications(products);
+  };
  
   useEffect(() => {
     // Pokus o automatické prihlásenie zo saved údajov (ak existujú)
@@ -138,6 +147,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
             await pullAllUserData(storedEmail);
             // plánovanie notifikácií (po prípadnom súhlase)
             await ensureNotificationsSetup();
+            await refreshExpirationNotifications();
             console.log("✅ Data pulled, navigating to Dashboard");
             setIsLoggedIn(true);
 
@@ -197,6 +207,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       // stiahneme zvyšok používateľských dát (produkty, recepty, história)
       await pullAllUserData(data.user.email);
       await ensureNotificationsSetup();
+      await refreshExpirationNotifications();
 
       // Určíme počiatočné eatenTotals (čo zobrazí Dashboard):
       // - najprv lokálna cache 'eatenTotals' (rýchle)

@@ -18,14 +18,34 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 // Centrálne štýly aplikácie.
 import styles from "../../styles";
+import { rescheduleExpirationNotifications } from "../../notifications";
 
 // Základná URL servera – všetky API volania idú cez tento hostname.
 const SERVER_URL = "https://app.bitewise.it.com";
 
-export default function PantryTab({
-  // Funkcia z rodičovskej obrazovky, ktorá odstráni produkt zo servera.
-  removeMealBox,
-}) {
+// Základná štruktúra denných súhrnov
+// (používa sa ako bezpečný „štart“ keď ešte nemáme dáta)
+const DEFAULT_TOTALS = {
+  calories: 0,
+  proteins: 0,
+  carbs: 0,
+  fat: 0,
+  fiber: 0,
+  sugar: 0,
+  salt: 0,
+  drunkWater: 0,
+};
+
+// Pomocná funkcia na dnešný dátum (YYYY-MM-DD) v lokálnom čase
+// Tento formát vyžaduje aj backend API
+const getTodayKey = (date = new Date()) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+export default function PantryTab() {
   // Email prihláseného používateľa (načítaný z AsyncStorage).
   const [email, setEmail] = useState(null);
   // Lokálny zoznam všetkých produktov v špajzi.
@@ -36,6 +56,69 @@ export default function PantryTab({
   const [customName, setCustomName] = useState("");
   // Flag, či práve prebieha ukladanie vlastnej položky.
   const [savingCustom, setSavingCustom] = useState(false);
+
+  // Načíta lokálne uložené súhrny (ak existujú)
+  // Ak lokálne súbory chýbajú alebo sú poškodené, použijeme DEFAULT_TOTALS
+  const loadStoredTotals = useCallback(async () => {
+    const storedTotalsRaw = await AsyncStorage.getItem("eatenTotals");
+    if (!storedTotalsRaw) return { ...DEFAULT_TOTALS };
+    try {
+      return { ...DEFAULT_TOTALS, ...JSON.parse(storedTotalsRaw) };
+    } catch (e) {
+      console.error("Error parsing stored eatenTotals:", e);
+      return { ...DEFAULT_TOTALS };
+    }
+  }, []);
+
+  // Pridá skonzumované hodnoty do denného súhrnu
+  // (kalórie, makrá, vláknina, cukor, soľ)
+  const addEatenValues = useCallback(
+    async (box) => {
+      if (!box) return;
+
+      const todayKey = getTodayKey();
+      const storedTotalsDate = await AsyncStorage.getItem("eatenTotalsDate");
+      let totals = await loadStoredTotals();
+
+      if (storedTotalsDate !== todayKey) {
+        totals = { ...DEFAULT_TOTALS };
+        await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+      }
+
+      const updatedTotals = {
+        ...totals,
+        calories: totals.calories + (box.totalCalories || 0),
+        proteins: totals.proteins + (box.totalProteins || 0),
+        carbs: totals.carbs + (box.totalCarbs || 0),
+        fat: totals.fat + (box.totalFat || 0),
+        fiber: totals.fiber + (box.totalFiber || 0),
+        sugar: totals.sugar + (box.totalSugar || 0),
+        salt: totals.salt + (box.totalSalt || 0),
+      };
+
+      // Uložíme denné súhrny lokálne
+      await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
+      await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+
+      // Bez emailu nevieme synchronizovať so serverom
+      if (!email) return;
+
+      try {
+        await fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date: todayKey,
+            totals: updatedTotals,
+          }),
+        });
+      } catch (err) {
+        console.error("Error pushing consumed totals:", err);
+      }
+    },
+    [email, loadStoredTotals],
+  );
 
   // Vráti čas exspirácie v ms; ak je dátum neplatný, hodnota je Infinity.
   const getExpirationMs = useCallback((product) => {
@@ -237,17 +320,28 @@ export default function PantryTab({
     }
   }, [activeKey, activeGroup]);
 
+  // Odstráni produkt z lokálneho zoznamu a pripočíta jeho hodnoty do súhrnov
+  // 1) vymaže zo servera
+  // 2) upraví lokálnu cache
+  // 3) pripočíta výživové hodnoty do denného súhrnu
   const handleRemoveMealBox = async (id, productId, box) => {
     // Ak zlyhá serverové odstránenie, spravíme následný refresh.
     let shouldForceRefresh = false;
 
     try {
-      // Voláme parent funkciu – obvykle server request.
-      await removeMealBox(id, productId, box);
+      if (email && productId) {
+        await fetch(`${SERVER_URL}/api/removeProduct`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, productId }),
+        });
+      }
     } catch {
       // Pri chybe vynútime neskôr fetch zo servera.
       shouldForceRefresh = true;
     }
+
+    await addEatenValues(box);
 
     // Najprv upravíme lokálnu cache.
     const stored = await AsyncStorage.getItem("products");
@@ -293,6 +387,7 @@ export default function PantryTab({
     // Uložíme novú cache a prepíšeme state.
     await AsyncStorage.setItem("products", JSON.stringify(allProducts));
     setMealBoxes(allProducts);
+    await rescheduleExpirationNotifications(allProducts);
 
     if (shouldForceRefresh) {
       // Ak bol problém na serveri, zosynchronizujeme so serverom.
@@ -331,6 +426,7 @@ export default function PantryTab({
 
     // UI update + reset inputu.
     setMealBoxes(nextProducts);
+    await rescheduleExpirationNotifications(nextProducts);
     setCustomName("");
     setSavingCustom(false);
   };
@@ -363,6 +459,7 @@ export default function PantryTab({
     // Uloženie a aktualizácia state.
     await AsyncStorage.setItem("products", JSON.stringify(filteredProducts));
     setMealBoxes(filteredProducts);
+    await rescheduleExpirationNotifications(filteredProducts);
   };
 
   // --- MealBoxItem ---

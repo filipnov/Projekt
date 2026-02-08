@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.anonymous.MyApp",
+      "package_name": "com.bitewise.app",
       "sha256_cert_fingerprints": [
-        "5E:C2:7E:65:49:32:AE:F3:65:AB:5A:2F:34:B7:25:F3:56:DD:86:E8:65:0A:B7:25:B3:EA:56:E3:AB:0B:F2:78"
+        "DD:AD:48:F8:93:B4:65:66:12:33:26:22:ED:A6:E8:13:13:59:84:E8:74:9C:AA:BF:EC:0B:18:45:33:72:71:CB"
       ]
     }
   }

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MyApp",
+    "name": "Bitewise",
     "slug": "MyApp",
     "version": "1.0.0",
     "platforms": ["android"],
@@ -16,7 +16,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.MyApp",
+      "bundleIdentifier": "com.bitewise.app",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -44,7 +44,10 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.MyApp"
+      "package": "com.bitewise.app"
+    },
+    "notification": {
+      "icon": "./assets/logo_icon.png"
     },
     "web": {
       "favicon": "./assets/favicon.png"

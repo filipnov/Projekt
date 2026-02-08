@@ -71,7 +71,7 @@ export default function WelcomeScreen() {
               Míňaj menej jedla, jedz múdrejšie.
               {"\n\n"}
               Naskenuj svoje potraviny, objav recepty z toho, čo máš doma, a
-              sleduj svoje výživové ciele – jednoducho a prehľadne.
+              sleduj svoje výživové ciele - jednoducho a prehľadne.
               {"\n\n"}
               Zníž plýtvanie potravín, sleduj kalórie, živiny aj pitný režim,
               všetko na jednom mieste.{"\n"}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,24 +7,69 @@ import {
   Modal,
   TouchableOpacity,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../../styles";
 import plus from "../../assets/plus.png";
 
-export default function OverviewTab({
-  navigation,
-  profileLoaded,
-  weight,
-  height,
-  age,
-  gender,
-  goal,
-  activityLevel,
-  eatenTotals,
-  setEatenTotals,
-}) {
+// URL backendu (z tohto servera načítavame dáta)
+const SERVER_URL = "https://app.bitewise.it.com";
+
+// Základná štruktúra denných súhrnov
+// (používa sa ako bezpečný „štart“ keď ešte nemáme dáta)
+const DEFAULT_TOTALS = {
+  calories: 0,
+  proteins: 0,
+  carbs: 0,
+  fat: 0,
+  fiber: 0,
+  sugar: 0,
+  salt: 0,
+  drunkWater: 0,
+};
+
+// Pomocná funkcia na dnešný dátum (YYYY-MM-DD) v lokálnom čase
+// Tento formát vyžaduje aj backend API
+const getTodayKey = (date = new Date()) => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+// Preferujeme serverové hodnoty (aby bol prehľad vždy aktuálny)
+// Ak server pošle hodnotu, prepíše lokálnu (ak je dostupná)
+const mergeTotalsPreferRemote = (localTotals, remoteTotals) => {
+  if (!remoteTotals) return localTotals;
+  const merged = { ...localTotals };
+  for (const key of Object.keys(merged)) {
+    const remoteVal = remoteTotals[key];
+    if (remoteVal !== null && remoteVal !== undefined) {
+      merged[key] = remoteVal;
+    }
+  }
+  return merged;
+};
+
+export default function OverviewTab({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [overviewData, setOverviewData] = useState({});
+  const [email, setEmail] = useState(null);
+
+  // Stav profilu (či je profil načítaný + konkrétne hodnoty)
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [weight, setWeight] = useState(null);
+  const [height, setHeight] = useState(null);
+  const [age, setAge] = useState(null);
+  const [gender, setGender] = useState(null);
+  const [goal, setGoal] = useState(null);
+  const [activityLevel, setActivityLevel] = useState(null);
+
+  // Denné súhrny skonzumovaných živín
+  const [eatenTotals, setEatenTotals] = useState(DEFAULT_TOTALS);
+  const [eatenLoaded, setEatenLoaded] = useState(false);
+  const [currentDayKey, setCurrentDayKey] = useState(getTodayKey());
   const currentDate = (() => {
     const d = new Date();
     return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
@@ -68,6 +113,161 @@ export default function OverviewTab({
 
     setModalVisible(false);
   };
+
+  // Načíta uložený e‑mail
+  useEffect(() => {
+    AsyncStorage.getItem("userEmail").then((storedEmail) => {
+      if (storedEmail) setEmail(storedEmail);
+    });
+  }, []);
+
+  // Načíta používateľský profil (váha, výška, cieľ atď.)
+  // Používame useFocusEffect, aby sa hodnoty obnovili vždy pri návrate na prehľad
+  useFocusEffect(
+    useCallback(() => {
+      async function reloadProfileFromStorage() {
+        try {
+          const storedProfile = await AsyncStorage.getItem("userProfile");
+          if (storedProfile) {
+            const profile = JSON.parse(storedProfile);
+            setWeight(profile.weight);
+            setHeight(profile.height);
+            setAge(profile.age);
+            setGender(profile.gender);
+            setGoal(profile.goal);
+            setActivityLevel(profile.activityLevel);
+          }
+        } catch (err) {
+          console.error("Error loading profile from storage:", err);
+        } finally {
+          setProfileLoaded(true);
+        }
+      }
+
+      reloadProfileFromStorage();
+    }, []),
+  );
+
+  // Načíta denné súhrny z backendu (ak sú dostupné)
+  // Tieto hodnoty majú prednosť, aby bol prehľad vždy presný
+  const fetchDailyTotals = useCallback(async () => {
+    if (!email) return null;
+    try {
+      const response = await fetch(
+        `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(
+          email,
+        )}&date=${getTodayKey()}`,
+      );
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data?.totals || null;
+    } catch (err) {
+      console.error("Error fetching daily consumption from server:", err);
+      return null;
+    }
+  }, [email]);
+
+  // Načíta lokálne uložené súhrny (ak existujú)
+  // Ak lokálne súbory chýbajú alebo sú poškodené, použijeme DEFAULT_TOTALS
+  const loadStoredTotals = useCallback(async () => {
+    const storedTotalsRaw = await AsyncStorage.getItem("eatenTotals");
+    if (!storedTotalsRaw) return { ...DEFAULT_TOTALS };
+    try {
+      return { ...DEFAULT_TOTALS, ...JSON.parse(storedTotalsRaw) };
+    } catch (e) {
+      console.error("Error parsing stored eatenTotals:", e);
+      return { ...DEFAULT_TOTALS };
+    }
+  }, []);
+
+  // Načíta uložené dáta pri otvorení Prehľadu
+  // Cieľ: mať rýchly štart (lokálne údaje) + vždy aktuálne hodnoty (server)
+  const loadOverviewTotals = useCallback(async () => {
+    try {
+      let totals = await loadStoredTotals();
+
+      const todayKey = getTodayKey();
+      const storedTotalsDate = await AsyncStorage.getItem("eatenTotalsDate");
+      if (storedTotalsDate !== todayKey) {
+        totals = { ...DEFAULT_TOTALS };
+        await AsyncStorage.setItem("eatenTotals", JSON.stringify(totals));
+        await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+      }
+
+      setCurrentDayKey(todayKey);
+
+      const remoteTotals = await fetchDailyTotals();
+      totals = mergeTotalsPreferRemote(totals, remoteTotals);
+
+      setEatenTotals(totals);
+      setEatenLoaded(true);
+    } catch (err) {
+      console.error("Error loading overview totals:", err);
+    }
+  }, [fetchDailyTotals, loadStoredTotals]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadOverviewTotals();
+    }, [loadOverviewTotals]),
+  );
+
+  useEffect(() => {
+    if (email) loadOverviewTotals();
+  }, [email, loadOverviewTotals]);
+
+  // Ukladá denné súhrny do lokálneho úložiska
+  // Pozn.: ukladáme až po prvom načítaní, aby sme neprepísali hodnoty 0
+  useEffect(() => {
+    if (!eatenLoaded) return;
+    AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
+    AsyncStorage.setItem("eatenTotalsDate", getTodayKey());
+  }, [eatenTotals, eatenLoaded]);
+
+  // Reset o polnoci (lokálny čas) aj pri otvorenej appke
+  useEffect(() => {
+    if (!eatenLoaded) return;
+
+    const now = new Date();
+    const nextMidnight = new Date(now);
+    nextMidnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = nextMidnight.getTime() - now.getTime() + 500;
+
+    const timer = setTimeout(async () => {
+      const todayKey = getTodayKey();
+      const cleared = { ...DEFAULT_TOTALS };
+      setEatenTotals(cleared);
+      await AsyncStorage.setItem("eatenTotals", JSON.stringify(cleared));
+      await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+      setCurrentDayKey(todayKey);
+    }, msUntilMidnight);
+
+    return () => clearTimeout(timer);
+  }, [currentDayKey, eatenLoaded]);
+
+  // Posiela denné súhrny na server (po každej zmene)
+  // Toto drží backend v synchronizovanom stave
+  useEffect(() => {
+    if (!eatenLoaded || !email) return;
+
+    const pushConsumedToDB = async () => {
+      try {
+        await fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date: getTodayKey(),
+            totals: eatenTotals,
+          }),
+        });
+      } catch (err) {
+        console.error("Error pushing consumed totals:", err);
+      }
+    };
+
+    pushConsumedToDB();
+  }, [eatenTotals, eatenLoaded, email]);
 
   useEffect(() => {
     if (

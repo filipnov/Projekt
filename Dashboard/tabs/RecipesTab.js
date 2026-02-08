@@ -16,21 +16,16 @@ import styles from "../../styles";
 
 const SERVER_URL = "https://app.bitewise.it.com";
 
+//Získanie dnešného dátumu
 const getTodayKey = (date = new Date()) => {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  // Predvolene pouzi aktualny datum, ak volajuci ziaden neposkytne.
+  const yyyy = date.getFullYear(); // Vytiahni rok (YYYY) z datumu.
+  const mm = String(date.getMonth() + 1).padStart(2, "0"); // Mesiac je 0-index, preto +1 a doplnenie na 2 cislice.
+  const dd = String(date.getDate()).padStart(2, "0"); // Den v mesiaci, doplneny na 2 cislice.
+  return `${yyyy}-${mm}-${dd}`; // Vrat formatovany kluc YYYY-MM-DD.
 };
 
-const recipeImagesByCategory = {
-  mäsité: require("./../../assets/meat.png"),
-  bezmäsité: require("./../../assets/no_meat.png"),
-  vegánske: require("./../../assets/lettuce.png"),
-  sladké: require("./../../assets/cake.png"),
-  štipľavé: require("./../../assets/chili.png"),
-};
-
+//Overené recepty vryté do kódu
 const STATIC_RECIPES = [
   {
     id: 1,
@@ -193,6 +188,7 @@ const STATIC_RECIPES = [
   },
 ];
 
+//Základné preferencie ktoré si používateľ môže vybrať pri tvorení receptu.
 const ALL_PREFERENCES = [
   {
     id: "sweet",
@@ -258,6 +254,7 @@ const ALL_PREFERENCES = [
   },
 ];
 
+//Ďalšie preferencie z ktorých si môže používateľ vybrať
 const ADDITIONAL_PREFERENCES = [
   {
     category: "Druh jedla",
@@ -496,8 +493,7 @@ export default function RecipesTab() {
   const [userEmail, setUserEmail] = useState(null);
 
   const [selectedPreferences, setSelectedPreferences] = useState([]);
-  const [showAdditionalPreferences, setShowAdditionalPreferences] =
-    useState(false);
+  const [showAdditionalPreferences, setShowAdditionalPreferences] = useState(false);
   const [showPreferenceInfo, setShowPreferenceInfo] = useState(false);
 
   const [useFitnessGoal, setUseFitnessGoal] = useState(false);
@@ -508,8 +504,9 @@ export default function RecipesTab() {
   const [maxCookingTime, setMaxCookingTime] = useState(60);
   const [showUnitInfo, setShowUnitInfo] = useState(false);
 
-  const availablePreferences = ALL_PREFERENCES.filter(
-    (pref) => !selectedPreferences.some((sel) => sel.id === pref.id),
+  //Obsahuje preferencie ktoré AI dostane ako dostupné na vytvorenie receptu.
+  const availablePreferences = ALL_PREFERENCES.filter( //porovnáme každu položku
+    ({ id }) => !selectedPreferences.some((selected) => selected.id === id),//necháme len preferencie ktoré nie su vybrané
   );
 
   const activeRecipe = selectedRecept || generatedRecipeModal;
@@ -518,7 +515,20 @@ export default function RecipesTab() {
   const getRecipeImage = (category) => {
     if (!category) return require("../../assets/logo.png");
     const key = category.toLowerCase();
-    return recipeImagesByCategory[key] || require("../../assets/logo.png");
+    switch (key) {
+      case "mäsité":
+        return require("./../../assets/meat.png");
+      case "bezmäsité":
+        return require("./../../assets/no_meat.png");
+      case "vegánske":
+        return require("./../../assets/lettuce.png");
+      case "sladké":
+        return require("./../../assets/cake.png");
+      case "štipľavé":
+        return require("./../../assets/chili.png");
+      default:
+        return require("../../assets/logo.png");
+    }
   };
 
   const resetState = () => {
@@ -530,14 +540,44 @@ export default function RecipesTab() {
     setShowAdditionalPreferences(false);
   };
 
+  const isGeneratedRecipeValid = (recipe) => {
+    if (!recipe || typeof recipe !== "object" || Array.isArray(recipe)) {
+      return false;
+    }
+
+    const hasText = (value) =>
+      typeof value === "string" && value.trim().length > 0;
+
+    const hasIngredients = Array.isArray(recipe.ingredients)
+      ? recipe.ingredients.some(
+          (item) =>
+            item &&
+            hasText(item.name) &&
+            Number.isFinite(Number(item.amountGrams)) &&
+            Number(item.amountGrams) > 0,
+        )
+      : false;
+
+    const hasSteps = Array.isArray(recipe.steps)
+      ? recipe.steps.some((step) => hasText(step))
+      : false;
+
+    return (
+      hasText(recipe.name) &&
+      hasText(recipe.category) &&
+      hasText(recipe.estimatedCookingTime) &&
+      hasIngredients &&
+      hasSteps
+    );
+  };
+
   const closeRecipeModal = () => {
     setSelectedRecept(null);
     setGeneratedRecipeModal(null);
   };
 
-  const showGenerateErrorModal = (serverMessage) => {
+  const showGenerateErrorModal = () => {
     const base =
-      serverMessage ||
       "Recept sa nepodarilo vygenerovať. Skús to prosím ešte raz.";
     const reasons =
       "Možné dôvody:\n" +
@@ -603,7 +643,7 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
         }),
       });
       const data = await response.json();
-      if (!data.success || !data.recipe) {
+      if (!data.success || !data.recipe || !isGeneratedRecipeValid(data.recipe)) {
         showGenerateErrorModal(data?.error);
         return;
       }
@@ -1072,7 +1112,7 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
               <Image
                 source={
                   selectedRecept
-                    ? selectedRecept.type === "static"
+                      ? selectedRecept.type === "static"
                       ? selectedRecept.obrazok
                       : getRecipeImage(selectedRecept.category)
                     : generatedRecipeModal
