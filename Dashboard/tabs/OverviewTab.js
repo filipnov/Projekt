@@ -83,7 +83,7 @@ export default function OverviewTab({ navigation }) {
   ];
 
   const renderNutriItem = (label, valueConsumed, valueGoal, barPercent) => (
-    <View style={styles.dashNutriDisplay}>
+    <View key={label} style={styles.dashNutriDisplay}>
       <Text style={styles.dashNutriDisplay_text}>{label}</Text>
       <View style={styles.dashCaloriesBarContainer}>
         <View
@@ -96,7 +96,7 @@ export default function OverviewTab({ navigation }) {
           ]}
         />
       </View>
-      <Text style={{ color: "white", marginBottom: 5 }}>
+      <Text style={styles.dashNutriValueText}>
         {valueConsumed} / {valueGoal} g
       </Text>
     </View>
@@ -378,21 +378,15 @@ export default function OverviewTab({ navigation }) {
 
   if (!weight || !height || !age) {
     return (
-      <View style={{ padding: 20, alignItems: "center" }}>
-        <Text style={{ fontSize: 18, textAlign: "center" }}>
+      <View style={styles.overviewMissingProfileContainer}>
+        <Text style={styles.overviewMissingProfileText}>
           Vyplň si svoj profil, aby si videl/-a prehľad!
         </Text>
         <Pressable
-          style={{
-            marginTop: 15,
-            backgroundColor: "#4CAF50",
-            paddingHorizontal: 20,
-            paddingVertical: 10,
-            borderRadius: 10,
-          }}
+          style={styles.overviewMissingProfileButton}
           onPress={() => navigation.navigate("ProfileCompletition")}
         >
-          <Text style={{ color: "#fff", fontWeight: "bold" }}>
+          <Text style={styles.overviewMissingProfileButtonText}>
             Vyplniť profil
           </Text>
         </Pressable>
@@ -400,53 +394,14 @@ export default function OverviewTab({ navigation }) {
     );
   }
 
-  const topNutri = [
-    {
-      label: "Bielkoviny",
-      consumed: overviewData.proteinConsumed,
-      goal: overviewData.proteinGoal,
-      bar: overviewData.proteinBar,
-    },
-    {
-      label: "Sacharidy",
-      consumed: overviewData.carbConsumed,
-      goal: overviewData.carbGoal,
-      bar: overviewData.carbBar,
-    },
-    {
-      label: "Tuky",
-      consumed: overviewData.fatConsumed,
-      goal: overviewData.fatGoal,
-      bar: overviewData.fatBar,
-    },
-  ];
-
-  const bottomNutri = [
-    {
-      label: "Vláknina",
-      consumed: overviewData.fiberConsumed,
-      goal: overviewData.fiberGoal,
-      bar: overviewData.fiberBar,
-    },
-    {
-      label: "Soľ",
-      consumed: overviewData.saltConsumed,
-      goal: overviewData.saltGoal,
-      bar: overviewData.saltBar,
-    },
-    {
-      label: "Cukry",
-      consumed: overviewData.sugarConsumed,
-      goal: overviewData.sugarGoal,
-      bar: overviewData.sugarBar,
-    },
-  ];
+  const nutriBarColor = (barPercent) =>
+    barPercent >= 100 ? "#FF3B30" : "#4CAF50";
 
   return (
     <>
       <View style={styles.dashCaloriesDisplay}>
         <Text style={styles.dashDateText}>{currentDate}</Text>
-        <Text style={{ color: "white", marginTop: 20 }}>
+        <Text style={styles.dashEatOutputText}>
           {overviewData.eatOutput}
         </Text>
 
@@ -461,30 +416,126 @@ export default function OverviewTab({ navigation }) {
             ]}
           />
         </View>
-        <Text style={{ color: "white", marginTop: 14 }}>
+        <Text style={styles.dashCaloriesText}>
           {overviewData.eatenOutput}
         </Text>
       </View>
 
       <View style={styles.dashNutriDisplay_container}>
-        <View style={{ flexDirection: "row" }}>
-          {topNutri.map((item) => (
-            <React.Fragment key={item.label}>
-              {renderNutriItem(item.label, item.consumed, item.goal, item.bar)}
-            </React.Fragment>
-          ))}
+        <View style={styles.dashNutriRow}>
+          <View style={styles.dashNutriDisplay}>
+            <Text style={styles.dashNutriDisplay_text}>Bielkoviny</Text>
+            <View style={styles.dashCaloriesBarContainer}>
+              <View
+                style={[
+                  styles.dashCaloriesBar,
+                  {
+                    width: `${overviewData.proteinBar}%`,
+                    backgroundColor: nutriBarColor(overviewData.proteinBar),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.dashNutriValueText}>
+              {overviewData.proteinConsumed} / {overviewData.proteinGoal} g
+            </Text>
+          </View>
+
+          <View style={styles.dashNutriDisplay}>
+            <Text style={styles.dashNutriDisplay_text}>Sacharidy</Text>
+            <View style={styles.dashCaloriesBarContainer}>
+              <View
+                style={[
+                  styles.dashCaloriesBar,
+                  {
+                    width: `${overviewData.carbBar}%`,
+                    backgroundColor: nutriBarColor(overviewData.carbBar),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.dashNutriValueText}>
+              {overviewData.carbConsumed} / {overviewData.carbGoal} g
+            </Text>
+          </View>
+
+          <View style={styles.dashNutriDisplay}>
+            <Text style={styles.dashNutriDisplay_text}>Tuky</Text>
+            <View style={styles.dashCaloriesBarContainer}>
+              <View
+                style={[
+                  styles.dashCaloriesBar,
+                  {
+                    width: `${overviewData.fatBar}%`,
+                    backgroundColor: nutriBarColor(overviewData.fatBar),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.dashNutriValueText}>
+              {overviewData.fatConsumed} / {overviewData.fatGoal} g
+            </Text>
+          </View>
         </View>
-        <View style={{ flexDirection: "row" }}>
-          {bottomNutri.map((item) => (
-            <React.Fragment key={item.label}>
-              {renderNutriItem(item.label, item.consumed, item.goal, item.bar)}
-            </React.Fragment>
-          ))}
+        <View style={styles.dashNutriRow}>
+          <View style={styles.dashNutriDisplay}>
+            <Text style={styles.dashNutriDisplay_text}>Vláknina</Text>
+            <View style={styles.dashCaloriesBarContainer}>
+              <View
+                style={[
+                  styles.dashCaloriesBar,
+                  {
+                    width: `${overviewData.fiberBar}%`,
+                    backgroundColor: nutriBarColor(overviewData.fiberBar),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.dashNutriValueText}>
+              {overviewData.fiberConsumed} / {overviewData.fiberGoal} g
+            </Text>
+          </View>
+
+          <View style={styles.dashNutriDisplay}>
+            <Text style={styles.dashNutriDisplay_text}>Soľ</Text>
+            <View style={styles.dashCaloriesBarContainer}>
+              <View
+                style={[
+                  styles.dashCaloriesBar,
+                  {
+                    width: `${overviewData.saltBar}%`,
+                    backgroundColor: nutriBarColor(overviewData.saltBar),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.dashNutriValueText}>
+              {overviewData.saltConsumed} / {overviewData.saltGoal} g
+            </Text>
+          </View>
+
+          <View style={styles.dashNutriDisplay}>
+            <Text style={styles.dashNutriDisplay_text}>Cukry</Text>
+            <View style={styles.dashCaloriesBarContainer}>
+              <View
+                style={[
+                  styles.dashCaloriesBar,
+                  {
+                    width: `${overviewData.sugarBar}%`,
+                    backgroundColor: nutriBarColor(overviewData.sugarBar),
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.dashNutriValueText}>
+              {overviewData.sugarConsumed} / {overviewData.sugarGoal} g
+            </Text>
+          </View>
         </View>
       </View>
 
       <View style={styles.dashBmiContainer}>
-        <Text style={{ color: "white" }}>
+        <Text style={styles.dashWaterText}>
           {overviewData.drunkWater} / {overviewData.waterGoal} ml
         </Text>
         <View style={styles.dashCaloriesBarContainer}>
@@ -500,12 +551,10 @@ export default function OverviewTab({ navigation }) {
         </View>
 
         <Pressable
-          backgroundColor="green"
-          padding={5}
-          borderRadius={20}
+          style={styles.dashAddWaterButton}
           onPress={() => setModalVisible(true)}
         >
-          <Image source={plus} style={{ width: 20, height: 20 }} />
+          <Image source={plus} style={styles.dashAddWaterIcon} />
         </Pressable>
 
         <Modal
@@ -514,79 +563,42 @@ export default function OverviewTab({ navigation }) {
           animationType="slide"
           onRequestClose={() => setModalVisible(false)}
         >
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-              backgroundColor: "rgba(0,0,0,0.5)",
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "white",
-                padding: 20,
-                borderRadius: 10,
-                width: "80%",
-              }}
-            >
-              <Text style={{ fontSize: 18, marginBottom: 10 }}>
+          <View style={styles.dashModalOverlay}>
+            <View style={styles.dashModalContent}>
+              <Text style={styles.dashModalTitle}>
                 Vyber možnosť
               </Text>
 
               {options.map((opt) => (
                 <TouchableOpacity
                   key={opt.label}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginVertical: 5,
-                  }}
+                  style={styles.dashModalOptionRow}
                   onPress={() => setSelectedOption(opt.label)}
                 >
-                  <View
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: 10,
-                      borderWidth: 1,
-                      borderColor: "#000",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      marginRight: 10,
-                    }}
-                  >
+                  <View style={styles.dashModalRadioOuter}>
                     {selectedOption === opt.label && (
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: "#4CAF50",
-                        }}
-                      />
+                      <View style={styles.dashModalRadioInner} />
                     )}
                   </View>
                   <View>
-                    <Text style={{ fontWeight: "bold" }}>{opt.label}</Text>
-                    <Text style={{ color: "#555" }}>{opt.description}</Text>
+                    <Text style={styles.dashModalOptionLabel}>
+                      {opt.label}
+                    </Text>
+                    <Text style={styles.dashModalOptionDescription}>
+                      {opt.description}
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ))}
 
               <Pressable
-                style={{
-                  marginTop: 15,
-                  backgroundColor: "#4CAF50",
-                  padding: 10,
-                  borderRadius: 5,
-                }}
+                style={styles.dashModalConfirmButton}
                 onPress={() => {
                   setModalVisible(false);
                   addWater();
                 }}
               >
-                <Text style={{ color: "white", textAlign: "center" }}>
+                <Text style={styles.dashModalConfirmButtonText}>
                   Potvrdiť
                 </Text>
               </Pressable>
@@ -596,7 +608,7 @@ export default function OverviewTab({ navigation }) {
       </View>
 
       <View style={styles.dashBmiContainer}>
-        <Text style={{ color: "white", textAlign: "center" }}>
+        <Text style={styles.dashBmiText}>
           {overviewData.bmiOutput}
         </Text>
         <View style={styles.dashCaloriesBarContainer}>
