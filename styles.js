@@ -1389,6 +1389,21 @@ export default StyleSheet.create({
     alignSelf: "center",
     marginTop: Math.round(clamp(vs(10), 8, 12)),
   },
+  dashNutriValueText: {
+    color: COLORS.white,
+    marginBottom: 5,
+  },
+  dashNutriRow: {
+    flexDirection: "row",
+  },
+  dashEatOutputText: {
+    color: COLORS.white,
+    marginTop: Math.round(clamp(vs(15), 12, 20)),
+  },
+  dashCaloriesText: {
+    color: COLORS.white,
+    marginTop: Math.round(clamp(vs(12), 10, 16)),
+  },
   dashBmiContainer: {
     backgroundColor: COLORS.darkSurface,
     width: "90%",
@@ -1398,5 +1413,93 @@ export default StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: Math.round(clamp(vs(2.5), 2, 6)),
+  },
+  dashWaterText: {
+    color: COLORS.white,
+  },
+  dashAddWaterButton: {
+    backgroundColor: "green",
+    padding: 5,
+    borderRadius: 20,
+  },
+  dashAddWaterIcon: {
+    width: 20,
+    height: 20,
+  },
+  dashModalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  dashModalContent: {
+    backgroundColor: COLORS.white,
+    padding: 20,
+    borderRadius: 10,
+    width: "80%",
+  },
+  dashModalTitle: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  dashModalOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 5,
+  },
+  dashModalRadioOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: COLORS.black,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+  dashModalRadioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.buttonColor,
+  },
+  dashModalOptionLabel: {
+    fontWeight: "bold",
+  },
+  dashModalOptionDescription: {
+    color: "#555",
+  },
+  dashModalConfirmButton: {
+    marginTop: 15,
+    backgroundColor: COLORS.buttonColor,
+    padding: 10,
+    borderRadius: 5,
+  },
+  dashModalConfirmButtonText: {
+    color: COLORS.white,
+    textAlign: "center",
+  },
+  dashBmiText: {
+    color: COLORS.white,
+    textAlign: "center",
+  },
+  overviewMissingProfileContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  overviewMissingProfileText: {
+    fontSize: 18,
+    textAlign: "center",
+  },
+  overviewMissingProfileButton: {
+    marginTop: 15,
+    backgroundColor: COLORS.buttonColor,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  overviewMissingProfileButtonText: {
+    color: COLORS.white,
+    fontWeight: "bold",
   },
 });
