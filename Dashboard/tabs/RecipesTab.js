@@ -690,7 +690,7 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
     if (data.ok) closeRecipeModal();
   };
 
-  const deleteRecipe = async () => {
+  const   deleteRecipe = async () => {
     if (!selectedRecept?.recipeId || !userEmail) return;
 
     const res = await fetch(`${SERVER_URL}/api/deleteRecipe`, {
@@ -891,7 +891,7 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                         if (!value) setSelectedPantryItems([]);
                       }}
                     />
-                    <Text style={styles.switchLabel}>
+                    <Text style={styles.switchLabel}>   
                       Použiť produkty zo špajze
                     </Text>
                   </View>

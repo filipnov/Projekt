@@ -290,9 +290,9 @@ async function start() {
 
       // Odoslanie e‑mailu
       await transporter.sendMail({
-  from: `"Socka" <${process.env.EMAIL_USER}>`,
+  from: `"Bitewise" <${process.env.EMAIL_USER}>`,
   to: email,
-  subject: "Password Reset Request",
+  subject: "Požiadavka na resetovanie ",
   html: `
     <p>Požiadali ste o reset hesla.</p>
     <p>Kliknite na odkaz nižšie (platí 15 minút):</p>
@@ -750,7 +750,7 @@ PRAVIDLÁ:
 11. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
 12. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
 13. Priraď každému receptu jednu z vymenovaných kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé. Žiadna iná kategória nesmie byť použitá
-14. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií – kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
+14. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií - kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
 15. Nepoužívaj odhady typu "cca" alebo "približne".
 16. Ak nevieš presnú hodnotu, použi databázový priemer.
 17. Celkové kalórie musia korešpondovať so súčtom makroživín.
@@ -761,7 +761,7 @@ PRAVIDLÁ:
 22. Odhadni čas každého kroku a výsledok urči ako ich súčet, zaokrúhlený na 5 minút.
 23. Skontroluj, že JSON je validný.
 24. Odpoveď MUSÍ začínať { a končiť }.
-25. Vráť **LEN validný JSON** – žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
+25. Vráť **LEN validný JSON** - žiadny text mimo JSON, žiadne vysvetlenia, žiadne komentáre.
 
 JSON ŠTRUKTÚRA:
 {

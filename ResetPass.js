@@ -31,7 +31,7 @@ export default function ResetPasswordScreen() {
   const getTokenFromUrl = (url) => {
     if (!url) return "";
     const parsed = Linking.parse(url);
-    return parsed.queryParams?.token || "";
+    return parsed.queryParams.token || "";
   };
 
   // Ak je token platný (nie je prázdny), uloží ho do stavu
@@ -49,12 +49,12 @@ export default function ResetPasswordScreen() {
     // 2) Počúvaj na nové deep linky, ak appka už beží
     //    Napr. keď je appka otvorená na pozadí a používateľ klikne na link
     const subscription = Linking.addEventListener("url", (event) => {
-      applyToken(getTokenFromUrl(event?.url));
+      applyToken(getTokenFromUrl(event.url));
     });
 
     // Upratanie listenera pri odchode zo screenu
     // Aby sme nepočúvali zbytočne a nevznikali memory leaky
-    return () => subscription?.remove?.();
+    return () => subscription.remove();
   }, []);
 
   // Odoslanie novej hodnoty hesla na server
@@ -62,7 +62,7 @@ export default function ResetPasswordScreen() {
     // Validácia: musí existovať token
     if (!token) {
       return showError(
-        "Token pre reset hesla sa nenašiel. Skús otvoriť link z e‑mailu znova.",
+        "Token pre reset hesla sa nenašiel. Skús otvoriť link z e-mailu znova.",
       );
     }
 

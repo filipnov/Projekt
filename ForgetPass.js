@@ -1,13 +1,11 @@
 // ForgetPass.js
 import { useState } from "react";
 import {
-  StyleSheet,
   Text,
   View,
   Image,
   TextInput,
   Pressable,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
