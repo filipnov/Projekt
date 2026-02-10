@@ -20,7 +20,7 @@ import arrow from "./assets/left_arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
-import { rescheduleExpirationNotifications } from "./notifications";
+import { scheduleExpirationNotificationForProduct } from "./notifications";
 
 const SERVER_URL = "https://app.bitewise.it.com";
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
@@ -113,7 +113,10 @@ export default function CameraScreen() {
 
       if (data.success && Array.isArray(data.products)) {
         await AsyncStorage.setItem("products", JSON.stringify(data.products));
-        await rescheduleExpirationNotifications(data.products);
+        await scheduleExpirationNotificationForProduct({
+          name: productName,
+          expirationDate,
+        });
       }
     } catch {}
   }

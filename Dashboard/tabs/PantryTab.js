@@ -18,7 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 // Centrálne štýly aplikácie.
 import styles from "../../styles";
-import { rescheduleExpirationNotifications } from "../../notifications";
+import { removeExpirationNotificationForProduct } from "../../notifications";
 
 // Základná URL servera – všetky API volania idú cez tento hostname.
 const SERVER_URL = "https://app.bitewise.it.com";
@@ -43,6 +43,25 @@ const getTodayKey = (date = new Date()) => {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+};
+
+const buildExpirationKey = (product) => {
+  const rawExpiration = product?.expirationDate;
+  if (!rawExpiration) return null;
+
+  const expirationDate = new Date(rawExpiration);
+  if (Number.isNaN(expirationDate.getTime())) return null;
+
+  const localDate = new Date(
+    expirationDate.getFullYear(),
+    expirationDate.getMonth(),
+    expirationDate.getDate(),
+  );
+  const dateKey = getTodayKey(localDate);
+  const nameValue = typeof product?.name === "string" ? product.name.trim() : "";
+  const normalizedName = nameValue ? nameValue.toLowerCase() : "potravina";
+
+  return `${normalizedName}::${dateKey}`;
 };
 
 export default function PantryTab() {
@@ -356,7 +375,14 @@ export default function PantryTab() {
     // Uložíme novú cache a prepíšeme state.
     await AsyncStorage.setItem("products", JSON.stringify(allProducts));
     setMealBoxes(allProducts);
-    await rescheduleExpirationNotifications(allProducts);
+    const removedKey = buildExpirationKey(box);
+    const hasSameExpiration = removedKey
+      ? allProducts.some((item) => buildExpirationKey(item) === removedKey)
+      : false;
+
+    if (!hasSameExpiration) {
+      await removeExpirationNotificationForProduct(box);
+    }
 
   };
 
@@ -391,7 +417,6 @@ export default function PantryTab() {
 
     // UI update + reset inputu.
     setMealBoxes(nextProducts);
-    await rescheduleExpirationNotifications(nextProducts);
     setCustomName("");
     setSavingCustom(false);
   };
@@ -424,7 +449,19 @@ export default function PantryTab() {
     // Uloženie a aktualizácia state.
     await AsyncStorage.setItem("products", JSON.stringify(filteredProducts));
     setMealBoxes(filteredProducts);
-    await rescheduleExpirationNotifications(filteredProducts);
+    const removedProduct = allProducts.find((item) => {
+      return item.productId === productId;
+    });
+    if (removedProduct) {
+      const removedKey = buildExpirationKey(removedProduct);
+      const hasSameExpiration = removedKey
+        ? filteredProducts.some((item) => buildExpirationKey(item) === removedKey)
+        : false;
+
+      if (!hasSameExpiration) {
+        await removeExpirationNotificationForProduct(removedProduct);
+      }
+    }
   };
 
   // --- MealBoxItem ---
