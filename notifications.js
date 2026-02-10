@@ -8,6 +8,7 @@ const PERMISSION_KEY = "notificationPermissionRequested";
 const DAILY_NOTIFICATION_IDS_KEY = "dailyNotificationIds";
 const EXPIRATION_NOTIFICATION_IDS_KEY = "expirationNotificationIds";
 const EXPIRATION_NOTIFICATION_TIME_KEY = "expirationNotificationTime";
+const EXPIRATION_NOTIFICATION_PLANS_KEY = "expirationNotificationPlans";
 
 const DEFAULT_TIMES = ["08:00", "11:00", "14:00", "17:00", "20:00"];
 const DEFAULT_EXPIRATION_TIME = "08:00";
@@ -47,11 +48,75 @@ const cancelNotificationsByIds = async (ids) => {
   );
 };
 
+const loadExpirationPlans = async () => {
+  const stored = await AsyncStorage.getItem(EXPIRATION_NOTIFICATION_PLANS_KEY);
+  const parsed = stored ? JSON.parse(stored) : [];
+  return Array.isArray(parsed) ? parsed : [];
+};
+
+const saveExpirationPlans = async (plans) => {
+  await AsyncStorage.setItem(
+    EXPIRATION_NOTIFICATION_PLANS_KEY,
+    JSON.stringify(plans),
+  );
+};
+
 const toDateKey = (date) => {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+};
+
+const buildExpirationKey = (product) => {
+  const rawExpiration = product?.expirationDate;
+  if (!rawExpiration) return null;
+
+  const expirationDate = new Date(rawExpiration);
+  if (Number.isNaN(expirationDate.getTime())) return null;
+
+  const localDate = new Date(
+    expirationDate.getFullYear(),
+    expirationDate.getMonth(),
+    expirationDate.getDate(),
+  );
+  const dateKey = toDateKey(localDate);
+  const nameValue = typeof product?.name === "string" ? product.name.trim() : "";
+  const normalizedName = nameValue ? nameValue.toLowerCase() : "potravina";
+
+  return `${normalizedName}::${dateKey}`;
+};
+
+const buildExpirationTarget = (product, time = DEFAULT_EXPIRATION_TIME) => {
+  const rawExpiration = product?.expirationDate;
+  if (!rawExpiration) return null;
+
+  const expirationDate = new Date(rawExpiration);
+  if (Number.isNaN(expirationDate.getTime())) return null;
+
+  const now = Date.now();
+  const { hour, minute } = parseTimeValue(time, DEFAULT_EXPIRATION_TIME);
+  const targetKey = buildExpirationKey(product);
+  if (!targetKey) return null;
+
+  const triggerDate = new Date(
+    expirationDate.getFullYear(),
+    expirationDate.getMonth(),
+    expirationDate.getDate() - 1,
+    hour,
+    minute,
+    0,
+    0,
+  );
+
+  if (triggerDate.getTime() <= now) return null;
+
+  const nameValue = typeof product?.name === "string" ? product.name.trim() : "";
+  return {
+    key: targetKey,
+    name: nameValue || "Potravina",
+    triggerDate,
+  };
 };
 
 // Požiada používateľa o povolenia
@@ -65,7 +130,7 @@ export async function getPermissionStatus() {
   return status;
 }
 
-// Naplánuje notifikácie na konkrétne časy (napr. 10:00 a 18:00)
+// Naplánuje notifikácie na konkrétne časy 
 export async function scheduleDailyNotifications(times = DEFAULT_TIMES) {
   const storedIds = await loadStoredIds(DAILY_NOTIFICATION_IDS_KEY);
 
@@ -104,20 +169,20 @@ export async function scheduleDailyNotifications(times = DEFAULT_TIMES) {
   await saveStoredIds(DAILY_NOTIFICATION_IDS_KEY, nextIds);
 }
 
-export async function ensureNotificationsSetup() {
-  const requested = await AsyncStorage.getItem(PERMISSION_KEY);
+export async function ensureNotificationsSetup(times = DEFAULT_TIMES) {
+  const permission = await Notifications.getPermissionsAsync();
+  let status = permission.status;
 
-  let status = null;
-  if (!requested) {
-    status = await requestPermissions();
+  if (status !== "granted") {
+    status = (await requestPermissions()) ? "granted" : "denied";
     await AsyncStorage.setItem(PERMISSION_KEY, "true");
-    if (!status) return false;
-  } else {
-    status = (await getPermissionStatus()) === "granted";
-    if (!status) return false;
+    if (status !== "granted") return false;
   }
 
-  await scheduleDailyNotifications();
+  const storedIds = await loadStoredIds(DAILY_NOTIFICATION_IDS_KEY);
+  if (storedIds.length) return true;
+
+  await scheduleDailyNotifications(times);
   return true;
 }
 
@@ -141,6 +206,7 @@ export async function cancelExpirationNotifications() {
   const storedIds = await loadStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY);
   await cancelNotificationsByIds(storedIds);
   await saveStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY, []);
+  await saveExpirationPlans([]);
 }
 
 export async function rescheduleExpirationNotifications(
@@ -152,48 +218,17 @@ export async function rescheduleExpirationNotifications(
 
   await cancelExpirationNotifications();
 
-  const now = Date.now();
-  const { hour, minute } = parseTimeValue(time, DEFAULT_EXPIRATION_TIME);
   const uniqueTargets = new Map();
 
   for (const product of products || []) {
-    const rawExpiration = product?.expirationDate;
-    if (!rawExpiration) continue;
-
-    const expirationDate = new Date(rawExpiration);
-    if (Number.isNaN(expirationDate.getTime())) continue;
-
-    const localDate = new Date(
-      expirationDate.getFullYear(),
-      expirationDate.getMonth(),
-      expirationDate.getDate(),
-    );
-    const dateKey = toDateKey(localDate);
-    const nameValue = typeof product?.name === "string" ? product.name.trim() : "";
-    const normalizedName = nameValue ? nameValue.toLowerCase() : "potravina";
-    const targetKey = `${normalizedName}::${dateKey}`;
-
-    if (uniqueTargets.has(targetKey)) continue;
-
-    const triggerDate = new Date(
-      expirationDate.getFullYear(),
-      expirationDate.getMonth(),
-      expirationDate.getDate() - 1,
-      hour,
-      minute,
-      0,
-      0,
-    );
-
-    if (triggerDate.getTime() <= now) continue;
-
-    uniqueTargets.set(targetKey, {
-      name: nameValue || "Potravina",
-      triggerDate,
-    });
+    const target = buildExpirationTarget(product, time);
+    if (!target) continue;
+    if (uniqueTargets.has(target.key)) continue;
+    uniqueTargets.set(target.key, target);
   }
 
   const nextIds = [];
+  const nextPlans = [];
 
   for (const target of uniqueTargets.values()) {
     const id = await Notifications.scheduleNotificationAsync({
@@ -208,10 +243,97 @@ export async function rescheduleExpirationNotifications(
     });
 
     nextIds.push(id);
+    nextPlans.push({
+      key: target.key,
+      id,
+      name: target.name,
+      triggerDate: target.triggerDate.toISOString(),
+    });
   }
 
   await saveStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY, nextIds);
+  await saveExpirationPlans(nextPlans);
   await AsyncStorage.setItem(EXPIRATION_NOTIFICATION_TIME_KEY, time);
 
   return nextIds.length > 0;
+}
+
+export async function ensureExpirationNotifications(
+  products,
+  time = DEFAULT_EXPIRATION_TIME,
+) {
+  const permissionStatus = await Notifications.getPermissionsAsync();
+  if (permissionStatus.status !== "granted") return false;
+
+  const storedIds = await loadStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY);
+  if (storedIds.length) return true;
+
+  await rescheduleExpirationNotifications(products, time);
+  return true;
+}
+
+export async function scheduleExpirationNotificationForProduct(
+  product,
+  time = DEFAULT_EXPIRATION_TIME,
+) {
+  const permissionStatus = await Notifications.getPermissionsAsync();
+  if (permissionStatus.status !== "granted") return false;
+
+  const target = buildExpirationTarget(product, time);
+  if (!target) return false;
+
+  const plans = await loadExpirationPlans();
+  const existing = plans.find((plan) => plan.key === target.key);
+  if (existing) return true;
+
+  const id = await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "📆 Zajtra končí spotreba",
+      body: `${target.name} – o deň končí dátum spotreby.`,
+      sound: true,
+    },
+    trigger: {
+      date: target.triggerDate,
+    },
+  });
+
+  const nextPlans = [
+    ...plans,
+    {
+      key: target.key,
+      id,
+      name: target.name,
+      triggerDate: target.triggerDate.toISOString(),
+    },
+  ];
+
+  const storedIds = await loadStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY);
+  await saveStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY, [...storedIds, id]);
+  await saveExpirationPlans(nextPlans);
+  await AsyncStorage.setItem(EXPIRATION_NOTIFICATION_TIME_KEY, time);
+
+  return true;
+}
+
+export async function removeExpirationNotificationForProduct(product) {
+  const key = buildExpirationKey(product);
+  if (!key) return false;
+
+  const plans = await loadExpirationPlans();
+  const matchIndex = plans.findIndex((plan) => plan.key === key);
+  if (matchIndex === -1) return false;
+
+  const match = plans[matchIndex];
+  const nextPlans = plans.filter((_, index) => index !== matchIndex);
+  await saveExpirationPlans(nextPlans);
+
+  if (match?.id) {
+    await Notifications.cancelScheduledNotificationAsync(match.id);
+
+    const storedIds = await loadStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY);
+    const nextIds = storedIds.filter((id) => id !== match.id);
+    await saveStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY, nextIds);
+  }
+
+  return true;
 }

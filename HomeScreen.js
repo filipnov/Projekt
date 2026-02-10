@@ -20,7 +20,7 @@ import KeyboardWrapper from "./KeyboardWrapper";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
-  rescheduleExpirationNotifications,
+  ensureExpirationNotifications,
 } from "./notifications";
 
 export default function HomeScreen({ setIsLoggedIn }) {
@@ -112,7 +112,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
   const refreshExpirationNotifications = async () => {
     const storedProducts = await AsyncStorage.getItem("products");
     const products = storedProducts ? JSON.parse(storedProducts) : [];
-    await rescheduleExpirationNotifications(products);
+    await ensureExpirationNotifications(products);
   };
  
   useEffect(() => {
