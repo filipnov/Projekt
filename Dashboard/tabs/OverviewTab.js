@@ -82,26 +82,6 @@ export default function OverviewTab({ navigation }) {
     { label: "Fľaša", description: "500 ml", ml: 500 },
   ];
 
-  const renderNutriItem = (label, valueConsumed, valueGoal, barPercent) => (
-    <View key={label} style={styles.dashNutriDisplay}>
-      <Text style={styles.dashNutriDisplay_text}>{label}</Text>
-      <View style={styles.dashCaloriesBarContainer}>
-        <View
-          style={[
-            styles.dashCaloriesBar,
-            {
-              width: `${barPercent}%`,
-              backgroundColor: barPercent >= 100 ? "#FF3B30" : "#4CAF50",
-            },
-          ]}
-        />
-      </View>
-      <Text style={styles.dashNutriValueText}>
-        {valueConsumed} / {valueGoal} g
-      </Text>
-    </View>
-  );
-
   const addWater = () => {
     const picked = options.find((opt) => opt.label === selectedOption);
     const water = picked?.ml || 0;
@@ -173,7 +153,7 @@ export default function OverviewTab({ navigation }) {
     const storedTotalsRaw = await AsyncStorage.getItem("eatenTotals");
     if (!storedTotalsRaw) return { ...DEFAULT_TOTALS };
     try {
-      return { ...DEFAULT_TOTALS, ...JSON.parse(storedTotalsRaw) };
+      return JSON.parse(storedTotalsRaw);
     } catch (e) {
       console.error("Error parsing stored eatenTotals:", e);
       return { ...DEFAULT_TOTALS };
@@ -297,8 +277,7 @@ export default function OverviewTab({ navigation }) {
     let eatOutput = `Prekročil/a si cieľ o ${Math.round(calories - cal)} kcal`;
     if (calories < cal)
       eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
-    if (calories === cal)
-      eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
+    if (calories === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
 
     const proteinGoal = ((cal * 0.13) / 4).toFixed(0);
     const carbGoal = ((cal * 0.65) / 4).toFixed(0);
@@ -401,10 +380,7 @@ export default function OverviewTab({ navigation }) {
     <>
       <View style={styles.dashCaloriesDisplay}>
         <Text style={styles.dashDateText}>{currentDate}</Text>
-        <Text style={styles.dashEatOutputText}>
-          {overviewData.eatOutput}
-        </Text>
-
+        <Text style={styles.dashEatOutputText}>{overviewData.eatOutput}</Text>
         <View style={styles.dashCaloriesBarContainer}>
           <View
             style={[
@@ -416,9 +392,7 @@ export default function OverviewTab({ navigation }) {
             ]}
           />
         </View>
-        <Text style={styles.dashCaloriesText}>
-          {overviewData.eatenOutput}
-        </Text>
+        <Text style={styles.dashCaloriesText}>{overviewData.eatenOutput}</Text>
       </View>
 
       <View style={styles.dashNutriDisplay_container}>
@@ -565,9 +539,7 @@ export default function OverviewTab({ navigation }) {
         >
           <View style={styles.dashModalOverlay}>
             <View style={styles.dashModalContent}>
-              <Text style={styles.dashModalTitle}>
-                Vyber možnosť
-              </Text>
+              <Text style={styles.dashModalTitle}>Vyber možnosť</Text>
 
               {options.map((opt) => (
                 <TouchableOpacity
@@ -581,9 +553,7 @@ export default function OverviewTab({ navigation }) {
                     )}
                   </View>
                   <View>
-                    <Text style={styles.dashModalOptionLabel}>
-                      {opt.label}
-                    </Text>
+                    <Text style={styles.dashModalOptionLabel}>{opt.label}</Text>
                     <Text style={styles.dashModalOptionDescription}>
                       {opt.description}
                     </Text>
@@ -598,9 +568,7 @@ export default function OverviewTab({ navigation }) {
                   addWater();
                 }}
               >
-                <Text style={styles.dashModalConfirmButtonText}>
-                  Potvrdiť
-                </Text>
+                <Text style={styles.dashModalConfirmButtonText}>Potvrdiť</Text>
               </Pressable>
             </View>
           </View>
@@ -608,9 +576,7 @@ export default function OverviewTab({ navigation }) {
       </View>
 
       <View style={styles.dashBmiContainer}>
-        <Text style={styles.dashBmiText}>
-          {overviewData.bmiOutput}
-        </Text>
+        <Text style={styles.dashBmiText}>{overviewData.bmiOutput}</Text>
         <View style={styles.dashCaloriesBarContainer}>
           <View
             style={[
