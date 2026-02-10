@@ -4,10 +4,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Kľúč pre uloženie času notifikácií
 const STORAGE_KEY = "notificationTimes";
-const PERMISSION_KEY = "notificationPermissionRequested";
 const DAILY_NOTIFICATION_IDS_KEY = "dailyNotificationIds";
 const EXPIRATION_NOTIFICATION_IDS_KEY = "expirationNotificationIds";
-const EXPIRATION_NOTIFICATION_TIME_KEY = "expirationNotificationTime";
 const EXPIRATION_NOTIFICATION_PLANS_KEY = "expirationNotificationPlans";
 
 const DEFAULT_TIMES = ["08:00", "11:00", "14:00", "17:00", "20:00"];
@@ -125,20 +123,12 @@ export async function requestPermissions() {
   return status === "granted";
 }
 
-export async function getPermissionStatus() {
-  const { status } = await Notifications.getPermissionsAsync();
-  return status;
-}
-
 // Naplánuje notifikácie na konkrétne časy 
 export async function scheduleDailyNotifications(times = DEFAULT_TIMES) {
   const storedIds = await loadStoredIds(DAILY_NOTIFICATION_IDS_KEY);
 
   if (storedIds.length) {
     await cancelNotificationsByIds(storedIds);
-  } else {
-    // Legacy cleanup pre staré verzie bez uložených ID.
-    await cancelAllNotifications();
   }
 
   const nextIds = [];
@@ -175,7 +165,6 @@ export async function ensureNotificationsSetup(times = DEFAULT_TIMES) {
 
   if (status !== "granted") {
     status = (await requestPermissions()) ? "granted" : "denied";
-    await AsyncStorage.setItem(PERMISSION_KEY, "true");
     if (status !== "granted") return false;
   }
 
@@ -186,90 +175,11 @@ export async function ensureNotificationsSetup(times = DEFAULT_TIMES) {
   return true;
 }
 
-// Zruší všetky naplánované notifikácie
-export async function cancelAllNotifications() {
-  await Notifications.cancelAllScheduledNotificationsAsync();
-}
-
-// Načíta uložené časy notifikácií
-export async function loadNotificationTimes() {
-  const times = await AsyncStorage.getItem(STORAGE_KEY);
-  return times ? JSON.parse(times) : null;
-}
-
-// Upraví existujúce časy notifikácií
-export async function updateNotificationTimes(times) {
-  await scheduleDailyNotifications(times);
-}
-
 export async function cancelExpirationNotifications() {
   const storedIds = await loadStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY);
   await cancelNotificationsByIds(storedIds);
   await saveStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY, []);
   await saveExpirationPlans([]);
-}
-
-export async function rescheduleExpirationNotifications(
-  products,
-  time = DEFAULT_EXPIRATION_TIME,
-) {
-  const permissionStatus = await Notifications.getPermissionsAsync();
-  if (permissionStatus.status !== "granted") return false;
-
-  await cancelExpirationNotifications();
-
-  const uniqueTargets = new Map();
-
-  for (const product of products || []) {
-    const target = buildExpirationTarget(product, time);
-    if (!target) continue;
-    if (uniqueTargets.has(target.key)) continue;
-    uniqueTargets.set(target.key, target);
-  }
-
-  const nextIds = [];
-  const nextPlans = [];
-
-  for (const target of uniqueTargets.values()) {
-    const id = await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "📆 Zajtra končí spotreba",
-        body: `${target.name} – o deň končí dátum spotreby.`,
-        sound: true,
-      },
-      trigger: {
-        date: target.triggerDate,
-      },
-    });
-
-    nextIds.push(id);
-    nextPlans.push({
-      key: target.key,
-      id,
-      name: target.name,
-      triggerDate: target.triggerDate.toISOString(),
-    });
-  }
-
-  await saveStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY, nextIds);
-  await saveExpirationPlans(nextPlans);
-  await AsyncStorage.setItem(EXPIRATION_NOTIFICATION_TIME_KEY, time);
-
-  return nextIds.length > 0;
-}
-
-export async function ensureExpirationNotifications(
-  products,
-  time = DEFAULT_EXPIRATION_TIME,
-) {
-  const permissionStatus = await Notifications.getPermissionsAsync();
-  if (permissionStatus.status !== "granted") return false;
-
-  const storedIds = await loadStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY);
-  if (storedIds.length) return true;
-
-  await rescheduleExpirationNotifications(products, time);
-  return true;
 }
 
 export async function scheduleExpirationNotificationForProduct(
@@ -310,7 +220,6 @@ export async function scheduleExpirationNotificationForProduct(
   const storedIds = await loadStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY);
   await saveStoredIds(EXPIRATION_NOTIFICATION_IDS_KEY, [...storedIds, id]);
   await saveExpirationPlans(nextPlans);
-  await AsyncStorage.setItem(EXPIRATION_NOTIFICATION_TIME_KEY, time);
 
   return true;
 }

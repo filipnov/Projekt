@@ -20,7 +20,6 @@ import KeyboardWrapper from "./KeyboardWrapper";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
-  ensureExpirationNotifications,
 } from "./notifications";
 
 export default function HomeScreen({ setIsLoggedIn }) {
@@ -109,12 +108,6 @@ export default function HomeScreen({ setIsLoggedIn }) {
     }
   }
 
-  const refreshExpirationNotifications = async () => {
-    const storedProducts = await AsyncStorage.getItem("products");
-    const products = storedProducts ? JSON.parse(storedProducts) : [];
-    await ensureExpirationNotifications(products);
-  };
- 
   useEffect(() => {
     // Pokus o automatické prihlásenie zo saved údajov (ak existujú)
     const tryAutoLogin = async () => {
@@ -147,7 +140,6 @@ export default function HomeScreen({ setIsLoggedIn }) {
             await pullAllUserData(storedEmail);
             // plánovanie notifikácií (po prípadnom súhlase)
             await ensureNotificationsSetup();
-            await refreshExpirationNotifications();
             console.log("✅ Data pulled, navigating to Dashboard");
             setIsLoggedIn(true);
 
@@ -207,7 +199,6 @@ export default function HomeScreen({ setIsLoggedIn }) {
       // stiahneme zvyšok používateľských dát (produkty, recepty, história)
       await pullAllUserData(data.user.email);
       await ensureNotificationsSetup();
-      await refreshExpirationNotifications();
 
       // Určíme počiatočné eatenTotals (čo zobrazí Dashboard):
       // - najprv lokálna cache 'eatenTotals' (rýchle)
