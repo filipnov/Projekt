@@ -237,10 +237,7 @@ export default function PantryTab() {
 
   // --- Fetch mealBoxes from AsyncStorage only ---
   const loadMealBoxes = useCallback(async () => {
-    // Bez emailu nevieme filtrovať produkty pre používateľa.
-    if (!email) return;
-
-    // Skúsime načítať cache (rýchlejšie a offline-friendly).
+    // Načítanie z cache 
     const storedMealBox = await AsyncStorage.getItem("products");
     const boxes = storedMealBox ? JSON.parse(storedMealBox) : [];
 

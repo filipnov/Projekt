@@ -87,31 +87,11 @@ export default function ProfileCompletition() {
             value: data.activityLevel,
           });
         }
-        return;
-      }
-
-      const response = await fetch(`${SERVER}/api/userProfile?email=${email}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        setWeight(String(data.weight || ""));
-        setHeight(String(data.height || ""));
-        setAge(String(data.age || ""));
-        setGender(data.gender || "male");
-        setGoal(data.goal || "maintain");
-        if (data.activityLevel) {
-          setSelectedActivity({
-            label: data.activityLabel || "Ľahko aktívny",
-            value: data.activityLevel,
-          });
-        }
-        await AsyncStorage.setItem("userProfile", JSON.stringify(data));
       }
     };
 
     loadUserProfile();
   }, [email]);
-
 
   async function handleCompletion() {
     if (!weight.trim() || !height.trim() || !age.trim()) {
@@ -156,155 +136,158 @@ export default function ProfileCompletition() {
   }
 
   return (
-    <KeyboardWrapper style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
+    <KeyboardWrapper
+      style={{ flex: 1 }}
+      contentContainerStyle={{ paddingBottom: 24 }}
+    >
       <View style={styles.formContainer}>
-  <Pressable
-    style={({ pressed }) =>
-      pressed ? styles.backButtonPressed : styles.backButton
-    }
-    onPress={() => navigation.goBack()}
-  >
-    <Image source={arrow} style={styles.backIcon} />
-  </Pressable>
+        <Pressable
+          style={({ pressed }) =>
+            pressed ? styles.backButtonPressed : styles.backButton
+          }
+          onPress={() => navigation.goBack()}
+        >
+          <Image source={arrow} style={styles.backIcon} />
+        </Pressable>
 
-  <Text style={styles.screenTitle}>Uprav svoj profil</Text>
+        <Text style={styles.screenTitle}>Uprav svoj profil</Text>
 
-  <Text style={styles.inputLabel}>Výška (cm):</Text>
-  <TextInput
-    placeholder="cm"
-    style={styles.textInput}
-    value={height}
-    onChangeText={setHeight}
-    keyboardType="numeric"
-  />
+        <Text style={styles.inputLabel}>Výška (cm):</Text>
+        <TextInput
+          placeholder="cm"
+          style={styles.textInput}
+          value={height}
+          onChangeText={setHeight}
+          keyboardType="numeric"
+        />
 
-  <Text style={styles.inputLabel}>Váha (kg):</Text>
-  <TextInput
-    placeholder="kg"
-    style={styles.textInput}
-    value={weight}
-    onChangeText={setWeight}
-    keyboardType="numeric"
-  />
+        <Text style={styles.inputLabel}>Váha (kg):</Text>
+        <TextInput
+          placeholder="kg"
+          style={styles.textInput}
+          value={weight}
+          onChangeText={setWeight}
+          keyboardType="numeric"
+        />
 
-  <Text style={styles.inputLabel}>Vek:</Text>
-  <TextInput
-    placeholder="rokov"
-    style={styles.textInput}
-    value={age}
-    onChangeText={setAge}
-    keyboardType="numeric"
-  />
+        <Text style={styles.inputLabel}>Vek:</Text>
+        <TextInput
+          placeholder="rokov"
+          style={styles.textInput}
+          value={age}
+          onChangeText={setAge}
+          keyboardType="numeric"
+        />
 
-  <Text style={styles.inputLabel}>Pohlavie:</Text>
-  <View style={styles.optionRow}>
-    <Pressable
-      onPress={() => setGender("male")}
-      style={[
-        styles.optionButton,
-        { backgroundColor: gender === "male" ? "#2196F3" : "#ccc" },
-      ]}
-    >
-      <Text style={styles.optionText}>Muž</Text>
-    </Pressable>
-
-    <Pressable
-      onPress={() => setGender("female")}
-      style={[
-        styles.optionButton,
-        { backgroundColor: gender === "female" ? "#E91E63" : "#ccc" },
-      ]}
-    >
-      <Text style={styles.optionText}>Žena</Text>
-    </Pressable>
-  </View>
-
-  <Text style={styles.inputLabel}>Úroveň aktivity:</Text>
-  <Pressable
-    style={styles.selectButton}
-    onPress={() => setActivityModalVisible(true)}
-  >
-    <Text style={{ color: "black" }}>{selectedActivity.label}</Text>
-  </Pressable>
-
-  <Text style={styles.inputLabel}>Cieľ:</Text>
-  <View style={styles.optionRow}>
-    <Pressable
-      onPress={() => setGoal("lose")}
-      style={[
-        styles.optionButton,
-        { backgroundColor: goal === "lose" ? "#2196F3" : "#ccc" },
-      ]}
-    >
-      <Text style={styles.optionText}>Chudnúť</Text>
-    </Pressable>
-
-    <Pressable
-      onPress={() => setGoal("maintain")}
-      style={[
-        styles.optionButton,
-        { backgroundColor: goal === "maintain" ? "#4CAF50" : "#ccc" },
-      ]}
-    >
-      <Text style={styles.optionText}>Udržať sa</Text>
-    </Pressable>
-
-    <Pressable
-      onPress={() => setGoal("gain")}
-      style={[
-        styles.optionButton,
-        { backgroundColor: goal === "gain" ? "#E91E63" : "#ccc" },
-      ]}
-    >
-      <Text style={styles.optionText}>Pribrať</Text>
-    </Pressable>
-  </View>
-
-  <Pressable style={styles.primaryButton} onPress={handleCompletion}>
-    <Text style={styles.primaryButtonText}>Uložiť údaje</Text>
-  </Pressable>
-</View>
-
-<Modal visible={activityModalVisible} transparent animationType="slide">
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalCard}>
-      <Text style={styles.modalTitle}>Vyber úroveň aktivity</Text>
-
-      <ScrollView>
-        {ACTIVITY_OPTIONS.map((option) => (
+        <Text style={styles.inputLabel}>Pohlavie:</Text>
+        <View style={styles.optionRow}>
           <Pressable
-            key={option.label}
-            style={styles.activityOption}
-            onPress={() => {
-              setSelectedActivity(option);
-              setActivityModalVisible(false);
-            }}
+            onPress={() => setGender("male")}
+            style={[
+              styles.optionButton,
+              { backgroundColor: gender === "male" ? "#2196F3" : "#ccc" },
+            ]}
           >
-            <View style={styles.radioCircleOuter}>
-              {selectedActivity?.label === option.label && (
-                <View style={styles.radioCircleInner} />
-              )}
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.modalLabel}>{option.label}</Text>
-              <Text style={styles.modalDescription}>
-                {option.description}
-              </Text>
-            </View>
+            <Text style={styles.optionText}>Muž</Text>
           </Pressable>
-        ))}
-      </ScrollView>
 
-      <Pressable
-        style={styles.primaryButton}
-        onPress={() => setActivityModalVisible(false)}
-      >
-        <Text style={styles.primaryButtonText}>Zavrieť</Text>
-      </Pressable>
-    </View>
-  </View>
-</Modal>
+          <Pressable
+            onPress={() => setGender("female")}
+            style={[
+              styles.optionButton,
+              { backgroundColor: gender === "female" ? "#E91E63" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.optionText}>Žena</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.inputLabel}>Úroveň aktivity:</Text>
+        <Pressable
+          style={styles.selectButton}
+          onPress={() => setActivityModalVisible(true)}
+        >
+          <Text style={{ color: "black" }}>{selectedActivity.label}</Text>
+        </Pressable>
+
+        <Text style={styles.inputLabel}>Cieľ:</Text>
+        <View style={styles.optionRow}>
+          <Pressable
+            onPress={() => setGoal("lose")}
+            style={[
+              styles.optionButton,
+              { backgroundColor: goal === "lose" ? "#2196F3" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.optionText}>Chudnúť</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setGoal("maintain")}
+            style={[
+              styles.optionButton,
+              { backgroundColor: goal === "maintain" ? "#4CAF50" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.optionText}>Udržať sa</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => setGoal("gain")}
+            style={[
+              styles.optionButton,
+              { backgroundColor: goal === "gain" ? "#E91E63" : "#ccc" },
+            ]}
+          >
+            <Text style={styles.optionText}>Pribrať</Text>
+          </Pressable>
+        </View>
+
+        <Pressable style={styles.primaryButton} onPress={handleCompletion}>
+          <Text style={styles.primaryButtonText}>Uložiť údaje</Text>
+        </Pressable>
+      </View>
+
+      <Modal visible={activityModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Vyber úroveň aktivity</Text>
+
+            <ScrollView>
+              {ACTIVITY_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.label}
+                  style={styles.activityOption}
+                  onPress={() => {
+                    setSelectedActivity(option);
+                    setActivityModalVisible(false);
+                  }}
+                >
+                  <View style={styles.radioCircleOuter}>
+                    {selectedActivity?.label === option.label && (
+                      <View style={styles.radioCircleInner} />
+                    )}
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.modalLabel}>{option.label}</Text>
+                    <Text style={styles.modalDescription}>
+                      {option.description}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+
+            <Pressable
+              style={styles.primaryButton}
+              onPress={() => setActivityModalVisible(false)}
+            >
+              <Text style={styles.primaryButtonText}>Zavrieť</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </KeyboardWrapper>
   );
 }
