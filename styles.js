@@ -1082,7 +1082,6 @@ export default StyleSheet.create({
   pantryCloseButtonText: {
     ...baseButtonTextMedium,
   },
-  pantryRoot: {},
   pantryMealContainer: {
     marginTop: Math.round(clamp(vs(20), 16, 28)),
     width: "90%",

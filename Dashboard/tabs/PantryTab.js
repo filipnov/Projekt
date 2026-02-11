@@ -235,45 +235,15 @@ export default function PantryTab() {
     });
   }, []);
 
-  // --- Fetch mealBoxes with AsyncStorage first, server fallback ---
-  const loadMealBoxes = useCallback(
-    async ({ forceServer = false } = {}) => {
-      // Bez emailu nevieme filtrovať produkty pre používateľa.
-      if (!email) return;
+  // --- Fetch mealBoxes from AsyncStorage only ---
+  const loadMealBoxes = useCallback(async () => {
+    // Načítanie z cache 
+    const storedMealBox = await AsyncStorage.getItem("products");
+    const boxes = storedMealBox ? JSON.parse(storedMealBox) : [];
 
-      // Lokálna premenna na výsledné produkty.
-      let boxes = [];
-
-      if (!forceServer) {
-        // Skúsime najprv cache (rýchlejšie a offline-friendly).
-        const storedMealBox = await AsyncStorage.getItem("products");
-
-        if (storedMealBox) {
-          // JSON -> JS array.
-          boxes = JSON.parse(storedMealBox);
-        }
-      }
-
-      if (!boxes.length) {
-        // Keď cache neobsahuje dáta, ideme na server.
-        const requestUrl = `${SERVER_URL}/api/getProducts?email=${encodeURIComponent(
-          email,
-        )}`;
-        const response = await fetch(requestUrl);
-        const data = await response.json();
-
-        // Bezpečný fallback na prázdny array.
-        boxes = data.products || [];
-
-        // Uložíme výsledok do cache pre budúce rýchle načítanie.
-        await AsyncStorage.setItem("products", JSON.stringify(boxes));
-      }
-
-      // Aktualizujeme stav v UI.
-      setMealBoxes(boxes);
-    },
-    [email],
-  );
+    // Aktualizujeme stav v UI.
+    setMealBoxes(boxes);
+  }, [email]);
 
   // --- Auto fetch on tab focus ---
   useFocusEffect(
@@ -344,9 +314,6 @@ export default function PantryTab() {
   // 2) upraví lokálnu cache
   // 3) pripočíta výživové hodnoty do denného súhrnu
   const handleRemoveMealBox = async (id, productId, box) => {
-    // Ak zlyhá serverové odstránenie, spravíme následný refresh.
-    let shouldForceRefresh = false;
-
     try {
       if (email && productId) {
         await fetch(`${SERVER_URL}/api/removeProduct`, {
@@ -356,8 +323,7 @@ export default function PantryTab() {
         });
       }
     } catch {
-      // Pri chybe vynútime neskôr fetch zo servera.
-      shouldForceRefresh = true;
+      console.error("Error removing product from server:", err);
     }
 
     await addEatenValues(box);
@@ -415,10 +381,6 @@ export default function PantryTab() {
       await removeExpirationNotificationForProduct(box);
     }
 
-    if (shouldForceRefresh) {
-      // Ak bol problém na serveri, zosynchronizujeme so serverom.
-      await loadMealBoxes({ forceServer: true });
-    }
   };
 
   const addCustomMealBox = async () => {
@@ -751,7 +713,7 @@ export default function PantryTab() {
 
   return (
     // Root kontajner celej obrazovky.
-    <View style={styles.pantryRoot}>
+    <View>
       {/* Modál s detailom produktu */}
       <Modal
         visible={isModalVisible}
