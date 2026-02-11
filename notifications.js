@@ -12,11 +12,11 @@ const DEFAULT_TIMES = ["08:00", "11:00", "14:00", "17:00", "20:00"];
 const DEFAULT_EXPIRATION_TIME = "08:00";
 const MESSAGE_VARIANTS = [
   {
-    title: "💧 Čas na vodu",
-    body: "Daj si pár dúškov a pokračuj v pohode.",
+    title: "Čas na vodu",
+    body: "Nezabudni dodržiavať pitný režim",
   },
   {
-    title: "🥫 Špajza čaká",
+    title: "Špajza čaká",
     body: "Máś niečo nové? Pridaj to, nech máš prehľad.",
   },
 ];
@@ -198,8 +198,8 @@ export async function scheduleExpirationNotificationForProduct(
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: "📆 Zajtra končí spotreba",
-      body: `${target.name} – o deň končí dátum spotreby.`,
+      title: "Zajtra končí spotreba",
+      body: `${target.name} - o deň končí dátum spotreby.`,
       sound: true,
     },
     trigger: {
