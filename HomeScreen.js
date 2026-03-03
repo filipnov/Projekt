@@ -17,6 +17,7 @@ import logo from "./assets/logo_name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+import { ensurePasswordHash } from "./passwordUtils";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
@@ -121,6 +122,18 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
         // Ak máme e‑mail aj heslo, skúsime prihlásiť bez zásahu používateľa
         if (storedEmail && storedPass) {
+          const storedPassHash = await ensurePasswordHash(storedPass);
+
+          if (!storedPassHash) {
+            console.warn("Stored password missing after hashing");
+            setIsLoading(false);
+            return;
+          }
+
+          if (storedPassHash !== storedPass) {
+            await AsyncStorage.setItem("userPass", storedPassHash);
+          }
+
           // zapneme spinner počas komunikácie so serverom
           setIsLoading(true);
 
@@ -128,7 +141,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
           const response = await fetch(`${SERVER_URL}/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: storedEmail, password: storedPass }),
+            body: JSON.stringify({ email: storedEmail, password: storedPassHash }),
           });
 
           const data = await response.json();
@@ -175,11 +188,19 @@ export default function HomeScreen({ setIsLoggedIn }) {
     // zapnúť spinner
     setIsLoading(true);
     try {
+      const hashedPassword = await ensurePasswordHash(password);
+
+      if (!hashedPassword) {
+        Alert.alert("Chyba", "Heslo sa nepodarilo spracovať. Skús to znovu.");
+        return;
+      }
+
+      console.log(hashedPassword);
       // volanie login API
       const response = await fetch(`${SERVER_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password: hashedPassword }),
       });
 
       const data = await response.json();
@@ -194,7 +215,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       setIsLoggedIn(true);
       await AsyncStorage.setItem("userEmail", data.user.email);
       await AsyncStorage.setItem("userNick", data.user.nick);
-      await AsyncStorage.setItem("userPass", password);
+      await AsyncStorage.setItem("userPass", hashedPassword);
 
       // stiahneme zvyšok používateľských dát (produkty, recepty, história)
       await pullAllUserData(data.user.email);

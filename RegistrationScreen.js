@@ -21,6 +21,7 @@ import arrow from "./assets/left_arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+import { hashPassword } from "./passwordUtils";
 
 export default function RegistrationScreen() {
   // Navigácia medzi obrazovkami
@@ -69,10 +70,13 @@ export default function RegistrationScreen() {
       return;
     }
 
+    // Hashovanie hesla pred odoslaním na server
+    const hashedPassword = await hashPassword(password);
+
     // Príprava payloadu pre API (len potrebné údaje)
     const body = {
       email: trimmedEmail,
-      password,
+      password: hashedPassword,
       nick: trimmedNick,
       gdprConsent,
       gdprConsentAt: new Date().toISOString(),
