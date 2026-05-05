@@ -30,7 +30,7 @@ export default function PasswordForgetScreen() {
 
       const data = await res.json();
       if (data.ok) {
-        Alert.alert("Succes", "Check your email for reset link! ");
+        Alert.alert("Skontroluj si e-mail!");
       } else {
         Alert.alert("Error", data.error);
       }
