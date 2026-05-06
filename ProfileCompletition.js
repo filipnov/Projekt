@@ -9,7 +9,9 @@ import {
   Image,
   Modal,
   ScrollView,
+  Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import arrow from "./assets/left_arrow.png";
 import { useNavigation } from "@react-navigation/native";
@@ -18,6 +20,7 @@ import KeyboardWrapper from "./KeyboardWrapper";
 
 const SERVER = "https://app.bitewise.it.com";
 const UPDATE_URL = `${SERVER}/api/updateProfile`;
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const ACTIVITY_OPTIONS = [
   {
@@ -135,143 +138,418 @@ export default function ProfileCompletition() {
     }
   }
 
+  // Moderný štýl
+  const containerStyle = {
+    flex: 1,
+    backgroundColor: "hsla(0, 0%, 98%, 1)",
+  };
+
+  const headerStyle = {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingTop: 16,
+    paddingBottom: 8,
+    marginBottom: 16,
+  };
+
+  const backButtonStyle = {
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  };
+
+  const backIconStyle = {
+    width: "100%",
+    height: "100%",
+  };
+
+  const titleContainerStyle = {
+    flex: 1,
+  };
+
+  const screenTitleStyle = {
+    fontSize: 26,
+    fontWeight: "900",
+    color: "hsla(0, 0%, 15%, 1)",
+  };
+
+  const subtitleStyle = {
+    fontSize: 13,
+    color: "hsla(0, 0%, 50%, 1)",
+    marginTop: 2,
+    fontWeight: "500",
+  };
+
+  const cardStyle = {
+    backgroundColor: "white",
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 16,
+    padding: 14,
+    elevation: 1,
+    borderWidth: 1,
+    borderColor: "rgba(0, 0, 0, 0.05)",
+  };
+
+  const cardHeaderStyle = {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "hsla(0, 0%, 15%, 1)",
+    marginBottom: 14,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(129, 190, 95, 0.2)",
+  };
+
+  const inputLabelStyle = {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "hsla(0, 0%, 15%, 1)",
+    marginTop: 10,
+    marginBottom: 6,
+  };
+
+  const modernTextInputStyle = {
+    backgroundColor: "rgba(129, 190, 95, 0.05)",
+    borderWidth: 1.5,
+    borderColor: "rgba(129, 190, 95, 0.3)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    fontWeight: "500",
+    color: "hsla(0, 0%, 15%, 1)",
+  };
+
+  const buttonRowStyle = {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 4,
+  };
+
+  const modernButtonStyle = (isSelected, color = "hsla(129, 56%, 43%, 1)") => ({
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: isSelected ? color : "rgba(0, 0, 0, 0.05)",
+    borderWidth: isSelected ? 0 : 1.5,
+    borderColor: isSelected ? color : "rgba(0, 0, 0, 0.1)",
+    elevation: isSelected ? 1 : 0,
+  });
+
+  const modernButtonTextStyle = (isSelected) => ({
+    color: isSelected ? "white" : "hsla(0, 0%, 20%, 1)",
+    fontWeight: isSelected ? "700" : "600",
+    fontSize: 13,
+  });
+
+  const selectButtonStyle = {
+    backgroundColor: "rgba(129, 190, 95, 0.08)",
+    borderWidth: 1.5,
+    borderColor: "rgba(129, 190, 95, 0.4)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginTop: 10,
+    marginBottom: 6,
+    justifyContent: "center",
+  };
+
+  const primaryButtonStyle = {
+    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginHorizontal: 12,
+    marginTop: 20,
+    marginBottom: 12,
+    elevation: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  };
+
+  const primaryButtonTextStyle = {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+  };
+
   return (
-    <KeyboardWrapper
-      style={{ flex: 1 }}
-      contentContainerStyle={{ paddingBottom: 24 }}
-    >
-      <View style={styles.formContainer}>
-        <Pressable
-          style={({ pressed }) =>
-            pressed ? styles.backButtonPressed : styles.backButton
-          }
-          onPress={() => navigation.goBack()}
-        >
-          <Image source={arrow} style={styles.backIcon} />
-        </Pressable>
-
-        <Text style={styles.screenTitle}>Uprav svoj profil</Text>
-
-        <Text style={styles.inputLabel}>Výška (cm):</Text>
-        <TextInput
-          placeholder="cm"
-          style={styles.textInput}
-          value={height}
-          onChangeText={setHeight}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.inputLabel}>Váha (kg):</Text>
-        <TextInput
-          placeholder="kg"
-          style={styles.textInput}
-          value={weight}
-          onChangeText={setWeight}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.inputLabel}>Vek:</Text>
-        <TextInput
-          placeholder="rokov"
-          style={styles.textInput}
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-        />
-
-        <Text style={styles.inputLabel}>Pohlavie:</Text>
-        <View style={styles.optionRow}>
+    <SafeAreaView style={containerStyle} edges={["top"]}>
+      <KeyboardWrapper
+        style={containerStyle}
+        contentContainerStyle={{ paddingBottom: 24 }}
+      >
+        {/* Modern Header */}
+        <View style={headerStyle}>
           <Pressable
-            onPress={() => setGender("male")}
-            style={[
-              styles.optionButton,
-              { backgroundColor: gender === "male" ? "#2196F3" : "#ccc" },
+            style={({ pressed }) => [
+              backButtonStyle,
+              { opacity: pressed ? 0.7 : 1 },
             ]}
+            onPress={() => navigation.goBack()}
           >
-            <Text style={styles.optionText}>Muž</Text>
+            <Image source={arrow} style={backIconStyle} />
           </Pressable>
+          <View style={titleContainerStyle}>
+            <Text style={screenTitleStyle}>👤 Tvoj profil</Text>
+            <Text style={subtitleStyle}>Uprav svoje osobné údaje</Text>
+          </View>
+        </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Body Measurements Card */}
+        <View style={cardStyle}>
+          <Text style={cardHeaderStyle}>📏 Telesné miery</Text>
+
+          <Text style={inputLabelStyle}>Výška (cm)</Text>
+          <TextInput
+            placeholder="Zadaj výšku"
+            style={modernTextInputStyle}
+            value={height}
+            onChangeText={setHeight}
+            keyboardType="numeric"
+            placeholderTextColor="rgba(0, 0, 0, 0.3)"
+          />
+
+          <Text style={inputLabelStyle}>Váha (kg)</Text>
+          <TextInput
+            placeholder="Zadaj váhu"
+            style={modernTextInputStyle}
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="numeric"
+            placeholderTextColor="rgba(0, 0, 0, 0.3)"
+          />
+
+          <Text style={inputLabelStyle}>Vek (rokov)</Text>
+          <TextInput
+            placeholder="Zadaj vek"
+            style={modernTextInputStyle}
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+            placeholderTextColor="rgba(0, 0, 0, 0.3)"
+          />
+        </View>
+
+        {/* Gender Card */}
+        <View style={cardStyle}>
+          <Text style={cardHeaderStyle}>⚧ Pohlavie</Text>
+
+          <View style={buttonRowStyle}>
+            <Pressable
+              style={modernButtonStyle(gender === "male", "#2196F3")}
+              onPress={() => setGender("male")}
+            >
+              <Text style={modernButtonTextStyle(gender === "male")}>
+                👨 Muž
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={modernButtonStyle(gender === "female", "#E91E63")}
+              onPress={() => setGender("female")}
+            >
+              <Text style={modernButtonTextStyle(gender === "female")}>
+                👩 Žena
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Activity Level Card */}
+        <View style={cardStyle}>
+          <Text style={cardHeaderStyle}>🏃 Úroveň aktivity</Text>
 
           <Pressable
-            onPress={() => setGender("female")}
-            style={[
-              styles.optionButton,
-              { backgroundColor: gender === "female" ? "#E91E63" : "#ccc" },
-            ]}
+            style={selectButtonStyle}
+            onPress={() => setActivityModalVisible(true)}
           >
-            <Text style={styles.optionText}>Žena</Text>
+            <Text
+              style={{ color: "hsla(0, 0%, 15%, 1)", fontWeight: "600", fontSize: 15 }}
+            >
+              {selectedActivity.label} →
+            </Text>
+            <Text
+              style={{
+                color: "hsla(0, 0%, 50%, 1)",
+                fontSize: 12,
+                marginTop: 4,
+                fontWeight: "500",
+              }}
+            >
+              {selectedActivity.label === "Sedavý"
+                ? "Väčšinu času v sede"
+                : selectedActivity.label === "Ľahko aktívny"
+                  ? "Občas v pohybe"
+                  : selectedActivity.label === "Stredne aktívny"
+                    ? "Pravidelný pohyb"
+                    : selectedActivity.label === "Veľmi aktívny"
+                      ? "Intenzívny šport"
+                      : "Extrémy výkony"}
+            </Text>
           </Pressable>
         </View>
 
-        <Text style={styles.inputLabel}>Úroveň aktivity:</Text>
-        <Pressable
-          style={styles.selectButton}
-          onPress={() => setActivityModalVisible(true)}
-        >
-          <Text style={{ color: "black" }}>{selectedActivity.label}</Text>
-        </Pressable>
+        {/* Goal Card */}
+        <View style={cardStyle}>
+          <Text style={cardHeaderStyle}>🎯 Cieľ</Text>
 
-        <Text style={styles.inputLabel}>Cieľ:</Text>
-        <View style={styles.optionRow}>
-          <Pressable
-            onPress={() => setGoal("lose")}
-            style={[
-              styles.optionButton,
-              { backgroundColor: goal === "lose" ? "#2196F3" : "#ccc" },
-            ]}
-          >
-            <Text style={styles.optionText}>Chudnúť</Text>
-          </Pressable>
+          <View style={buttonRowStyle}>
+            <Pressable
+              style={modernButtonStyle(goal === "lose", "#2196F3")}
+              onPress={() => setGoal("lose")}
+            >
+              <Text style={modernButtonTextStyle(goal === "lose")}>
+                ⬇️ Chudnúť
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => setGoal("maintain")}
-            style={[
-              styles.optionButton,
-              { backgroundColor: goal === "maintain" ? "#4CAF50" : "#ccc" },
-            ]}
-          >
-            <Text style={styles.optionText}>Udržať sa</Text>
-          </Pressable>
+            <Pressable
+              style={modernButtonStyle(goal === "maintain", "#4CAF50")}
+              onPress={() => setGoal("maintain")}
+            >
+              <Text style={modernButtonTextStyle(goal === "maintain")}>
+                ➡️ Udržať
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => setGoal("gain")}
-            style={[
-              styles.optionButton,
-              { backgroundColor: goal === "gain" ? "#E91E63" : "#ccc" },
-            ]}
-          >
-            <Text style={styles.optionText}>Pribrať</Text>
-          </Pressable>
+            <Pressable
+              style={modernButtonStyle(goal === "gain", "#FF6B6B")}
+              onPress={() => setGoal("gain")}
+            >
+              <Text style={modernButtonTextStyle(goal === "gain")}>
+                ⬆️ Pribrať
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
-        <Pressable style={styles.primaryButton} onPress={handleCompletion}>
-          <Text style={styles.primaryButtonText}>Uložiť údaje</Text>
+        {/* Save Button */}
+        <Pressable
+          style={({ pressed }) => [
+            primaryButtonStyle,
+            { opacity: pressed ? 0.8 : 1 },
+          ]}
+          onPress={handleCompletion}
+        >
+          <Text style={primaryButtonTextStyle}>💾 Uložiť údaje</Text>
         </Pressable>
-      </View>
+      </ScrollView>
 
+      {/* Activity Modal */}
       <Modal visible={activityModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Vyber úroveň aktivity</Text>
+          <View
+            style={[
+              styles.modalCard,
+              {
+                backgroundColor: "white",
+                borderRadius: 20,
+                maxHeight: "85%",
+              },
+            ]}
+          >
+            <View style={{ alignItems: "center", marginBottom: 16 }}>
+              <Text style={{ fontSize: 24, marginBottom: 8 }}>🏃</Text>
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: "700",
+                  color: "hsla(0, 0%, 15%, 1)",
+                }}
+              >
+                Vyber úroveň aktivity
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: "hsla(0, 0%, 50%, 1)",
+                  marginTop: 4,
+                }}
+              >
+                Výber vplýva na tvoje denné kalórie
+              </Text>
+            </View>
 
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false}>
               {ACTIVITY_OPTIONS.map((option) => (
                 <Pressable
                   key={option.label}
-                  style={styles.activityOption}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "flex-start",
+                    marginBottom: 12,
+                    paddingHorizontal: 12,
+                    paddingVertical: 12,
+                    backgroundColor:
+                      selectedActivity?.label === option.label
+                        ? "rgba(129, 190, 95, 0.1)"
+                        : "transparent",
+                    borderRadius: 12,
+                    borderWidth: selectedActivity?.label === option.label ? 1.5 : 0,
+                    borderColor: "rgba(129, 190, 95, 0.3)",
+                  }}
                   onPress={() => {
                     setSelectedActivity(option);
                     setActivityModalVisible(false);
                   }}
                 >
-                  <View style={styles.radioCircleOuter}>
+                  <View
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 11,
+                      borderWidth: 2,
+                      borderColor:
+                        selectedActivity?.label === option.label
+                          ? "hsla(129, 56%, 43%, 1)"
+                          : "hsla(0, 0%, 50%, 1)",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 12,
+                      marginTop: 2,
+                    }}
+                  >
                     {selectedActivity?.label === option.label && (
-                      <View style={styles.radioCircleInner} />
+                      <View
+                        style={{
+                          width: 12,
+                          height: 12,
+                          borderRadius: 6,
+                          backgroundColor: "hsla(129, 56%, 43%, 1)",
+                        }}
+                      />
                     )}
                   </View>
 
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.modalLabel}>{option.label}</Text>
-                    <Text style={styles.modalDescription}>
+                    <Text
+                      style={{
+                        fontWeight: "700",
+                        fontSize: 15,
+                        color: "hsla(0, 0%, 15%, 1)",
+                        marginBottom: 2,
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                    <Text
+                      style={{
+                        color: "hsla(0, 0%, 50%, 1)",
+                        fontSize: 12,
+                        fontWeight: "500",
+                        lineHeight: 16,
+                      }}
+                    >
                       {option.description}
                     </Text>
                   </View>
@@ -280,14 +558,15 @@ export default function ProfileCompletition() {
             </ScrollView>
 
             <Pressable
-              style={styles.primaryButton}
+              style={primaryButtonStyle}
               onPress={() => setActivityModalVisible(false)}
             >
-              <Text style={styles.primaryButtonText}>Zavrieť</Text>
+              <Text style={primaryButtonTextStyle}>Zavrieť</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
     </KeyboardWrapper>
+    </SafeAreaView>
   );
 }
