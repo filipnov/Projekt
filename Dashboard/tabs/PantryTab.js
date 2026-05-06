@@ -19,6 +19,7 @@ import { useFocusEffect } from "@react-navigation/native";
 // Centrálne štýly aplikácie.
 import styles from "../../styles";
 import { removeExpirationNotificationForProduct } from "../../notifications";
+import { updateTotalsForDate } from "../../dailyTotalsStorage";
 
 // Základná URL servera – všetky API volania idú cez tento hostname.
 const SERVER_URL = "https://app.bitewise.it.com";
@@ -76,19 +77,6 @@ export default function PantryTab() {
   // Flag, či práve prebieha ukladanie vlastnej položky.
   const [savingCustom, setSavingCustom] = useState(false);
 
-  // Načíta lokálne uložené súhrny (ak existujú)
-  // Ak lokálne súbory chýbajú alebo sú poškodené, použijeme DEFAULT_TOTALS
-  const loadStoredTotals = useCallback(async () => {
-    const storedTotalsRaw = await AsyncStorage.getItem("eatenTotals");
-    if (!storedTotalsRaw) return { ...DEFAULT_TOTALS };
-    try {
-      return { ...DEFAULT_TOTALS, ...JSON.parse(storedTotalsRaw) };
-    } catch (e) {
-      console.error("Error parsing stored eatenTotals:", e);
-      return { ...DEFAULT_TOTALS };
-    }
-  }, []);
-
   // Pridá skonzumované hodnoty do denného súhrnu
   // (kalórie, makrá, vláknina, cukor, soľ)
   const addEatenValues = useCallback(
@@ -96,28 +84,21 @@ export default function PantryTab() {
       if (!box) return;
 
       const todayKey = getTodayKey();
-      const storedTotalsDate = await AsyncStorage.getItem("eatenTotalsDate");
-      let totals = await loadStoredTotals();
-
-      if (storedTotalsDate !== todayKey) {
-        totals = { ...DEFAULT_TOTALS };
-        await AsyncStorage.setItem("eatenTotalsDate", todayKey);
-      }
-
-      const updatedTotals = {
-        ...totals,
-        calories: totals.calories + (box.totalCalories || 0),
-        proteins: totals.proteins + (box.totalProteins || 0),
-        carbs: totals.carbs + (box.totalCarbs || 0),
-        fat: totals.fat + (box.totalFat || 0),
-        fiber: totals.fiber + (box.totalFiber || 0),
-        sugar: totals.sugar + (box.totalSugar || 0),
-        salt: totals.salt + (box.totalSalt || 0),
-      };
-
-      // Uložíme denné súhrny lokálne
-      await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
-      await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+      const updatedTotals = await updateTotalsForDate(
+        todayKey,
+        DEFAULT_TOTALS,
+        (totals) => ({
+          ...totals,
+          calories: totals.calories + (box.totalCalories || 0),
+          proteins: totals.proteins + (box.totalProteins || 0),
+          carbs: totals.carbs + (box.totalCarbs || 0),
+          fat: totals.fat + (box.totalFat || 0),
+          fiber: totals.fiber + (box.totalFiber || 0),
+          sugar: totals.sugar + (box.totalSugar || 0),
+          salt: totals.salt + (box.totalSalt || 0),
+        }),
+        true,
+      );
 
       // Bez emailu nevieme synchronizovať so serverom
       if (!email) return;
@@ -136,7 +117,7 @@ export default function PantryTab() {
         console.error("Error pushing consumed totals:", err);
       }
     },
-    [email, loadStoredTotals],
+    [email],
   );
 
   // Vráti čas exspirácie v ms; ak je dátum neplatný, hodnota je Infinity.

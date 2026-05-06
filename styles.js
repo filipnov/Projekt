@@ -1553,6 +1553,115 @@ export default StyleSheet.create({
     borderColor: "#e5e7eb",
     marginBottom: Math.round(clamp(vs(12), 10, 16)),
   },
+  overviewChartMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Math.round(clamp(vs(10), 8, 12)),
+  },
+  overviewChartMetaLabel: {
+    fontSize: Math.round(clamp(ms(12), 11, 14)),
+    fontWeight: "700",
+    color: "#111827",
+  },
+  overviewChartMetaValue: {
+    fontSize: Math.round(clamp(ms(11), 10, 13)),
+    fontWeight: "600",
+    color: "#6b7280",
+  },
+  overviewChartSummary: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    backgroundColor: "#f8fafc",
+    borderRadius: Math.round(clamp(ms(12), 10, 16)),
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    padding: Math.round(clamp(ms(12), 10, 14)),
+    marginBottom: Math.round(clamp(vs(12), 10, 14)),
+  },
+  overviewChartSummaryItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  overviewChartSummaryLabel: {
+    fontSize: Math.round(clamp(ms(10), 9, 12)),
+    fontWeight: "700",
+    color: "#6b7280",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  overviewChartSummaryValue: {
+    fontSize: Math.round(clamp(ms(14), 12, 16)),
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: Math.round(clamp(vs(4), 3, 6)),
+  },
+  overviewChartSummaryMeta: {
+    fontSize: Math.round(clamp(ms(10), 9, 12)),
+    color: "#9ca3af",
+    marginTop: Math.round(clamp(vs(2), 2, 4)),
+  },
+  overviewChartList: {
+    marginTop: Math.round(clamp(vs(2), 0, 4)),
+  },
+  overviewChartRowCard: {
+    backgroundColor: "#f8fafc",
+    borderRadius: Math.round(clamp(ms(12), 10, 16)),
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    padding: Math.round(clamp(ms(12), 10, 14)),
+    marginBottom: Math.round(clamp(vs(8), 6, 10)),
+  },
+  overviewChartRowCardHighlight: {
+    borderColor: COLORS.buttonColor,
+    backgroundColor: "rgba(97, 138, 51, 0.08)",
+  },
+  overviewChartRowCardCurrent: {
+    borderColor: "#0ea5e9",
+    backgroundColor: "rgba(14, 165, 233, 0.08)",
+  },
+  overviewChartRowHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: Math.round(clamp(vs(6), 5, 8)),
+  },
+  overviewChartRowLabelGroup: {
+    flexDirection: "column",
+  },
+  overviewChartRowLabel: {
+    fontSize: Math.round(clamp(ms(13), 12, 15)),
+    fontWeight: "800",
+    color: "#111827",
+  },
+  overviewChartRowSubLabel: {
+    fontSize: Math.round(clamp(ms(10), 9, 12)),
+    color: "#6b7280",
+    marginTop: Math.round(clamp(vs(2), 1, 3)),
+  },
+  overviewChartRowValueGroup: {
+    alignItems: "flex-end",
+  },
+  overviewChartRowValue: {
+    fontSize: Math.round(clamp(ms(12), 11, 14)),
+    fontWeight: "700",
+    color: "#111827",
+  },
+  overviewChartRowPercent: {
+    fontSize: Math.round(clamp(ms(10), 9, 12)),
+    color: "#6b7280",
+    marginTop: Math.round(clamp(vs(2), 1, 3)),
+  },
+  overviewChartRowBarTrack: {
+    height: Math.round(clamp(vs(8), 6, 10)),
+    backgroundColor: "#e5e7eb",
+    borderRadius: Math.round(clamp(ms(6), 5, 8)),
+    overflow: "hidden",
+  },
+  overviewChartRowBarFill: {
+    height: "100%",
+    borderRadius: Math.round(clamp(ms(6), 5, 8)),
+  },
   overviewChartRow: {
     flexDirection: "row",
     alignItems: "flex-end",
@@ -1646,16 +1755,47 @@ export default StyleSheet.create({
   overviewModalOptionDescription: {
     color: "#6b7280",
   },
+  overviewModalCustomContent: {
+    flex: 1,
+  },
+  overviewModalCustomInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Math.round(clamp(vs(6), 5, 8)),
+  },
+  overviewModalCustomInput: {
+    flex: 1,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    paddingVertical: Math.round(clamp(vs(6), 5, 8)),
+    paddingHorizontal: Math.round(clamp(ms(10), 8, 12)),
+    fontSize: Math.round(clamp(ms(12), 11, 14)),
+    color: "#111827",
+  },
+  overviewModalCustomUnit: {
+    marginLeft: Math.round(clamp(ms(8), 6, 10)),
+    fontSize: Math.round(clamp(ms(12), 11, 14)),
+    fontWeight: "700",
+    color: "#6b7280",
+  },
   overviewModalConfirmButton: {
     marginTop: Math.round(clamp(vs(12), 10, 14)),
     backgroundColor: COLORS.buttonColor,
     paddingVertical: Math.round(clamp(vs(10), 8, 12)),
     borderRadius: Math.round(clamp(ms(10), 8, 12)),
   },
+  overviewModalConfirmButtonDisabled: {
+    backgroundColor: "#cbd5f5",
+  },
   overviewModalConfirmButtonText: {
     color: COLORS.white,
     textAlign: "center",
     fontWeight: "700",
+  },
+  overviewModalConfirmButtonTextDisabled: {
+    color: "#f8fafc",
   },
   overviewMissingProfileContainer: {
     backgroundColor: COLORS.white,

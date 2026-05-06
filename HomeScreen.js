@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { ensurePasswordHash } from "./passwordUtils";
+import { loadTotalsForDate, saveTotalsForDate } from "./dailyTotalsStorage";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
@@ -34,6 +35,17 @@ export default function HomeScreen({ setIsLoggedIn }) {
     const mm = String(date.getMonth() + 1).padStart(2, "0");
     const dd = String(date.getDate()).padStart(2, "0");
     return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const DEFAULT_TOTALS = {
+    calories: 0,
+    proteins: 0,
+    carbs: 0,
+    fat: 0,
+    fiber: 0,
+    sugar: 0,
+    salt: 0,
+    drunkWater: 0,
   };
 
   // Jednoduchý UI stav
@@ -221,27 +233,23 @@ export default function HomeScreen({ setIsLoggedIn }) {
       await pullAllUserData(data.user.email);
       await ensureNotificationsSetup();
 
-      // Určíme počiatočné eatenTotals (čo zobrazí Dashboard):
-      // - najprv lokálna cache 'eatenTotals' (rýchle)
+      // Určíme počiatočné denné totals (čo zobrazí Dashboard):
+      // - najprv lokálna cache v dailyConsumption (rýchle)
       // - ak nie je, pokus o dnešné dáta zo servera
       // - ak zlyhá, použijeme nulové hodnoty
-      let totalsToUse = null;
-      const storedTotals = await AsyncStorage.getItem("eatenTotals");
-      if (storedTotals) {
-        // použijeme lokálne cache, ak existuje (rýchly štart)
-        totalsToUse = JSON.parse(storedTotals);
-      }
+      const todayKey = getTodayKey();
+      let totalsToUse = await loadTotalsForDate(todayKey, DEFAULT_TOTALS);
 
       if (!totalsToUse) {
         // Nemáme lokálne hodnoty -> skúsime dnešné hodnoty zo servera
         try {
-          const isoDate = getTodayKey(); // YYYY-MM-DD (lokálny čas)
+          const isoDate = todayKey; // YYYY-MM-DD (lokálny čas)
           const url = `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(data.user.email)}&date=${encodeURIComponent(isoDate)}`;
           const dbResponse = await fetch(url);
           if (dbResponse.ok) {
             const dbData = await dbResponse.json();
             if (dbData && dbData.totals) {
-              totalsToUse = dbData.totals; // serverové hodnoty (preferované)
+              totalsToUse = { ...DEFAULT_TOTALS, ...dbData.totals };
             }
           }
         } catch (err) {
@@ -252,12 +260,11 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
       if (!totalsToUse) {
         // Nikde nie sú dáta: nastavíme bezpečné nuly
-        totalsToUse = { calories: 0, proteins: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, salt: 0 };
+        totalsToUse = { ...DEFAULT_TOTALS };
       }
 
       // Uložíme zvolené totals, aby ich ostatné obrazovky čítali konzistentne
-      await AsyncStorage.setItem("eatenTotals", JSON.stringify(totalsToUse));
-      await AsyncStorage.setItem("eatenTotalsDate", getTodayKey());
+      await saveTotalsForDate(todayKey, totalsToUse, true);
 
       navigation.reset({
         index: 0,
