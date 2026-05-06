@@ -21,6 +21,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { scheduleExpirationNotificationForProduct } from "./notifications";
+import { updateTotalsForDate } from "./dailyTotalsStorage";
 
 const SERVER_URL = "https://app.bitewise.it.com";
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
@@ -270,7 +271,8 @@ export default function CameraScreen() {
     if (!productData) return;
 
     try {
-      const storedTotals = await AsyncStorage.getItem("eatenTotals");
+      const email = await AsyncStorage.getItem("userEmail");
+      const todayKey = getTodayKey();
       const baseTotals = {
         calories: 0,
         proteins: 0,
@@ -281,24 +283,33 @@ export default function CameraScreen() {
         salt: 0,
         drunkWater: 0,
       };
+      const updatedTotals = await updateTotalsForDate(
+        todayKey,
+        baseTotals,
+        (currentTotals) => ({
+          calories: currentTotals.calories + (productData.totalCalories || 0),
+          proteins: currentTotals.proteins + (productData.totalProteins || 0),
+          carbs: currentTotals.carbs + (productData.totalCarbs || 0),
+          fat: currentTotals.fat + (productData.totalFat || 0),
+          fiber: currentTotals.fiber + (productData.totalFiber || 0),
+          sugar: currentTotals.sugar + (productData.totalSugar || 0),
+          salt: currentTotals.salt + (productData.totalSalt || 0),
+          drunkWater: currentTotals.drunkWater,
+        }),
+        true,
+      );
 
-      const currentTotals = storedTotals
-        ? { ...baseTotals, ...JSON.parse(storedTotals) }
-        : baseTotals;
-
-      const updatedTotals = {
-        calories: currentTotals.calories + (productData.totalCalories || 0),
-        proteins: currentTotals.proteins + (productData.totalProteins || 0),
-        carbs: currentTotals.carbs + (productData.totalCarbs || 0),
-        fat: currentTotals.fat + (productData.totalFat || 0),
-        fiber: currentTotals.fiber + (productData.totalFiber || 0),
-        sugar: currentTotals.sugar + (productData.totalSugar || 0),
-        salt: currentTotals.salt + (productData.totalSalt || 0),
-        drunkWater: currentTotals.drunkWater,
-      };
-
-      await AsyncStorage.setItem("eatenTotals", JSON.stringify(updatedTotals));
-      await AsyncStorage.setItem("eatenTotalsDate", getTodayKey());
+      if (email) {
+        await fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date: todayKey,
+            totals: updatedTotals,
+          }),
+        });
+      }
 
       setProductData(null);
       setScanned(false); // 🔁 znovu skenovať

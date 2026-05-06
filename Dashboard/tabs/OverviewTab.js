@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,14 @@ import {
   Pressable,
   Modal,
   TouchableOpacity,
-  ScrollView,
+  TextInput,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  loadTotalsForDate as loadStoredTotalsForDate,
+  saveTotalsForDate as saveStoredTotalsForDate,
+} from "../../dailyTotalsStorage";
 import styles from "../../styles";
 import plus from "../../assets/plus.png";
 
@@ -57,6 +61,9 @@ const MONTH_LABELS = [
 const formatDisplayDate = (date = new Date()) =>
   `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 
+const formatShortDate = (date = new Date()) =>
+  `${date.getDate()}.${date.getMonth() + 1}.`;
+
 const parseDateKey = (value) => {
   const [yyyy, mm, dd] = String(value).split("-").map(Number);
   if (!yyyy || !mm || !dd) return new Date();
@@ -68,15 +75,12 @@ const shiftDateByDays = (date, delta) =>
 
 const getRangeForView = (date, view) => {
   if (view === "week") {
+    const day = date.getDay();
+    const diffToMonday = (day + 6) % 7;
+    const startDate = shiftDateByDays(date, -diffToMonday);
     return {
-      startDate: shiftDateByDays(date, -6),
-      endDate: date,
-    };
-  }
-  if (view === "month") {
-    return {
-      startDate: new Date(date.getFullYear(), date.getMonth(), 1),
-      endDate: new Date(date.getFullYear(), date.getMonth() + 1, 0),
+      startDate,
+      endDate: shiftDateByDays(startDate, 6),
     };
   }
   if (view === "year") {
@@ -127,6 +131,7 @@ const mergeTotalsPreferRemote = (localTotals, remoteTotals) => {
 export default function OverviewTab({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [customWaterMl, setCustomWaterMl] = useState("");
   const [overviewData, setOverviewData] = useState({});
   const [email, setEmail] = useState(null);
 
@@ -146,6 +151,9 @@ export default function OverviewTab({ navigation }) {
   const [rangeView, setRangeView] = useState("day");
   const [rangeTotals, setRangeTotals] = useState([]);
   const [rangeLoading, setRangeLoading] = useState(false);
+  const activeDateKeyRef = useRef(null);
+  const [loadedDateKey, setLoadedDateKey] = useState(null);
+  const [hasTotalsData, setHasTotalsData] = useState(false);
 
   const selectedDateKey = getTodayKey(selectedDate);
   const currentDate = formatDisplayDate(selectedDate);
@@ -158,24 +166,84 @@ export default function OverviewTab({ navigation }) {
     { label: "Fľaša", description: "500 ml", ml: 500 },
   ];
 
+  const CUSTOM_WATER_OPTION = "custom";
+
   const rangeOptions = [
     { key: "day", label: "Dnes" },
     { key: "week", label: "Týždeň" },
-    { key: "month", label: "Mesiac" },
     { key: "year", label: "Rok" },
   ];
 
+  const parseWaterInput = (value) => {
+    const cleaned = String(value || "")
+      .replace(",", ".")
+      .replace(/[^0-9.]/g, "");
+    const parsed = Number(cleaned);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.max(0, Math.round(parsed));
+  };
+
+  const closeWaterModal = () => {
+    setModalVisible(false);
+    setSelectedOption(null);
+    setCustomWaterMl("");
+  };
+
   const addWater = () => {
     const picked = options.find((opt) => opt.label === selectedOption);
-    const water = picked?.ml || 0;
+    const customWater = parseWaterInput(customWaterMl);
+    const water =
+      selectedOption === CUSTOM_WATER_OPTION
+        ? customWater
+        : picked?.ml || 0;
 
-    setEatenTotals((prev) => ({
-      ...prev,
-      drunkWater: (prev.drunkWater || 0) + water,
-    }));
+    if (!water) {
+      closeWaterModal();
+      return;
+    }
 
-    setModalVisible(false);
+    setEatenTotals((prev) => {
+      const nextTotals = {
+        ...prev,
+        drunkWater: (prev.drunkWater || 0) + water,
+      };
+
+      saveStoredTotalsForDate(selectedDateKey, nextTotals, true).catch(
+        (err) => {
+          console.error("Error saving daily totals:", err);
+        },
+      );
+
+      if (email && isTodaySelected) {
+        fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date: selectedDateKey,
+            totals: nextTotals,
+          }),
+        }).catch((err) => {
+          console.error("Error pushing water totals:", err);
+        });
+      }
+
+      return nextTotals;
+    });
+
+    setHasTotalsData(true);
+    closeWaterModal();
   };
+
+  const customWaterValue = parseWaterInput(customWaterMl);
+  const canConfirmWater =
+    selectedOption === CUSTOM_WATER_OPTION
+      ? customWaterValue > 0
+      : Boolean(options.find((opt) => opt.label === selectedOption));
+
+  useEffect(() => {
+    if (rangeView === "month") setRangeView("week");
+  }, [rangeView]);
 
   const handleDateShift = (delta) => {
     setSelectedDate((prev) => shiftDateByDays(prev, delta));
@@ -259,46 +327,41 @@ export default function OverviewTab({ navigation }) {
     [email],
   );
 
-  // Načíta lokálne uložené súhrny (ak existujú)
-  // Ak lokálne súbory chýbajú alebo sú poškodené, použijeme DEFAULT_TOTALS
-  const loadStoredTotals = useCallback(async () => {
-    const storedTotalsRaw = await AsyncStorage.getItem("eatenTotals");
-    if (!storedTotalsRaw) return { ...DEFAULT_TOTALS };
-    try {
-      return JSON.parse(storedTotalsRaw);
-    } catch (e) {
-      console.error("Error parsing stored eatenTotals:", e);
-      return { ...DEFAULT_TOTALS };
-    }
-  }, []);
-
   // Načíta uložené dáta pri otvorení Prehľadu
   // Cieľ: mať rýchly štart (lokálne údaje) + vždy aktuálne hodnoty (server)
   const loadTotalsForDate = useCallback(
     async (dateKey) => {
+      activeDateKeyRef.current = dateKey;
       try {
         let totals = { ...DEFAULT_TOTALS };
-
-        if (dateKey === getTodayKey()) {
-          const storedTotalsDate = await AsyncStorage.getItem("eatenTotalsDate");
-          if (storedTotalsDate === dateKey) {
-            totals = await loadStoredTotals();
-          } else {
-            await AsyncStorage.setItem("eatenTotals", JSON.stringify(totals));
-            await AsyncStorage.setItem("eatenTotalsDate", dateKey);
-          }
-        }
+        const cachedTotals = await loadStoredTotalsForDate(
+          dateKey,
+          DEFAULT_TOTALS,
+        );
+        if (cachedTotals) totals = cachedTotals;
 
         const remoteTotals = await fetchDailyTotals(dateKey);
         totals = mergeTotalsPreferRemote(totals, remoteTotals);
 
+        if (activeDateKeyRef.current !== dateKey) return;
+        const hasData = Boolean(cachedTotals) || Boolean(remoteTotals);
+        setHasTotalsData(hasData);
+        setLoadedDateKey(dateKey);
         setEatenTotals(totals);
         setEatenLoaded(true);
+
+        if (remoteTotals) {
+          await saveStoredTotalsForDate(
+            dateKey,
+            totals,
+            dateKey === getTodayKey(),
+          );
+        }
       } catch (err) {
         console.error("Error loading overview totals:", err);
       }
     },
-    [fetchDailyTotals, loadStoredTotals],
+    [fetchDailyTotals],
   );
 
   useFocusEffect(
@@ -306,10 +369,6 @@ export default function OverviewTab({ navigation }) {
       if (email) loadTotalsForDate(selectedDateKey);
     }, [email, selectedDateKey, loadTotalsForDate]),
   );
-
-  useEffect(() => {
-    if (email) loadTotalsForDate(selectedDateKey);
-  }, [email, selectedDateKey, loadTotalsForDate]);
 
   useEffect(() => {
     if (!email) return;
@@ -339,10 +398,26 @@ export default function OverviewTab({ navigation }) {
   // Ukladá denné súhrny do lokálneho úložiska
   // Pozn.: ukladáme až po prvom načítaní, aby sme neprepísali hodnoty 0
   useEffect(() => {
-    if (!eatenLoaded || !isTodaySelected) return;
-    AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
-    AsyncStorage.setItem("eatenTotalsDate", selectedDateKey);
-  }, [eatenTotals, eatenLoaded, isTodaySelected, selectedDateKey]);
+    if (
+      !eatenLoaded ||
+      !isTodaySelected ||
+      loadedDateKey !== selectedDateKey ||
+      !hasTotalsData
+    )
+      return;
+    saveStoredTotalsForDate(selectedDateKey, eatenTotals, true).catch(
+      (err) => {
+        console.error("Error saving daily totals:", err);
+      },
+    );
+  }, [
+    eatenTotals,
+    eatenLoaded,
+    isTodaySelected,
+    selectedDateKey,
+    loadedDateKey,
+    hasTotalsData,
+  ]);
 
   // Reset o polnoci (lokálny čas) aj pri otvorenej appke
   useEffect(() => {
@@ -354,40 +429,14 @@ export default function OverviewTab({ navigation }) {
     const msUntilMidnight = nextMidnight.getTime() - now.getTime() + 500;
 
     const timer = setTimeout(async () => {
-      const todayKey = getTodayKey();
       const cleared = { ...DEFAULT_TOTALS };
+      setHasTotalsData(false);
       setEatenTotals(cleared);
-      await AsyncStorage.setItem("eatenTotals", JSON.stringify(cleared));
-      await AsyncStorage.setItem("eatenTotalsDate", todayKey);
       setSelectedDate(new Date());
     }, msUntilMidnight);
 
     return () => clearTimeout(timer);
   }, [eatenLoaded, isTodaySelected]);
-
-  // Posiela denné súhrny na server (po každej zmene)
-  // Toto drží backend v synchronizovanom stave
-  useEffect(() => {
-    if (!eatenLoaded || !email || !isTodaySelected) return;
-
-    const pushConsumedToDB = async () => {
-      try {
-        await fetch(`${SERVER_URL}/api/updateDailyConsumption`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            date: selectedDateKey,
-            totals: eatenTotals,
-          }),
-        });
-      } catch (err) {
-        console.error("Error pushing consumed totals:", err);
-      }
-    };
-
-    pushConsumedToDB();
-  }, [eatenTotals, eatenLoaded, email, isTodaySelected, selectedDateKey]);
 
   useEffect(() => {
     if (
@@ -573,138 +622,224 @@ export default function OverviewTab({ navigation }) {
     },
   ];
 
+  const dailyGoal = Number(overviewData.caloriesGoal) || 0;
+
   const buildChartData = () => {
     if (rangeView === "day") {
-      return {
-        title: "Graf makronutrientov",
-        scrollable: false,
-        data: [
-          {
-            label: "B",
-            value: Number(eatenTotals.proteins || 0),
-            color: "#f59e0b",
-          },
-          {
-            label: "S",
-            value: Number(eatenTotals.carbs || 0),
-            color: "#5d8c3a",
-          },
-          {
-            label: "T",
-            value: Number(eatenTotals.fat || 0),
-            color: "#ec5757",
-          },
-        ],
-      };
+      return { title: "", rangeLabel: "", data: [] };
     }
 
     const totalsByDate = {};
     rangeTotals.forEach((entry) => {
       if (!entry?.date) return;
-      totalsByDate[entry.date] = entry.totals || null;
+      totalsByDate[entry.date] = entry;
     });
 
-    if (rangeView === "week" || rangeView === "month") {
+    if (rangeView === "week") {
       const { startDate, endDate } = getRangeForView(selectedDate, rangeView);
       const dateKeys = buildDateKeysInRange(startDate, endDate);
       const data = dateKeys.map((dateKey) => {
-        const totals = totalsByDate[dateKey];
+        const entry = totalsByDate[dateKey];
+        const totals = entry?.totals;
         const dateObj = parseDateKey(dateKey);
-        const label =
-          rangeView === "week"
-            ? DAY_LABELS[dateObj.getDay()]
-            : String(dateObj.getDate());
+        const label = DAY_LABELS[dateObj.getDay()];
+        const subLabel = formatShortDate(dateObj);
+        const calories =
+          totals?.calories !== undefined && totals?.calories !== null
+            ? totals.calories
+            : null;
+        const goalMet =
+          typeof entry?.goalMet === "boolean"
+            ? entry.goalMet
+            : dailyGoal > 0
+              ? (calories || 0) >= dailyGoal
+              : false;
+        const value =
+          calories !== null
+            ? calories
+            : dailyGoal > 0 && goalMet
+              ? dailyGoal
+              : 0;
+        const percent = dailyGoal > 0 ? (value / dailyGoal) * 100 : 0;
 
         return {
           label,
-          value: totals?.calories || 0,
-          color: "#5d8c3a",
+          subLabel,
+          value,
+          percent,
+          goalMet,
         };
       });
 
       return {
-        title: rangeView === "week" ? "Kalórie - týždeň" : "Kalórie - mesiac",
-        scrollable: rangeView === "month",
+        title: "KALORIE",
+        rangeLabel: "Týždeň",
         data,
       };
     }
 
     if (rangeView === "year") {
-      const monthTotals = Array.from({ length: 12 }, () => 0);
+      const year = selectedDate.getFullYear();
+      const monthStats = Array.from({ length: 12 }, (_, index) => ({
+        monthIndex: index,
+        daysInMonth: new Date(year, index + 1, 0).getDate(),
+        metDays: 0,
+      }));
+
       rangeTotals.forEach((entry) => {
         if (!entry?.date) return;
         const dateObj = parseDateKey(entry.date);
+        if (dateObj.getFullYear() !== year) return;
         const monthIndex = dateObj.getMonth();
-        monthTotals[monthIndex] += entry?.totals?.calories || 0;
+        const calories = entry?.totals?.calories || 0;
+        const goalMet =
+          typeof entry?.goalMet === "boolean"
+            ? entry.goalMet
+            : dailyGoal > 0
+              ? calories >= dailyGoal
+              : false;
+
+        if (goalMet) monthStats[monthIndex].metDays += 1;
       });
 
       return {
-        title: "Kalórie - rok",
-        scrollable: true,
-        data: monthTotals.map((value, index) => ({
-          label: MONTH_LABELS[index],
-          value,
-          color: "#5d8c3a",
+        rangeLabel: "Rok",
+        data: monthStats.map((item) => ({
+          label: MONTH_LABELS[item.monthIndex],
+          value: item.metDays,
+          daysInMonth: item.daysInMonth,
+          percent: item.daysInMonth
+            ? (item.metDays / item.daysInMonth) * 100
+            : 0,
+          isCurrent: item.monthIndex === selectedDate.getMonth(),
         })),
       };
     }
 
-    return { title: "", scrollable: false, data: [] };
+    return { title: "", rangeLabel: "", data: [] };
   };
 
   const chartConfig = buildChartData();
-  const chartMaxValue = chartConfig.data.reduce(
-    (max, item) => Math.max(max, item.value || 0),
+  const isYearView = rangeView === "year";
+  const chartTotalValue = chartConfig.data.reduce(
+    (sum, item) => sum + (item.value || 0),
     0,
   );
+  const chartAverageValue = chartConfig.data.length
+    ? chartTotalValue / chartConfig.data.length
+    : 0;
+  const chartTopItem = chartConfig.data.reduce((best, item) => {
+    if (!best || (item.value || 0) > (best.value || 0)) return item;
+    return best;
+  }, null);
 
-  const renderBarChart = () => {
+  const renderRangeChart = () => {
     if (!chartConfig.data.length) {
       return (
         <Text style={styles.overviewChartEmptyText}>Žiadne dáta</Text>
       );
     }
-
-    const chartContent = (
-      <View style={styles.overviewChartRow}>
-        {chartConfig.data.map((item, index) => {
-          const barHeight = chartMaxValue
-            ? (item.value / chartMaxValue) * 120
-            : 0;
-
-          return (
-            <View
-              key={`${item.label}-${index}`}
-              style={styles.overviewChartItem}
-            >
-              <View style={styles.overviewChartBarTrack}>
-                <View
-                  style={[
-                    styles.overviewChartBarFill,
-                    {
-                      height: barHeight,
-                      backgroundColor: item.color || "#5d8c3a",
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={styles.overviewChartLabel}>{item.label}</Text>
-            </View>
-          );
-        })}
-      </View>
-    );
-
-    if (!chartConfig.scrollable) return chartContent;
+    const rangeSuffix = rangeView === "year" ? "mesiacov" : "dni";
+    const averageSuffix = rangeView === "year" ? "na mesiac" : "na deň";
+    const rangeMeta = chartConfig.rangeLabel
+      ? `${chartConfig.rangeLabel} (${chartConfig.data.length} ${rangeSuffix})`
+      : "";
+    const totalValueLabel = isYearView
+      ? `${Math.round(chartTotalValue)} splnených dní`
+      : `${Math.round(chartTotalValue)} kcal spolu`;
+    const averageValueLabel = isYearView
+      ? `${Math.round(chartAverageValue)} dní`
+      : `${Math.round(chartAverageValue)} kcal`;
+    const maxValueLabel = isYearView
+      ? `${chartTopItem ? Math.round(chartTopItem.value) : 0} dní`
+      : `${chartTopItem ? Math.round(chartTopItem.value) : 0} kcal`;
+    const maxMetaLabel =
+      chartTopItem && isYearView
+        ? `${chartTopItem.label} (${chartTopItem.value}/${chartTopItem.daysInMonth} dní)`
+        : "";
 
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.overviewChartScrollContent}
-      >
-        {chartContent}
-      </ScrollView>
+      <View>
+        <View style={styles.overviewChartMetaRow}>
+          <Text style={styles.overviewChartMetaLabel}>{rangeMeta}</Text>
+          <Text style={styles.overviewChartMetaValue}>{totalValueLabel}</Text>
+        </View>
+
+        <View style={styles.overviewChartSummary}>
+          <View style={styles.overviewChartSummaryItem}>
+            <Text style={styles.overviewChartSummaryLabel}>Priemer</Text>
+            <Text style={styles.overviewChartSummaryValue}>
+              {averageValueLabel}
+            </Text>
+            <Text style={styles.overviewChartSummaryMeta}>{averageSuffix}</Text>
+          </View>
+          <View style={styles.overviewChartSummaryItem}>
+            <Text style={styles.overviewChartSummaryLabel}>Maximum</Text>
+            <Text style={styles.overviewChartSummaryValue}>
+              {maxValueLabel}
+            </Text>
+            {chartTopItem ? (
+              <Text style={styles.overviewChartSummaryMeta}>
+                {isYearView
+                  ? maxMetaLabel
+                  : `${chartTopItem.label}${chartTopItem.subLabel ? ` (${chartTopItem.subLabel})` : ""}`}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+
+        <View style={styles.overviewChartList}>
+          {chartConfig.data.map((item, index) => {
+            const percentValue = Number(item.percent || 0);
+            const barPercent = Math.min(percentValue, 100);
+            const isPeak = item === chartTopItem && !isYearView;
+            const isCurrentMonth = isYearView && item.isCurrent;
+            const isGoalMet = !isYearView && percentValue >= 100;
+            const barColor = isGoalMet ? "#2f7d32" : "#5d8c3a";
+            const rowValueText = isYearView
+              ? `${item.value} / ${item.daysInMonth} dní`
+              : `${Math.round(item.value)} kcal`;
+
+            return (
+              <View
+                key={`${item.label}-${index}`}
+                style={[
+                  styles.overviewChartRowCard,
+                  isPeak && styles.overviewChartRowCardHighlight,
+                  isCurrentMonth && styles.overviewChartRowCardCurrent,
+                ]}
+              >
+                <View style={styles.overviewChartRowHeader}>
+                  <View style={styles.overviewChartRowLabelGroup}>
+                    <Text style={styles.overviewChartRowLabel}>{item.label}</Text>
+                    {item.subLabel ? (
+                      <Text style={styles.overviewChartRowSubLabel}>
+                        {item.subLabel}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.overviewChartRowValueGroup}>
+                    <Text style={styles.overviewChartRowValue}>
+                      {rowValueText}
+                    </Text>
+                    <Text style={styles.overviewChartRowPercent}>
+                      {Math.round(percentValue)}%
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.overviewChartRowBarTrack}>
+                  <View
+                    style={[
+                      styles.overviewChartRowBarFill,
+                      { width: `${barPercent}%`, backgroundColor: barColor },
+                    ]}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      </View>
     );
   };
 
@@ -736,7 +871,12 @@ export default function OverviewTab({ navigation }) {
           return (
             <Pressable
               key={option.key}
-              onPress={() => setRangeView(option.key)}
+              onPress={() => {
+                if (option.key === "day") {
+                  setSelectedDate(new Date());
+                }
+                setRangeView(option.key);
+              }}
               style={[
                 styles.overviewRangeButton,
                 isActive && styles.overviewRangeButtonActive,
@@ -755,17 +895,14 @@ export default function OverviewTab({ navigation }) {
         })}
       </View>
 
-      {chartConfig.title ? (
-        <>
-          <Text style={styles.overviewSectionTitle}>{chartConfig.title}</Text>
-          <View style={styles.overviewChartCard}>
-            {rangeLoading ? (
-              <Text style={styles.overviewChartLoading}>Načítavam dáta...</Text>
-            ) : (
-              renderBarChart()
-            )}
-          </View>
-        </>
+      {rangeView !== "day" ? (
+        <View style={styles.overviewChartCard}>
+          {rangeLoading ? (
+            <Text style={styles.overviewChartLoading}>Načítavam dáta...</Text>
+          ) : (
+            renderRangeChart()
+          )}
+        </View>
       ) : null}
 
       <View style={[styles.overviewCard, styles.overviewCardAccent]}>
@@ -860,7 +997,7 @@ export default function OverviewTab({ navigation }) {
         transparent={true}
         visible={modalVisible}
         animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={closeWaterModal}
       >
         <View style={styles.overviewModalOverlay}>
           <View style={styles.overviewModalContent}>
@@ -886,14 +1023,56 @@ export default function OverviewTab({ navigation }) {
               </TouchableOpacity>
             ))}
 
-            <Pressable
-              style={styles.overviewModalConfirmButton}
-              onPress={() => {
-                setModalVisible(false);
-                addWater();
-              }}
+            <TouchableOpacity
+              style={styles.overviewModalOptionRow}
+              onPress={() => setSelectedOption(CUSTOM_WATER_OPTION)}
             >
-              <Text style={styles.overviewModalConfirmButtonText}>Potvrdiť</Text>
+              <View style={styles.overviewModalRadioOuter}>
+                {selectedOption === CUSTOM_WATER_OPTION && (
+                  <View style={styles.overviewModalRadioInner} />
+                )}
+              </View>
+              <View style={styles.overviewModalCustomContent}>
+                <Text style={styles.overviewModalOptionLabel}>
+                  Vlastná hodnota
+                </Text>
+                <View style={styles.overviewModalCustomInputRow}>
+                  <TextInput
+                    value={customWaterMl}
+                    onChangeText={(value) => {
+                      const cleaned = value.replace(/[^0-9]/g, "");
+                      setCustomWaterMl(cleaned);
+                      if (selectedOption !== CUSTOM_WATER_OPTION) {
+                        setSelectedOption(CUSTOM_WATER_OPTION);
+                      }
+                    }}
+                    onFocus={() => setSelectedOption(CUSTOM_WATER_OPTION)}
+                    placeholder="Zadaj ml"
+                    keyboardType="numeric"
+                    style={styles.overviewModalCustomInput}
+                  />
+                  <Text style={styles.overviewModalCustomUnit}>ml</Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            <Pressable
+              style={[
+                styles.overviewModalConfirmButton,
+                !canConfirmWater && styles.overviewModalConfirmButtonDisabled,
+              ]}
+              onPress={addWater}
+              disabled={!canConfirmWater}
+            >
+              <Text
+                style={[
+                  styles.overviewModalConfirmButtonText,
+                  !canConfirmWater &&
+                    styles.overviewModalConfirmButtonTextDisabled,
+                ]}
+              >
+                Potvrdiť
+              </Text>
             </Pressable>
           </View>
         </View>

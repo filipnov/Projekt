@@ -535,6 +535,91 @@ async function start() {
 
   //-------------- CONSUMED PUSH --------------------------
   // Uloží denný súhrn (kalórie + makrá) pod kľúčom dátumu
+  const parseDateKey = (value) => {
+    const [yyyy, mm, dd] = String(value).split("-").map(Number);
+    if (!yyyy || !mm || !dd) return null;
+    return new Date(yyyy, mm - 1, dd);
+  };
+
+  const formatDateKey = (dateObj) => {
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const dd = String(dateObj.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const calculateDailyGoal = (user) => {
+    const weight = Number(user?.weight);
+    const height = Number(user?.height);
+    const age = Number(user?.age);
+    const activityLevel = Number(user?.activityLevel);
+    const gender = user?.gender;
+
+    if (!weight || !height || !age || !activityLevel || !gender) return null;
+
+    let cal =
+      gender === "male"
+        ? (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel
+        : (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
+
+    if (user.goal === "lose") cal -= 500;
+    if (user.goal === "gain") cal += 500;
+
+    return Math.round(cal);
+  };
+
+  const getGoalMet = (totals, goal) => {
+    if (!totals || !Number.isFinite(goal)) return null;
+    const calories = Number(totals.calories) || 0;
+    return calories >= goal;
+  };
+
+  const pruneOldDailyTotals = async (
+    user,
+    dailyGoal,
+    recentTotals = {},
+    recentGoalStatus = {},
+  ) => {
+    if (!dailyGoal) return;
+    const dailyConsumption = {
+      ...(user.dailyConsumption || {}),
+      ...(recentTotals || {}),
+    };
+    const dailyGoalStatus = {
+      ...(user.dailyGoalStatus || {}),
+      ...(recentGoalStatus || {}),
+    };
+
+    const todayKey = formatDateKey(new Date());
+    const cutoff = parseDateKey(todayKey);
+    if (!cutoff) return;
+    cutoff.setDate(cutoff.getDate() - 6);
+
+    let changed = false;
+    for (const [dateKey, totals] of Object.entries(dailyConsumption)) {
+      const dateObj = parseDateKey(dateKey);
+      if (!dateObj) continue;
+
+      if (dateObj < cutoff) {
+        if (typeof dailyGoalStatus[dateKey] !== "boolean") {
+          const goalMet = getGoalMet(totals, dailyGoal);
+          if (typeof goalMet === "boolean") {
+            dailyGoalStatus[dateKey] = goalMet;
+          }
+        }
+        delete dailyConsumption[dateKey];
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await users.updateOne(
+        { email: user.email },
+        { $set: { dailyConsumption, dailyGoalStatus } },
+      );
+    }
+  };
+
   app.post("/api/updateDailyConsumption", async (req, res) => {
     const { email, date, totals } = req.body; // email + dátum + súhrn
     if (!email || !date || !totals)
@@ -544,10 +629,27 @@ async function start() {
       const user = await users.findOne({ email }); // nájdi používateľa
       if (!user) return res.status(404).json({ error: "User not found" }); // neexistuje
 
+      const dailyGoal = calculateDailyGoal(user);
+      const goalMet = getGoalMet(totals, dailyGoal);
+      const updateFields = {
+        [`dailyConsumption.${date}`]: totals,
+      };
+
+      if (typeof goalMet === "boolean") {
+        updateFields[`dailyGoalStatus.${date}`] = goalMet;
+      }
+
       // Uloženie do DB (každý deň pod vlastným kľúčom)
       await users.updateOne( // uloženie súhrnov do DB
         { email },
-        { $set: { [`dailyConsumption.${date}`]: totals } }, // každý deň pod vlastným kľúčom
+        { $set: updateFields }, // každý deň pod vlastným kľúčom
+      );
+
+      await pruneOldDailyTotals(
+        user,
+        dailyGoal,
+        { [date]: totals },
+        typeof goalMet === "boolean" ? { [date]: goalMet } : {},
       );
 
       res.json({ ok: true, message: "Daily consumption updated" }); // odpoveď
@@ -593,19 +695,6 @@ async function start() {
       return res.status(400).json({ error: "Missing email or date range" });
     }
 
-    const parseDateKey = (value) => {
-      const [yyyy, mm, dd] = String(value).split("-").map(Number);
-      if (!yyyy || !mm || !dd) return null;
-      return new Date(yyyy, mm - 1, dd);
-    };
-
-    const formatDateKey = (dateObj) => {
-      const yyyy = dateObj.getFullYear();
-      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const dd = String(dateObj.getDate()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
-    };
-
     const startDate = parseDateKey(start);
     const endDate = parseDateKey(end);
 
@@ -634,6 +723,7 @@ async function start() {
         range.push({
           date: key,
           totals: user.dailyConsumption?.[key] || null,
+          goalMet: user.dailyGoalStatus?.[key] ?? null,
         });
         cursor.setDate(cursor.getDate() + 1);
       }
@@ -685,7 +775,7 @@ async function start() {
   app.post("/api/consumeRecipe", async (req, res) => {
     console.log("📩 Incoming /api/consumeRecipe request:", req.body); // debug
     
-    const { email, nutrition } = req.body; // email + výživové hodnoty receptu
+    const { email, nutrition, date } = req.body; // email + výživové hodnoty receptu
 
     if (!email || !nutrition) {
       return res.status(400).json({ error: "Missing email or nutrition data" }); // validácia
@@ -699,11 +789,14 @@ async function start() {
         return res.status(404).json({ error: "User not found" }); // neexistuje
       }
 
-      // Dnešný dátum (server time)
-      const today = new Date().toISOString().slice(0, 10); // dnešný dátum (YYYY-MM-DD)
+      // Dátum pre uloženie (preferujeme klienta, fallback na server)
+      const dateKey =
+        typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)
+          ? date
+          : new Date().toISOString().slice(0, 10);
 
       // Aktuálne súhrny pre dnešný deň
-      const currentTotals = user.dailyConsumption?.[today] || {
+      const currentTotals = user.dailyConsumption?.[dateKey] || {
         calories: 0,
         proteins: 0,
         carbs: 0,
@@ -726,10 +819,27 @@ async function start() {
         drunkWater: currentTotals.drunkWater || 0,
       };
 
+      const dailyGoal = calculateDailyGoal(user);
+      const goalMet = getGoalMet(updatedTotals, dailyGoal);
+      const updateFields = {
+        [`dailyConsumption.${dateKey}`]: updatedTotals,
+      };
+
+      if (typeof goalMet === "boolean") {
+        updateFields[`dailyGoalStatus.${dateKey}`] = goalMet;
+      }
+
       // Uloženie späť do DB
       await users.updateOne( // uloženie súhrnov
         { email },
-        { $set: { [`dailyConsumption.${today}`]: updatedTotals } },
+        { $set: updateFields },
+      );
+
+      await pruneOldDailyTotals(
+        user,
+        dailyGoal,
+        { [dateKey]: updatedTotals },
+        typeof goalMet === "boolean" ? { [dateKey]: goalMet } : {},
       );
 
       console.log("✅ Recipe consumed, totals updated:", updatedTotals); // log úspechu
