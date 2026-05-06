@@ -584,6 +584,67 @@ async function start() {
     }
   });
 
+  //-------------- CONSUMED RANGE PULL --------------------------
+  // Vráti súhrny pre interval dní (inclusive)
+  app.get("/api/getDailyConsumptionRange", async (req, res) => {
+    const { email, start, end } = req.query;
+
+    if (!email || !start || !end) {
+      return res.status(400).json({ error: "Missing email or date range" });
+    }
+
+    const parseDateKey = (value) => {
+      const [yyyy, mm, dd] = String(value).split("-").map(Number);
+      if (!yyyy || !mm || !dd) return null;
+      return new Date(yyyy, mm - 1, dd);
+    };
+
+    const formatDateKey = (dateObj) => {
+      const yyyy = dateObj.getFullYear();
+      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+      const dd = String(dateObj.getDate()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const startDate = parseDateKey(start);
+    const endDate = parseDateKey(end);
+
+    if (!startDate || !endDate || startDate > endDate) {
+      return res.status(400).json({ error: "Invalid date range" });
+    }
+
+    try {
+      const user = await users.findOne({ email });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
+      const range = [];
+      const cursor = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+      );
+      const last = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate(),
+      );
+
+      while (cursor <= last) {
+        const key = formatDateKey(cursor);
+        range.push({
+          date: key,
+          totals: user.dailyConsumption?.[key] || null,
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
+      res.json({ range });
+    } catch (err) {
+      console.error("❌ Get daily consumption range error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  });
+
   //------------ FIND PRODUCT INFO BY NAME ------------------
   // Pomocný endpoint pre vyhľadanie produktu podľa názvu
   app.get("/api/getProductByName", async (req, res) => {

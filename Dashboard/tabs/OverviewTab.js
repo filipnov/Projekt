@@ -6,6 +6,7 @@ import {
   Pressable,
   Modal,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -35,6 +36,78 @@ const getTodayKey = (date = new Date()) => {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+};
+
+const DAY_LABELS = ["Ne", "Po", "Ut", "St", "Št", "Pi", "So"];
+const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Máj",
+  "Jún",
+  "Júl",
+  "Aug",
+  "Sep",
+  "Okt",
+  "Nov",
+  "Dec",
+];
+
+const formatDisplayDate = (date = new Date()) =>
+  `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+
+const parseDateKey = (value) => {
+  const [yyyy, mm, dd] = String(value).split("-").map(Number);
+  if (!yyyy || !mm || !dd) return new Date();
+  return new Date(yyyy, mm - 1, dd);
+};
+
+const shiftDateByDays = (date, delta) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + delta);
+
+const getRangeForView = (date, view) => {
+  if (view === "week") {
+    return {
+      startDate: shiftDateByDays(date, -6),
+      endDate: date,
+    };
+  }
+  if (view === "month") {
+    return {
+      startDate: new Date(date.getFullYear(), date.getMonth(), 1),
+      endDate: new Date(date.getFullYear(), date.getMonth() + 1, 0),
+    };
+  }
+  if (view === "year") {
+    return {
+      startDate: new Date(date.getFullYear(), 0, 1),
+      endDate: new Date(date.getFullYear(), 11, 31),
+    };
+  }
+
+  return { startDate: date, endDate: date };
+};
+
+const buildDateKeysInRange = (startDate, endDate) => {
+  const keys = [];
+  const cursor = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate(),
+  );
+  const last = new Date(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate(),
+  );
+
+  while (cursor <= last) {
+    keys.push(getTodayKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return keys;
 };
 
 // Preferujeme serverové hodnoty (aby bol prehľad vždy aktuálny)
@@ -69,17 +142,27 @@ export default function OverviewTab({ navigation }) {
   // Denné súhrny skonzumovaných živín
   const [eatenTotals, setEatenTotals] = useState(DEFAULT_TOTALS);
   const [eatenLoaded, setEatenLoaded] = useState(false);
-  const [currentDayKey, setCurrentDayKey] = useState(getTodayKey());
-  const currentDate = (() => {
-    const d = new Date();
-    return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
-  })();
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [rangeView, setRangeView] = useState("day");
+  const [rangeTotals, setRangeTotals] = useState([]);
+  const [rangeLoading, setRangeLoading] = useState(false);
+
+  const selectedDateKey = getTodayKey(selectedDate);
+  const currentDate = formatDisplayDate(selectedDate);
+  const isTodaySelected = selectedDateKey === getTodayKey();
 
   const options = [
     { label: "Malý pohár / šálka ", description: "150 ml", ml: 150 },
     { label: "Stredný pohár / šálka", description: "250 ml", ml: 250 },
     { label: "Veľký pohár / hrnček", description: "350 ml", ml: 350 },
     { label: "Fľaša", description: "500 ml", ml: 500 },
+  ];
+
+  const rangeOptions = [
+    { key: "day", label: "Dnes" },
+    { key: "week", label: "Týždeň" },
+    { key: "month", label: "Mesiac" },
+    { key: "year", label: "Rok" },
   ];
 
   const addWater = () => {
@@ -92,6 +175,10 @@ export default function OverviewTab({ navigation }) {
     }));
 
     setModalVisible(false);
+  };
+
+  const handleDateShift = (delta) => {
+    setSelectedDate((prev) => shiftDateByDays(prev, delta));
   };
 
   // Načíta uložený e‑mail
@@ -130,22 +217,47 @@ export default function OverviewTab({ navigation }) {
 
   // Načíta denné súhrny z backendu (ak sú dostupné)
   // Tieto hodnoty majú prednosť, aby bol prehľad vždy presný
-  const fetchDailyTotals = useCallback(async () => {
-    if (!email) return null;
-    try {
-      const response = await fetch(
-        `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(
-          email,
-        )}&date=${getTodayKey()}`,
-      );
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data?.totals || null;
-    } catch (err) {
-      console.error("Error fetching daily consumption from server:", err);
-      return null;
-    }
-  }, [email]);
+  const fetchDailyTotals = useCallback(
+    async (dateKey) => {
+      if (!email) return null;
+      try {
+        const response = await fetch(
+          `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(
+            email,
+          )}&date=${encodeURIComponent(dateKey)}`,
+        );
+        if (!response.ok) return null;
+        const data = await response.json();
+        return data?.totals || null;
+      } catch (err) {
+        console.error("Error fetching daily consumption from server:", err);
+        return null;
+      }
+    },
+    [email],
+  );
+
+  const fetchRangeTotals = useCallback(
+    async (startKey, endKey) => {
+      if (!email) return [];
+      try {
+        const response = await fetch(
+          `${SERVER_URL}/api/getDailyConsumptionRange?email=${encodeURIComponent(
+            email,
+          )}&start=${encodeURIComponent(startKey)}&end=${encodeURIComponent(
+            endKey,
+          )}`,
+        );
+        if (!response.ok) return [];
+        const data = await response.json();
+        return Array.isArray(data?.range) ? data.range : [];
+      } catch (err) {
+        console.error("Error fetching range consumption from server:", err);
+        return [];
+      }
+    },
+    [email],
+  );
 
   // Načíta lokálne uložené súhrny (ak existujú)
   // Ak lokálne súbory chýbajú alebo sú poškodené, použijeme DEFAULT_TOTALS
@@ -162,51 +274,79 @@ export default function OverviewTab({ navigation }) {
 
   // Načíta uložené dáta pri otvorení Prehľadu
   // Cieľ: mať rýchly štart (lokálne údaje) + vždy aktuálne hodnoty (server)
-  const loadOverviewTotals = useCallback(async () => {
-    try {
-      let totals = await loadStoredTotals();
+  const loadTotalsForDate = useCallback(
+    async (dateKey) => {
+      try {
+        let totals = { ...DEFAULT_TOTALS };
 
-      const todayKey = getTodayKey();
-      const storedTotalsDate = await AsyncStorage.getItem("eatenTotalsDate");
-      if (storedTotalsDate !== todayKey) {
-        totals = { ...DEFAULT_TOTALS };
-        await AsyncStorage.setItem("eatenTotals", JSON.stringify(totals));
-        await AsyncStorage.setItem("eatenTotalsDate", todayKey);
+        if (dateKey === getTodayKey()) {
+          const storedTotalsDate = await AsyncStorage.getItem("eatenTotalsDate");
+          if (storedTotalsDate === dateKey) {
+            totals = await loadStoredTotals();
+          } else {
+            await AsyncStorage.setItem("eatenTotals", JSON.stringify(totals));
+            await AsyncStorage.setItem("eatenTotalsDate", dateKey);
+          }
+        }
+
+        const remoteTotals = await fetchDailyTotals(dateKey);
+        totals = mergeTotalsPreferRemote(totals, remoteTotals);
+
+        setEatenTotals(totals);
+        setEatenLoaded(true);
+      } catch (err) {
+        console.error("Error loading overview totals:", err);
       }
-
-      setCurrentDayKey(todayKey);
-
-      const remoteTotals = await fetchDailyTotals();
-      totals = mergeTotalsPreferRemote(totals, remoteTotals);
-
-      setEatenTotals(totals);
-      setEatenLoaded(true);
-    } catch (err) {
-      console.error("Error loading overview totals:", err);
-    }
-  }, [fetchDailyTotals, loadStoredTotals]);
+    },
+    [fetchDailyTotals, loadStoredTotals],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      loadOverviewTotals();
-    }, [loadOverviewTotals]),
+      if (email) loadTotalsForDate(selectedDateKey);
+    }, [email, selectedDateKey, loadTotalsForDate]),
   );
 
   useEffect(() => {
-    if (email) loadOverviewTotals();
-  }, [email, loadOverviewTotals]);
+    if (email) loadTotalsForDate(selectedDateKey);
+  }, [email, selectedDateKey, loadTotalsForDate]);
+
+  useEffect(() => {
+    if (!email) return;
+    if (rangeView === "day") {
+      setRangeTotals([]);
+      setRangeLoading(false);
+      return;
+    }
+
+    const { startDate, endDate } = getRangeForView(selectedDate, rangeView);
+    const startKey = getTodayKey(startDate);
+    const endKey = getTodayKey(endDate);
+    let isActive = true;
+
+    setRangeLoading(true);
+    fetchRangeTotals(startKey, endKey).then((range) => {
+      if (!isActive) return;
+      setRangeTotals(range);
+      setRangeLoading(false);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [email, rangeView, selectedDate, fetchRangeTotals]);
 
   // Ukladá denné súhrny do lokálneho úložiska
   // Pozn.: ukladáme až po prvom načítaní, aby sme neprepísali hodnoty 0
   useEffect(() => {
-    if (!eatenLoaded) return;
+    if (!eatenLoaded || !isTodaySelected) return;
     AsyncStorage.setItem("eatenTotals", JSON.stringify(eatenTotals));
-    AsyncStorage.setItem("eatenTotalsDate", getTodayKey());
-  }, [eatenTotals, eatenLoaded]);
+    AsyncStorage.setItem("eatenTotalsDate", selectedDateKey);
+  }, [eatenTotals, eatenLoaded, isTodaySelected, selectedDateKey]);
 
   // Reset o polnoci (lokálny čas) aj pri otvorenej appke
   useEffect(() => {
-    if (!eatenLoaded) return;
+    if (!eatenLoaded || !isTodaySelected) return;
 
     const now = new Date();
     const nextMidnight = new Date(now);
@@ -219,16 +359,16 @@ export default function OverviewTab({ navigation }) {
       setEatenTotals(cleared);
       await AsyncStorage.setItem("eatenTotals", JSON.stringify(cleared));
       await AsyncStorage.setItem("eatenTotalsDate", todayKey);
-      setCurrentDayKey(todayKey);
+      setSelectedDate(new Date());
     }, msUntilMidnight);
 
     return () => clearTimeout(timer);
-  }, [currentDayKey, eatenLoaded]);
+  }, [eatenLoaded, isTodaySelected]);
 
   // Posiela denné súhrny na server (po každej zmene)
   // Toto drží backend v synchronizovanom stave
   useEffect(() => {
-    if (!eatenLoaded || !email) return;
+    if (!eatenLoaded || !email || !isTodaySelected) return;
 
     const pushConsumedToDB = async () => {
       try {
@@ -237,7 +377,7 @@ export default function OverviewTab({ navigation }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email,
-            date: getTodayKey(),
+            date: selectedDateKey,
             totals: eatenTotals,
           }),
         });
@@ -247,7 +387,7 @@ export default function OverviewTab({ navigation }) {
     };
 
     pushConsumedToDB();
-  }, [eatenTotals, eatenLoaded, email]);
+  }, [eatenTotals, eatenLoaded, email, isTodaySelected, selectedDateKey]);
 
   useEffect(() => {
     if (
@@ -376,15 +516,277 @@ export default function OverviewTab({ navigation }) {
   const nutriBarColor = (barPercent) =>
     barPercent >= 100 ? "#FF3B30" : "#4CAF50";
 
+  const macroCards = [
+    {
+      key: "protein",
+      label: "Bielkoviny",
+      consumed: overviewData.proteinConsumed,
+      goal: overviewData.proteinGoal,
+      bar: overviewData.proteinBar,
+      unit: "g",
+      accent: "#f59e0b",
+    },
+    {
+      key: "carbs",
+      label: "Sacharidy",
+      consumed: overviewData.carbConsumed,
+      goal: overviewData.carbGoal,
+      bar: overviewData.carbBar,
+      unit: "g",
+      accent: "#5d8c3a",
+    },
+    {
+      key: "fat",
+      label: "Tuky",
+      consumed: overviewData.fatConsumed,
+      goal: overviewData.fatGoal,
+      bar: overviewData.fatBar,
+      unit: "g",
+      accent: "#ec5757",
+    },
+    {
+      key: "fiber",
+      label: "Vláknina",
+      consumed: overviewData.fiberConsumed,
+      goal: overviewData.fiberGoal,
+      bar: overviewData.fiberBar,
+      unit: "g",
+      accent: "#10b981",
+    },
+    {
+      key: "sugar",
+      label: "Cukry",
+      consumed: overviewData.sugarConsumed,
+      goal: overviewData.sugarGoal,
+      bar: overviewData.sugarBar,
+      unit: "g",
+      accent: "#f97316",
+    },
+    {
+      key: "salt",
+      label: "Soľ",
+      consumed: overviewData.saltConsumed,
+      goal: overviewData.saltGoal,
+      bar: overviewData.saltBar,
+      unit: "g",
+      accent: "#3b82f6",
+    },
+  ];
+
+  const buildChartData = () => {
+    if (rangeView === "day") {
+      return {
+        title: "Graf makronutrientov",
+        scrollable: false,
+        data: [
+          {
+            label: "B",
+            value: Number(eatenTotals.proteins || 0),
+            color: "#f59e0b",
+          },
+          {
+            label: "S",
+            value: Number(eatenTotals.carbs || 0),
+            color: "#5d8c3a",
+          },
+          {
+            label: "T",
+            value: Number(eatenTotals.fat || 0),
+            color: "#ec5757",
+          },
+        ],
+      };
+    }
+
+    const totalsByDate = {};
+    rangeTotals.forEach((entry) => {
+      if (!entry?.date) return;
+      totalsByDate[entry.date] = entry.totals || null;
+    });
+
+    if (rangeView === "week" || rangeView === "month") {
+      const { startDate, endDate } = getRangeForView(selectedDate, rangeView);
+      const dateKeys = buildDateKeysInRange(startDate, endDate);
+      const data = dateKeys.map((dateKey) => {
+        const totals = totalsByDate[dateKey];
+        const dateObj = parseDateKey(dateKey);
+        const label =
+          rangeView === "week"
+            ? DAY_LABELS[dateObj.getDay()]
+            : String(dateObj.getDate());
+
+        return {
+          label,
+          value: totals?.calories || 0,
+          color: "#5d8c3a",
+        };
+      });
+
+      return {
+        title: rangeView === "week" ? "Kalórie - týždeň" : "Kalórie - mesiac",
+        scrollable: rangeView === "month",
+        data,
+      };
+    }
+
+    if (rangeView === "year") {
+      const monthTotals = Array.from({ length: 12 }, () => 0);
+      rangeTotals.forEach((entry) => {
+        if (!entry?.date) return;
+        const dateObj = parseDateKey(entry.date);
+        const monthIndex = dateObj.getMonth();
+        monthTotals[monthIndex] += entry?.totals?.calories || 0;
+      });
+
+      return {
+        title: "Kalórie - rok",
+        scrollable: true,
+        data: monthTotals.map((value, index) => ({
+          label: MONTH_LABELS[index],
+          value,
+          color: "#5d8c3a",
+        })),
+      };
+    }
+
+    return { title: "", scrollable: false, data: [] };
+  };
+
+  const chartConfig = buildChartData();
+  const chartMaxValue = chartConfig.data.reduce(
+    (max, item) => Math.max(max, item.value || 0),
+    0,
+  );
+
+  const renderBarChart = () => {
+    if (!chartConfig.data.length) {
+      return (
+        <Text style={styles.overviewChartEmptyText}>Žiadne dáta</Text>
+      );
+    }
+
+    const chartContent = (
+      <View style={styles.overviewChartRow}>
+        {chartConfig.data.map((item, index) => {
+          const barHeight = chartMaxValue
+            ? (item.value / chartMaxValue) * 120
+            : 0;
+
+          return (
+            <View
+              key={`${item.label}-${index}`}
+              style={styles.overviewChartItem}
+            >
+              <View style={styles.overviewChartBarTrack}>
+                <View
+                  style={[
+                    styles.overviewChartBarFill,
+                    {
+                      height: barHeight,
+                      backgroundColor: item.color || "#5d8c3a",
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={styles.overviewChartLabel}>{item.label}</Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+
+    if (!chartConfig.scrollable) return chartContent;
+
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.overviewChartScrollContent}
+      >
+        {chartContent}
+      </ScrollView>
+    );
+  };
+
   return (
-    <>
-      <View style={styles.dashCaloriesDisplay}>
-        <Text style={styles.dashDateText}>{currentDate}</Text>
-        <Text style={styles.dashEatOutputText}>{overviewData.eatOutput}</Text>
-        <View style={styles.dashCaloriesBarContainer}>
+    <View style={styles.overviewScreen}>
+      <View style={styles.overviewHeader}>
+        <Text style={styles.overviewTitle}>Prehľad</Text>
+      </View>
+
+      <View style={styles.overviewDateRow}>
+        <Pressable
+          style={styles.overviewDateButton}
+          onPress={() => handleDateShift(-1)}
+        >
+          <Text style={styles.overviewDateArrow}>{"<"}</Text>
+        </Pressable>
+        <Text style={styles.overviewDateText}>{currentDate}</Text>
+        <Pressable
+          style={styles.overviewDateButton}
+          onPress={() => handleDateShift(1)}
+        >
+          <Text style={styles.overviewDateArrow}>{">"}</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.overviewRangeRow}>
+        {rangeOptions.map((option) => {
+          const isActive = rangeView === option.key;
+          return (
+            <Pressable
+              key={option.key}
+              onPress={() => setRangeView(option.key)}
+              style={[
+                styles.overviewRangeButton,
+                isActive && styles.overviewRangeButtonActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.overviewRangeButtonText,
+                  isActive && styles.overviewRangeButtonTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {chartConfig.title ? (
+        <>
+          <Text style={styles.overviewSectionTitle}>{chartConfig.title}</Text>
+          <View style={styles.overviewChartCard}>
+            {rangeLoading ? (
+              <Text style={styles.overviewChartLoading}>Načítavam dáta...</Text>
+            ) : (
+              renderBarChart()
+            )}
+          </View>
+        </>
+      ) : null}
+
+      <View style={[styles.overviewCard, styles.overviewCardAccent]}>
+        <View style={styles.overviewCardTopRow}>
+          <View>
+            <Text style={styles.overviewCardLabel}>Kalórie</Text>
+            <Text style={styles.overviewCardValueLarge}>
+              {overviewData.caloriesConsumed} kcal
+            </Text>
+          </View>
+          {isTodaySelected ? (
+            <View style={styles.overviewBadge}>
+              <Text style={styles.overviewBadgeText}>Dnes</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.overviewCardSubText}>{overviewData.eatOutput}</Text>
+        <View style={styles.overviewProgressBar}>
           <View
             style={[
-              styles.dashCaloriesBar,
+              styles.overviewProgressFill,
               {
                 width: `${overviewData.progressBar}%`,
                 backgroundColor: overviewData.barColor,
@@ -392,195 +794,119 @@ export default function OverviewTab({ navigation }) {
             ]}
           />
         </View>
-        <Text style={styles.dashCaloriesText}>{overviewData.eatenOutput}</Text>
+        <Text style={styles.overviewProgressText}>{overviewData.eatenOutput}</Text>
       </View>
 
-      <View style={styles.dashNutriDisplay_container}>
-        <View style={styles.dashNutriRow}>
-          <View style={styles.dashNutriDisplay}>
-            <Text style={styles.dashNutriDisplay_text}>Bielkoviny</Text>
-            <View style={styles.dashCaloriesBarContainer}>
+      <Text style={styles.overviewSectionTitle}>Makronutrienty</Text>
+      <View style={styles.overviewGrid}>
+        {macroCards.map((card) => (
+          <View
+            key={card.key}
+            style={[styles.overviewStatCard, { borderLeftColor: card.accent }]}
+          >
+            <Text style={styles.overviewStatLabel}>{card.label}</Text>
+            <Text style={styles.overviewStatValue}>
+              {card.consumed} / {card.goal} {card.unit}
+            </Text>
+            <View style={styles.overviewProgressBarSmall}>
               <View
                 style={[
-                  styles.dashCaloriesBar,
+                  styles.overviewProgressFill,
                   {
-                    width: `${overviewData.proteinBar}%`,
-                    backgroundColor: nutriBarColor(overviewData.proteinBar),
+                    width: `${card.bar}%`,
+                    backgroundColor: nutriBarColor(card.bar),
                   },
                 ]}
               />
             </View>
-            <Text style={styles.dashNutriValueText}>
-              {overviewData.proteinConsumed} / {overviewData.proteinGoal} g
-            </Text>
           </View>
-
-          <View style={styles.dashNutriDisplay}>
-            <Text style={styles.dashNutriDisplay_text}>Sacharidy</Text>
-            <View style={styles.dashCaloriesBarContainer}>
-              <View
-                style={[
-                  styles.dashCaloriesBar,
-                  {
-                    width: `${overviewData.carbBar}%`,
-                    backgroundColor: nutriBarColor(overviewData.carbBar),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.dashNutriValueText}>
-              {overviewData.carbConsumed} / {overviewData.carbGoal} g
-            </Text>
-          </View>
-
-          <View style={styles.dashNutriDisplay}>
-            <Text style={styles.dashNutriDisplay_text}>Tuky</Text>
-            <View style={styles.dashCaloriesBarContainer}>
-              <View
-                style={[
-                  styles.dashCaloriesBar,
-                  {
-                    width: `${overviewData.fatBar}%`,
-                    backgroundColor: nutriBarColor(overviewData.fatBar),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.dashNutriValueText}>
-              {overviewData.fatConsumed} / {overviewData.fatGoal} g
-            </Text>
-          </View>
-        </View>
-        <View style={styles.dashNutriRow}>
-          <View style={styles.dashNutriDisplay}>
-            <Text style={styles.dashNutriDisplay_text}>Vláknina</Text>
-            <View style={styles.dashCaloriesBarContainer}>
-              <View
-                style={[
-                  styles.dashCaloriesBar,
-                  {
-                    width: `${overviewData.fiberBar}%`,
-                    backgroundColor: nutriBarColor(overviewData.fiberBar),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.dashNutriValueText}>
-              {overviewData.fiberConsumed} / {overviewData.fiberGoal} g
-            </Text>
-          </View>
-
-          <View style={styles.dashNutriDisplay}>
-            <Text style={styles.dashNutriDisplay_text}>Soľ</Text>
-            <View style={styles.dashCaloriesBarContainer}>
-              <View
-                style={[
-                  styles.dashCaloriesBar,
-                  {
-                    width: `${overviewData.saltBar}%`,
-                    backgroundColor: nutriBarColor(overviewData.saltBar),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.dashNutriValueText}>
-              {overviewData.saltConsumed} / {overviewData.saltGoal} g
-            </Text>
-          </View>
-
-          <View style={styles.dashNutriDisplay}>
-            <Text style={styles.dashNutriDisplay_text}>Cukry</Text>
-            <View style={styles.dashCaloriesBarContainer}>
-              <View
-                style={[
-                  styles.dashCaloriesBar,
-                  {
-                    width: `${overviewData.sugarBar}%`,
-                    backgroundColor: nutriBarColor(overviewData.sugarBar),
-                  },
-                ]}
-              />
-            </View>
-            <Text style={styles.dashNutriValueText}>
-              {overviewData.sugarConsumed} / {overviewData.sugarGoal} g
-            </Text>
-          </View>
-        </View>
+        ))}
       </View>
 
-      <View style={styles.dashBmiContainer}>
-        <Text style={styles.dashWaterText}>
-          {overviewData.drunkWater} / {overviewData.waterGoal} ml
-        </Text>
-        <View style={styles.dashCaloriesBarContainer}>
+      <Text style={styles.overviewSectionTitle}>Hydratácia</Text>
+      <View style={[styles.overviewCard, styles.overviewCardAccentBlue]}>
+        <View style={styles.overviewCardTopRow}>
+          <View>
+            <Text style={styles.overviewCardLabel}>Voda</Text>
+            <Text style={styles.overviewCardValue}>
+              {overviewData.drunkWater} / {overviewData.waterGoal} ml
+            </Text>
+          </View>
+          <Pressable
+            style={[
+              styles.overviewAddWaterButton,
+              !isTodaySelected && styles.overviewAddWaterButtonDisabled,
+            ]}
+            onPress={() => setModalVisible(true)}
+            disabled={!isTodaySelected}
+          >
+            <Image source={plus} style={styles.overviewAddWaterIcon} />
+          </Pressable>
+        </View>
+        <View style={styles.overviewProgressBar}>
           <View
             style={[
-              styles.dashCaloriesBar,
+              styles.overviewProgressFill,
               {
                 width: `${overviewData.waterBar}%`,
-                backgroundColor: "#2cdba1",
+                backgroundColor: "#3b82f6",
               },
             ]}
           />
         </View>
-
-        <Pressable
-          style={styles.dashAddWaterButton}
-          onPress={() => setModalVisible(true)}
-        >
-          <Image source={plus} style={styles.dashAddWaterIcon} />
-        </Pressable>
-
-        <Modal
-          transparent={true}
-          visible={modalVisible}
-          animationType="slide"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.dashModalOverlay}>
-            <View style={styles.dashModalContent}>
-              <Text style={styles.dashModalTitle}>Vyber možnosť</Text>
-
-              {options.map((opt) => (
-                <TouchableOpacity
-                  key={opt.label}
-                  style={styles.dashModalOptionRow}
-                  onPress={() => setSelectedOption(opt.label)}
-                >
-                  <View style={styles.dashModalRadioOuter}>
-                    {selectedOption === opt.label && (
-                      <View style={styles.dashModalRadioInner} />
-                    )}
-                  </View>
-                  <View>
-                    <Text style={styles.dashModalOptionLabel}>{opt.label}</Text>
-                    <Text style={styles.dashModalOptionDescription}>
-                      {opt.description}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-
-              <Pressable
-                style={styles.dashModalConfirmButton}
-                onPress={() => {
-                  setModalVisible(false);
-                  addWater();
-                }}
-              >
-                <Text style={styles.dashModalConfirmButtonText}>Potvrdiť</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
       </View>
 
-      <View style={styles.dashBmiContainer}>
-        <Text style={styles.dashBmiText}>{overviewData.bmiOutput}</Text>
-        <View style={styles.dashCaloriesBarContainer}>
+      <Modal
+        transparent={true}
+        visible={modalVisible}
+        animationType="slide"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.overviewModalOverlay}>
+          <View style={styles.overviewModalContent}>
+            <Text style={styles.overviewModalTitle}>Vyber možnosť</Text>
+
+            {options.map((opt) => (
+              <TouchableOpacity
+                key={opt.label}
+                style={styles.overviewModalOptionRow}
+                onPress={() => setSelectedOption(opt.label)}
+              >
+                <View style={styles.overviewModalRadioOuter}>
+                  {selectedOption === opt.label && (
+                    <View style={styles.overviewModalRadioInner} />
+                  )}
+                </View>
+                <View>
+                  <Text style={styles.overviewModalOptionLabel}>{opt.label}</Text>
+                  <Text style={styles.overviewModalOptionDescription}>
+                    {opt.description}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+
+            <Pressable
+              style={styles.overviewModalConfirmButton}
+              onPress={() => {
+                setModalVisible(false);
+                addWater();
+              }}
+            >
+              <Text style={styles.overviewModalConfirmButtonText}>Potvrdiť</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      <Text style={styles.overviewSectionTitle}>BMI</Text>
+      <View style={styles.overviewCard}>
+    
+        <Text style={styles.overviewBmiText}>{overviewData.bmiOutput}</Text>
+        <View style={styles.overviewProgressBar}>
           <View
             style={[
-              styles.dashCaloriesBar,
+              styles.overviewProgressFill,
               {
                 width: `${overviewData.bmiBar}%`,
                 backgroundColor: overviewData.bmiBarColor,
@@ -589,6 +915,6 @@ export default function OverviewTab({ navigation }) {
           />
         </View>
       </View>
-    </>
+    </View>
   );
 }
