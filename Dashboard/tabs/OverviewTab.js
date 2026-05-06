@@ -431,13 +431,104 @@ export default function OverviewTab({ navigation }) {
       eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
     if (calories === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
 
-    const proteinGoal = ((cal * 0.18) / 4).toFixed(0);
-    const carbGoal = ((cal * 0.55) / 4).toFixed(0);
-    const fatGoal = ((cal * 0.27) / 9).toFixed(0);
-    const fiberGoal = ((cal / 1000) * 14).toFixed(0);
-    const sugarGoal = ((cal * 0.1) / 4).toFixed(0);
-    const saltGoal = 5;
-    const waterGoal = 35 * weight;
+    // Age-based nutritional targets (DRI AMDR + AHA sugars)
+    let proteinPercent;
+    let carbPercent;
+    let fatPercent;
+
+    if (age >= 1 && age <= 3) {
+      // AMDR: protein 5-20%, carbs 45-65%, fat 30-40% (higher fat, lower protein)
+      proteinPercent = 0.12;
+      carbPercent = 0.50;
+      fatPercent = 0.38;
+    } else if (age <= 18) {
+      // AMDR: protein 10-30%, carbs 45-65%, fat 25-35% (higher fat, lower protein)
+      proteinPercent = 0.15;
+      carbPercent = 0.50;
+      fatPercent = 0.35;
+    } else {
+      // AMDR: protein 10-35%, carbs 45-65%, fat 20-35%
+      proteinPercent = 0.20;
+      carbPercent = 0.50;
+      fatPercent = 0.30;
+    }
+
+    let proteinRda;
+    if (age <= 3) {
+      proteinRda = 13;
+    } else if (age <= 8) {
+      proteinRda = 19;
+    } else if (age <= 13) {
+      proteinRda = 34;
+    } else if (age <= 18) {
+      proteinRda = gender === "male" ? 52 : 46;
+    } else {
+      proteinRda = gender === "male" ? 56 : 46;
+    }
+
+    const minProteinPercent = (proteinRda * 4) / cal;
+    const proteinPercentEffective = Math.max(proteinPercent, minProteinPercent);
+    const remainingPercent = Math.max(0, 1 - proteinPercentEffective);
+    const carbFatTotal = carbPercent + fatPercent;
+    const carbPercentEffective = (carbPercent / carbFatTotal) * remainingPercent;
+    const fatPercentEffective = (fatPercent / carbFatTotal) * remainingPercent;
+
+    const proteinGoal = ((cal * proteinPercentEffective) / 4).toFixed(0);
+    const carbGoal = ((cal * carbPercentEffective) / 4).toFixed(0);
+    const fatGoal = ((cal * fatPercentEffective) / 9).toFixed(0);
+
+    // Fiber AI by age/sex (DRI)
+    let fiberGoal;
+    if (age <= 3) {
+      fiberGoal = 19;
+    } else if (age <= 8) {
+      fiberGoal = 25;
+    } else if (age <= 13) {
+      fiberGoal = gender === "male" ? 31 : 26;
+    } else if (age <= 18) {
+      fiberGoal = gender === "male" ? 38 : 26;
+    } else if (age <= 50) {
+      fiberGoal = gender === "male" ? 38 : 25;
+    } else {
+      fiberGoal = gender === "male" ? 30 : 21;
+    }
+
+    // Added sugar: AHA recommends <=6% of calories (stricter than WHO <10%)
+    const sugarGoal = ((cal * 0.06) / 4).toFixed(0);
+
+    // Sodium AI (DRI) converted to salt using WHO conversion
+    const sodiumToSalt = 2.5; // 1 g sodium = 2.5 g salt
+    let sodiumGoal;
+    if (age <= 3) {
+      sodiumGoal = 1.0;
+    } else if (age <= 8) {
+      sodiumGoal = 1.2;
+    } else if (age <= 18) {
+      sodiumGoal = 1.5;
+    } else if (age <= 50) {
+      sodiumGoal = 1.5;
+    } else if (age <= 70) {
+      sodiumGoal = 1.3;
+    } else {
+      sodiumGoal = 1.2;
+    }
+    const saltGoal = Number((sodiumGoal * sodiumToSalt).toFixed(2));
+
+    // Total water AI by age/sex (DRI, includes food + beverages)
+    let waterGoal;
+    if (age <= 3) {
+      waterGoal = 1300;
+    } else if (age <= 8) {
+      waterGoal = 1700;
+    } else if (age <= 13) {
+      waterGoal = gender === "male" ? 2400 : 2100;
+    } else if (age <= 18) {
+      waterGoal = gender === "male" ? 3300 : 2300;
+    } else if (age <= 50) {
+      waterGoal = gender === "male" ? 3700 : 2700;
+    } else {
+      waterGoal = gender === "male" ? 3700 : 2700;
+    }
 
     const proteinBar = (proteins / proteinGoal) * 100;
     const carbBar = (carbs / carbGoal) * 100;
@@ -567,7 +658,7 @@ export default function OverviewTab({ navigation }) {
     },
     {
       key: "sugar",
-      label: "Cukry",
+      label: "Pridané cukry",
       consumed: overviewData.sugarConsumed,
       goal: overviewData.sugarGoal,
       bar: overviewData.sugarBar,
