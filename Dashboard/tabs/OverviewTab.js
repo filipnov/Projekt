@@ -404,9 +404,21 @@ export default function OverviewTab({ navigation }) {
       eatenTotals;
 
     let cal;
-    if (gender === "male")
-      cal = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
-    else cal = (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
+    
+    // Vzorec závisí od veku
+    if (age < 18) {
+      // Vzorec pre deti/tínedžerov (FAO/WHO/UNU)
+      if (gender === "male")
+        cal = (17.686 * weight + 658.2) * activityLevel;
+      else
+        cal = (13.384 * weight + 692.6) * activityLevel;
+    } else {
+      // Vzorec pre dospelých (Mifflin-St Jeor)
+      if (gender === "male")
+        cal = (10 * weight + 6.25 * height - 5 * age + 5) * activityLevel;
+      else
+        cal = (10 * weight + 6.25 * height - 5 * age - 161) * activityLevel;
+    }
 
     if (goal === "lose") cal -= 500;
     if (goal === "gain") cal += 500;
@@ -419,13 +431,13 @@ export default function OverviewTab({ navigation }) {
       eatOutput = `Ešte ti chýba ${Math.round(cal - calories)} kcal`;
     if (calories === cal) eatOutput = "Dostal/-a si sa na svoj denný cieľ!";
 
-    const proteinGoal = ((cal * 0.13) / 4).toFixed(0);
-    const carbGoal = ((cal * 0.65) / 4).toFixed(0);
-    const fatGoal = ((cal * 0.23) / 9).toFixed(0);
+    const proteinGoal = ((cal * 0.18) / 4).toFixed(0);
+    const carbGoal = ((cal * 0.55) / 4).toFixed(0);
+    const fatGoal = ((cal * 0.27) / 9).toFixed(0);
     const fiberGoal = ((cal / 1000) * 14).toFixed(0);
-    const sugarGoal = ((cal * 0.075) / 4).toFixed(0);
+    const sugarGoal = ((cal * 0.1) / 4).toFixed(0);
     const saltGoal = 5;
-    const waterGoal = 33 * weight;
+    const waterGoal = 35 * weight;
 
     const proteinBar = (proteins / proteinGoal) * 100;
     const carbBar = (carbs / carbGoal) * 100;
