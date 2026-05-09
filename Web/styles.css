@@ -88,7 +88,6 @@ body.dark-mode {
 .demo-btn:hover {
     background: var(--primary-dark);
 }
-}
 
 .intro-phone .phone-screen {
     backdrop-filter: blur(12px);
