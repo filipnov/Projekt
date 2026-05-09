@@ -156,8 +156,9 @@ export default function OverviewTab({ navigation }) {
   const [hasTotalsData, setHasTotalsData] = useState(false);
 
   const selectedDateKey = getTodayKey(selectedDate);
+  const todayKey = getTodayKey();
   const currentDate = formatDisplayDate(selectedDate);
-  const isTodaySelected = selectedDateKey === getTodayKey();
+  const isTodaySelected = selectedDateKey === todayKey;
 
   const options = [
     { label: "Malý pohár / šálka ", description: "150 ml", ml: 150 },
@@ -245,8 +246,35 @@ export default function OverviewTab({ navigation }) {
     if (rangeView === "month") setRangeView("week");
   }, [rangeView]);
 
+  const isSameOrBeforeToday = (date) => getTodayKey(date) <= todayKey;
+  const getNextDateForView = (date) => {
+    if (rangeView === "week") return shiftDateByDays(date, 7);
+    if (rangeView === "year") {
+      return new Date(date.getFullYear() + 1, date.getMonth(), date.getDate());
+    }
+    return shiftDateByDays(date, 1);
+  };
+  const canShiftForward = isSameOrBeforeToday(getNextDateForView(selectedDate));
+
   const handleDateShift = (delta) => {
-    setSelectedDate((prev) => shiftDateByDays(prev, delta));
+    setSelectedDate((prev) => {
+      const nextDate =
+        rangeView === "week"
+          ? shiftDateByDays(prev, delta * 7)
+          : rangeView === "year"
+            ? new Date(
+                prev.getFullYear() + delta,
+                prev.getMonth(),
+                prev.getDate(),
+              )
+            : shiftDateByDays(prev, delta);
+
+      if (delta > 0 && !isSameOrBeforeToday(nextDate)) {
+        return new Date();
+      }
+
+      return nextDate;
+    });
   };
 
   // Načíta uložený e‑mail
@@ -960,12 +988,16 @@ export default function OverviewTab({ navigation }) {
           <Text style={styles.overviewDateArrow}>{"<"}</Text>
         </Pressable>
         <Text style={styles.overviewDateText}>{currentDate}</Text>
-        <Pressable
-          style={styles.overviewDateButton}
-          onPress={() => handleDateShift(1)}
-        >
-          <Text style={styles.overviewDateArrow}>{">"}</Text>
-        </Pressable>
+        {canShiftForward ? (
+          <Pressable
+            style={styles.overviewDateButton}
+            onPress={() => handleDateShift(1)}
+          >
+            <Text style={styles.overviewDateArrow}>{">"}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.overviewDateButton} />
+        )}
       </View>
 
       <View style={styles.overviewRangeRow}>
@@ -1008,93 +1040,102 @@ export default function OverviewTab({ navigation }) {
         </View>
       ) : null}
 
-      <View style={[styles.overviewCard, styles.overviewCardAccent]}>
-        <View style={styles.overviewCardTopRow}>
-          <View>
-            <Text style={styles.overviewCardLabel}>Kalórie</Text>
-            <Text style={styles.overviewCardValueLarge}>
-              {overviewData.caloriesConsumed} kcal
-            </Text>
-          </View>
-          {isTodaySelected ? (
-            <View style={styles.overviewBadge}>
-              <Text style={styles.overviewBadgeText}>Dnes</Text>
+      {rangeView === "day" ? (
+        <>
+          <View style={[styles.overviewCard, styles.overviewCardAccent]}>
+            <View style={styles.overviewCardTopRow}>
+              <View>
+                <Text style={styles.overviewCardLabel}>Kalórie</Text>
+                <Text style={styles.overviewCardValueLarge}>
+                  {overviewData.caloriesConsumed} kcal
+                </Text>
+              </View>
+              {isTodaySelected ? (
+                <View style={styles.overviewBadge}>
+                  <Text style={styles.overviewBadgeText}>Dnes</Text>
+                </View>
+              ) : null}
             </View>
-          ) : null}
-        </View>
-        <Text style={styles.overviewCardSubText}>{overviewData.eatOutput}</Text>
-        <View style={styles.overviewProgressBar}>
-          <View
-            style={[
-              styles.overviewProgressFill,
-              {
-                width: `${overviewData.progressBar}%`,
-                backgroundColor: overviewData.barColor,
-              },
-            ]}
-          />
-        </View>
-        <Text style={styles.overviewProgressText}>{overviewData.eatenOutput}</Text>
-      </View>
-
-      <Text style={styles.overviewSectionTitle}>Makronutrienty</Text>
-      <View style={styles.overviewGrid}>
-        {macroCards.map((card) => (
-          <View
-            key={card.key}
-            style={[styles.overviewStatCard, { borderLeftColor: card.accent }]}
-          >
-            <Text style={styles.overviewStatLabel}>{card.label}</Text>
-            <Text style={styles.overviewStatValue}>
-              {card.consumed} / {card.goal} {card.unit}
+            <Text style={styles.overviewCardSubText}>
+              {overviewData.eatOutput}
             </Text>
-            <View style={styles.overviewProgressBarSmall}>
+            <View style={styles.overviewProgressBar}>
               <View
                 style={[
                   styles.overviewProgressFill,
                   {
-                    width: `${card.bar}%`,
-                    backgroundColor: nutriBarColor(card.bar),
+                    width: `${overviewData.progressBar}%`,
+                    backgroundColor: overviewData.barColor,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.overviewProgressText}>
+              {overviewData.eatenOutput}
+            </Text>
+          </View>
+
+          <Text style={styles.overviewSectionTitle}>Makronutrienty</Text>
+          <View style={styles.overviewGrid}>
+            {macroCards.map((card) => (
+              <View
+                key={card.key}
+                style={[
+                  styles.overviewStatCard,
+                  { borderLeftColor: card.accent },
+                ]}
+              >
+                <Text style={styles.overviewStatLabel}>{card.label}</Text>
+                <Text style={styles.overviewStatValue}>
+                  {card.consumed} / {card.goal} {card.unit}
+                </Text>
+                <View style={styles.overviewProgressBarSmall}>
+                  <View
+                    style={[
+                      styles.overviewProgressFill,
+                      {
+                        width: `${card.bar}%`,
+                        backgroundColor: nutriBarColor(card.bar),
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            ))}
+          </View>
+
+          <Text style={styles.overviewSectionTitle}>Hydratácia</Text>
+          <View style={[styles.overviewCard, styles.overviewCardAccentBlue]}>
+            <View style={styles.overviewCardTopRow}>
+              <View>
+                <Text style={styles.overviewCardLabel}>Voda</Text>
+                <Text style={styles.overviewCardValue}>
+                  {overviewData.drunkWater} / {overviewData.waterGoal} ml
+                </Text>
+              </View>
+              <Pressable
+                style={[
+                  styles.overviewAddWaterButton,
+                  !isTodaySelected && styles.overviewAddWaterButtonDisabled,
+                ]}
+                onPress={() => setModalVisible(true)}
+                disabled={!isTodaySelected}
+              >
+                <Image source={plus} style={styles.overviewAddWaterIcon} />
+              </Pressable>
+            </View>
+            <View style={styles.overviewProgressBar}>
+              <View
+                style={[
+                  styles.overviewProgressFill,
+                  {
+                    width: `${overviewData.waterBar}%`,
+                    backgroundColor: "#3b82f6",
                   },
                 ]}
               />
             </View>
           </View>
-        ))}
-      </View>
-
-      <Text style={styles.overviewSectionTitle}>Hydratácia</Text>
-      <View style={[styles.overviewCard, styles.overviewCardAccentBlue]}>
-        <View style={styles.overviewCardTopRow}>
-          <View>
-            <Text style={styles.overviewCardLabel}>Voda</Text>
-            <Text style={styles.overviewCardValue}>
-              {overviewData.drunkWater} / {overviewData.waterGoal} ml
-            </Text>
-          </View>
-          <Pressable
-            style={[
-              styles.overviewAddWaterButton,
-              !isTodaySelected && styles.overviewAddWaterButtonDisabled,
-            ]}
-            onPress={() => setModalVisible(true)}
-            disabled={!isTodaySelected}
-          >
-            <Image source={plus} style={styles.overviewAddWaterIcon} />
-          </Pressable>
-        </View>
-        <View style={styles.overviewProgressBar}>
-          <View
-            style={[
-              styles.overviewProgressFill,
-              {
-                width: `${overviewData.waterBar}%`,
-                backgroundColor: "#3b82f6",
-              },
-            ]}
-          />
-        </View>
-      </View>
 
       <Modal
         transparent={true}
@@ -1197,6 +1238,8 @@ export default function OverviewTab({ navigation }) {
           />
         </View>
       </View>
+        </>
+      ) : null}
     </View>
   );
 }
