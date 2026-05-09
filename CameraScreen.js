@@ -25,6 +25,9 @@ import { updateTotalsForDate } from "./dailyTotalsStorage";
 
 const SERVER_URL = "https://app.bitewise.it.com";
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
+const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
+const OFF_SEARCH_FIELDS =
+  "code,product_name,brands,quantity,product_quantity,image_url,nutriments";
 
 export default function CameraScreen() {
   const getTodayKey = (date = new Date()) => {
@@ -36,8 +39,12 @@ export default function CameraScreen() {
   const navigation = useNavigation();
   const [permission, requestPermission] = useCameraPermissions();
   const [showContent, setShowContent] = useState(false);
+  const [lookupMode, setLookupMode] = useState("scan");
   const [scanned, setScanned] = useState(false);
   const [code, setCode] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchError, setSearchError] = useState("");
   const [productData, setProductData] = useState(null);
   const [quantityInput, setQuantityInput] = useState("");
   const [awaitingQuantity, setAwaitingQuantity] = useState(false);
@@ -136,8 +143,7 @@ export default function CameraScreen() {
     };
   }
 
-  async function fetchProductData(barcode) {
-    setLoading(true);
+  function resetLookupState() {
     setAwaitingQuantity(false);
     setQuantityInput("");
     setProductData(null);
@@ -145,61 +151,210 @@ export default function CameraScreen() {
     setShowDatePicker(false);
     setAwaitingExpirationDate(false);
     setSelectedExpirationDate(new Date());
+    setSearchError("");
+  }
+
+  function showProductNotFound() {
+    setNotFound(true);
+
+    setTimeout(() => {
+      setNotFound(false);
+      setScanned(false);
+    }, 2000);
+  }
+
+  function toNumber(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function convertToGrams(amount, unit) {
+    const normalizedUnit = String(unit || "g").toLowerCase();
+    if (normalizedUnit === "kg" || normalizedUnit === "l") return amount * 1000;
+    if (normalizedUnit === "cl") return amount * 10;
+    return amount;
+  }
+
+  function getProductWeight(product) {
+    const directWeight = Number(product?.product_quantity);
+    if (Number.isFinite(directWeight) && directWeight > 0) {
+      return directWeight;
+    }
+
+    const quantityText = String(
+      product?.quantity || product?.serving_size || "",
+    );
+    const normalizedQuantity = quantityText.replace(",", ".");
+    const totalMatch = normalizedQuantity.match(
+      /=\s*(\d+(?:\.\d+)?)\s*(kg|g|ml|l|cl)/i,
+    );
+
+    if (totalMatch) {
+      const totalAmount = Number(totalMatch[1]);
+      return Number.isFinite(totalAmount) && totalAmount > 0
+        ? convertToGrams(totalAmount, totalMatch[2])
+        : 0;
+    }
+
+    const multipackMatch = normalizedQuantity.match(
+      /(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*(kg|g|ml|l|cl)/i,
+    );
+
+    if (multipackMatch) {
+      const count = Number(multipackMatch[1]);
+      const unitAmount = Number(multipackMatch[2]);
+      if (Number.isFinite(count) && Number.isFinite(unitAmount)) {
+        return count * convertToGrams(unitAmount, multipackMatch[3]);
+      }
+    }
+
+    const match = normalizedQuantity.match(
+      /(\d+(?:\.\d+)?)\s*(kg|g|ml|l|cl)?/i,
+    );
+
+    if (!match) return 0;
+
+    const amount = Number(match[1]);
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+
+    return convertToGrams(amount, match[2]);
+  }
+
+  function mapOpenFoodFactsProduct(product) {
+    const n = product?.nutriments || {};
+    const weight = getProductWeight(product);
+
+    return {
+      name:
+        product?.product_name ||
+        product?.generic_name ||
+        product?.brands ||
+        "Neznámy produkt",
+      image: product?.image_url || product?.image_front_url || null,
+      calories: toNumber(n?.["energy-kcal_100g"]),
+      fat: toNumber(n?.fat_100g),
+      carbs: toNumber(n?.carbohydrates_100g),
+      sugar: toNumber(n?.sugars_100g),
+      proteins: toNumber(n?.proteins_100g),
+      salt: toNumber(n?.salt_100g),
+      fiber: toNumber(n?.fiber_100g),
+      quantity: weight,
+    };
+  }
+
+  function setSelectedProduct(productInfo) {
+    let finalProduct = productInfo;
+
+    if (productInfo.quantity && productInfo.quantity > 0) {
+      finalProduct = calculateTotals(productInfo, productInfo.quantity);
+      setAwaitingQuantity(false);
+    } else {
+      setAwaitingQuantity(true);
+    }
+
+    setProductData(finalProduct);
+    setSearchResults([]);
+    setSearchError("");
+  }
+
+  function buildOpenFoodFactsSearchUrl(query) {
+    return `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(
+      query,
+    )}&search_simple=1&action=process&json=1&page_size=10&page=1&sort_by=unique_scans_n&fields=${encodeURIComponent(
+      OFF_SEARCH_FIELDS,
+    )}`;
+  }
+
+  async function fetchSearchResults(query) {
+    try {
+      const response = await fetch(
+        `${SERVER_URL}/api/searchFoodFacts?q=${encodeURIComponent(query)}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Server search failed");
+      }
+
+      return await response.json();
+    } catch {
+      const response = await fetch(buildOpenFoodFactsSearchUrl(query), {
+        headers: { Accept: "application/json" },
+      });
+
+      if (!response.ok) {
+        throw new Error("Open Food Facts search failed");
+      }
+
+      return await response.json();
+    }
+  }
+
+  async function searchProductsByName() {
+    const query = searchQuery.trim();
+
+    if (query.length < 2) {
+      setSearchError("Zadajte aspoň 2 znaky.");
+      setSearchResults([]);
+      return;
+    }
+
+    setLoading(true);
+    resetLookupState();
+    setScanned(false);
+
+    try {
+      const data = await fetchSearchResults(query);
+      const products = Array.isArray(data.products) ? data.products : [];
+      const visibleProducts = products.filter((product) => {
+        return Boolean(product?.product_name || product?.brands);
+      });
+
+      setSearchResults(visibleProducts);
+      setSearchError(
+        visibleProducts.length ? "" : "Nenašli sa žiadne produkty.",
+      );
+    } catch {
+      setSearchResults([]);
+      setSearchError("Vyhľadávanie sa nepodarilo. Skúste to znova.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function selectSearchProduct(product) {
+    resetLookupState();
+    setSelectedProduct(mapOpenFoodFactsProduct(product));
+  }
+
+  function changeLookupMode(nextMode) {
+    setLookupMode(nextMode);
+    setShowContent(false);
+    setScanned(false);
+    setSearchError("");
+    setNotFound(false);
+  }
+
+  async function fetchProductData(barcode) {
+    setLoading(true);
+    resetLookupState();
     try {
       const response = await fetch(`${API_URL}/${barcode}.json`);
       const data = await response.json();
 
       if (data.status === 1) {
-        const product = data.product;
-        const n = product.nutriments;
-        const weight = Number(product.product_quantity);
-
-        const productInfo = {
-          name: product.product_name || "Neznámy produkt",
-          image: product.image_url,
-          calories: n?.["energy-kcal_100g"] || 0,
-          fat: n?.fat_100g || 0,
-          carbs: n?.carbohydrates_100g || 0,
-          sugar: n?.sugars_100g || 0,
-          proteins: n?.proteins_100g || 0,
-          salt: n?.salt_100g || 0,
-          fiber: n?.fiber_100g || 0,
-          quantity: weight,
-        };
-
-        let finalProduct = productInfo;
-
-        if (weight && !isNaN(weight) && weight > 0) {
-          finalProduct = calculateTotals(productInfo, weight);
-        } else {
-          setAwaitingQuantity(true);
-        }
-
-        setProductData(finalProduct);
-        // ❗ kamera ostáva STOP, lebo productData != null
+        setSelectedProduct(mapOpenFoodFactsProduct(data.product));
       } else {
-        setNotFound(true);
-
-        setTimeout(() => {
-          setNotFound(false);
-          setScanned(false);
-        }, 2000);
+        showProductNotFound();
       }
     } catch {
-
-      setNotFound(true);
-
-      setTimeout(() => {
-        setNotFound(false);
-        setScanned(false);
-      }, 2000);
+      showProductNotFound();
     } finally {
       setLoading(false);
     }
   }
 
   async function handleBarCodeScanned({ data }) {
-    if (scanned || loading || productData) return;
+    if (lookupMode !== "scan" || scanned || loading || productData) return;
 
     setScanned(true);
     fetchProductData(data);
@@ -229,6 +384,125 @@ export default function CameraScreen() {
         >
           <Text style={styles.primaryActionButtonText}>Pridať</Text>
         </Pressable>
+      </KeyboardWrapper>
+    );
+  };
+
+  const renderLookupModeSwitch = () => {
+    if (productData) return null;
+
+    return (
+      <View style={styles.lookupModeSwitch}>
+        <Pressable
+          onPress={() => changeLookupMode("scan")}
+          style={[
+            styles.lookupModeTab,
+            lookupMode === "scan" && styles.lookupModeTabActive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.lookupModeText,
+              lookupMode === "scan" && styles.lookupModeTextActive,
+            ]}
+          >
+            Skenovať
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => changeLookupMode("search")}
+          style={[
+            styles.lookupModeTab,
+            lookupMode === "search" && styles.lookupModeTabActive,
+          ]}
+        >
+          <Text
+            style={[
+              styles.lookupModeText,
+              lookupMode === "search" && styles.lookupModeTextActive,
+            ]}
+          >
+            Hľadať
+          </Text>
+        </Pressable>
+      </View>
+    );
+  };
+
+  const renderSearchResult = (product, index) => {
+    const title = product?.product_name || product?.brands || "Neznámy produkt";
+    const brand = product?.brands;
+    const quantity = product?.quantity;
+    const image = product?.image_url;
+    const key = product?.code || `${title}-${index}`;
+
+    return (
+      <Pressable
+        key={key}
+        onPress={() => selectSearchProduct(product)}
+        style={styles.productSearchResult}
+      >
+        {image ? (
+          <Image source={{ uri: image }} style={styles.productSearchImage} />
+        ) : (
+          <View style={styles.productSearchImagePlaceholder}>
+            <Text style={styles.productSearchImagePlaceholderText}>?</Text>
+          </View>
+        )}
+        <View style={styles.productSearchResultTextBox}>
+          <Text style={styles.productSearchResultName} numberOfLines={2}>
+            {title}
+          </Text>
+          {!!brand && (
+            <Text style={styles.productSearchResultMeta} numberOfLines={1}>
+              {brand}
+            </Text>
+          )}
+          {!!quantity && (
+            <Text style={styles.productSearchResultMeta} numberOfLines={1}>
+              {quantity}
+            </Text>
+          )}
+        </View>
+      </Pressable>
+    );
+  };
+
+  const renderSearchContent = () => {
+    if (lookupMode !== "search" || productData) return null;
+
+    return (
+      <KeyboardWrapper scroll={false} style={styles.productSearchContainer}>
+        <Text style={styles.manualAddText}>Vyhľadajte produkt podľa názvu.</Text>
+
+        <TextInput
+          style={styles.productSearchInput}
+          value={searchQuery}
+          onChangeText={(value) => {
+            setSearchQuery(value);
+            setSearchError("");
+          }}
+          placeholder="napr. horalky"
+          returnKeyType="search"
+          onSubmitEditing={searchProductsByName}
+        />
+
+        <Pressable
+          onPress={searchProductsByName}
+          style={styles.primaryActionButton}
+        >
+          <Text style={styles.primaryActionButtonText}>Hľadať</Text>
+        </Pressable>
+
+        {!!searchError && (
+          <Text style={styles.productSearchError}>{searchError}</Text>
+        )}
+
+        {searchResults.length > 0 && (
+          <ScrollView style={styles.productSearchResults}>
+            {searchResults.map(renderSearchResult)}
+          </ScrollView>
+        )}
       </KeyboardWrapper>
     );
   };
@@ -358,13 +632,17 @@ export default function CameraScreen() {
       <CameraView
         style={{ flex: 1 }}
         facing="back"
-        onBarcodeScanned={handleBarCodeScanned}
+        onBarcodeScanned={
+          lookupMode === "scan" ? handleBarCodeScanned : undefined
+        }
       />
 
-      <View style={{ position: "absolute", bottom: 20, alignSelf: "center" }}>
-        {renderContent()}
+      {renderLookupModeSwitch()}
 
-        {!productData && (
+      <View style={{ position: "absolute", bottom: 20, alignSelf: "center" }}>
+        {lookupMode === "search" ? renderSearchContent() : renderContent()}
+
+        {!productData && lookupMode === "scan" && (
           <Pressable
             style={styles.manualAddButton}
             onPress={() => setShowContent((prev) => !prev)}

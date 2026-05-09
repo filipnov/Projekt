@@ -32,6 +32,14 @@ app.use(express.json()); // parsovanie JSON v requestoch (body -> objekt)
 const PORT = process.env.PORT || 3000; // port, kde server počúva
 const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017"; // MongoDB URL
 const client = new MongoClient(MONGO_URI); // MongoDB klient
+const OPEN_FOOD_FACTS_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
+const OPEN_FOOD_FACTS_SEARCH_FIELDS =
+  "code,product_name,brands,quantity,product_quantity,image_url,nutriments";
+const OPEN_FOOD_FACTS_USER_AGENT =
+  process.env.OPEN_FOOD_FACTS_USER_AGENT ||
+  "Bitewise/1.0 (https://app.bitewise.it.com)";
+const FOOD_FACTS_SEARCH_CACHE_MS = 10 * 60 * 1000;
+const foodFactsSearchCache = new Map();
 
 // Servovanie .well-known (Android app links / assetlinks)
 app.use(
@@ -530,6 +538,73 @@ async function start() {
     } catch (err) {
       console.error("❌ Get products error:", err); // log chyby
       res.status(500).json({ error: "Server error" }); // serverová chyba
+    }
+  });
+
+  // Vyhľadanie produktov v Open Food Facts podľa textu.
+  app.get("/api/searchFoodFacts", async (req, res) => {
+    const query = String(req.query.q || "").trim();
+
+    if (query.length < 2) {
+      return res.status(400).json({ error: "Search query is too short" });
+    }
+
+    const cacheKey = query.toLowerCase();
+    const cached = foodFactsSearchCache.get(cacheKey);
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return res.json(cached.payload);
+    }
+
+    try {
+      const searchParams = new URLSearchParams({
+        search_terms: query,
+        search_simple: "1",
+        action: "process",
+        json: "1",
+        page_size: "10",
+        page: "1",
+        sort_by: "unique_scans_n",
+        fields: OPEN_FOOD_FACTS_SEARCH_FIELDS,
+      });
+      const response = await fetch(
+        `${OPEN_FOOD_FACTS_SEARCH_URL}?${searchParams.toString()}`,
+        {
+          headers: {
+            Accept: "application/json",
+            "User-Agent": OPEN_FOOD_FACTS_USER_AGENT,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        return res.status(response.status).json({
+          error: "Open Food Facts search failed",
+        });
+      }
+
+      const data = await response.json();
+      const products = Array.isArray(data.products) ? data.products : [];
+      const payload = {
+        success: true,
+        count: data.count ?? products.length,
+        products,
+      };
+
+      foodFactsSearchCache.set(cacheKey, {
+        expiresAt: Date.now() + FOOD_FACTS_SEARCH_CACHE_MS,
+        payload,
+      });
+
+      if (foodFactsSearchCache.size > 100) {
+        const oldestKey = foodFactsSearchCache.keys().next().value;
+        foodFactsSearchCache.delete(oldestKey);
+      }
+
+      return res.json(payload);
+    } catch (err) {
+      console.error("Open Food Facts search error:", err);
+      return res.status(500).json({ error: "Open Food Facts search error" });
     }
   });
 
