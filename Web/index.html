@@ -23,10 +23,11 @@
                 <span></span>
             </div>
             <ul class="nav-menu">
-                <li><a href="#home" onclick="scrollToSection('home')">Domov</a></li>
-                <li><a href="#features" onclick="scrollToSection('features')">Funkcie</a></li>
-                <li><a href="#dashboard" onclick="scrollToSection('dashboard')">Dashboard</a></li>
-                <li><a href="#recipes" onclick="scrollToSection('recipes')">Recepty</a></li>
+                <li><a href="#home" onclick="event.preventDefault(); scrollToSection('home')">Domov</a></li>
+                <li><a href="#features" onclick="event.preventDefault(); scrollToSection('features')">Funkcie</a></li>
+                <li><a href="#demo" onclick="event.preventDefault(); scrollToSection('demo')">Demo</a></li>
+                <li><a href="#recipes" onclick="event.preventDefault(); scrollToSection('recipes')">Recepty</a></li>
+                <li><button class="nav-download-btn" type="button">Stiahnuť aplikáciu</button></li>
                 <li><button class="theme-toggle" onclick="toggleTheme()"><i class="fas fa-moon"></i></button></li>
             </ul>
         </div>
@@ -36,32 +37,52 @@
     <section id="home" class="hero">
         <div class="hero-content">
             <div class="hero-text">
-                <h1 class="hero-title">Jedz Múdrejšie, Míňaj Menej Jedla</h1>
-                <p class="hero-subtitle">Naskenuj svoje potraviny, sleduj výživu a objavuj recepty z toho, čo máš doma</p>
+                <p class="hero-kicker">Smart výživa bez plytvania</p>
+                <h1 class="hero-title">BiteWise</h1>
+                <p class="hero-subtitle">Aplikácia, ktorá zmení tvoju chladničku na osobného nutričného asistenta. Naskenuj potraviny, sleduj výživu a var z toho, čo už máš doma.</p>
+                <div class="hero-badges">
+                    <span><i class="fas fa-barcode"></i> skenovanie potravín</span>
+                    <span><i class="fas fa-utensils"></i> recepty z tvojej špajzy</span>
+                    <span><i class="fas fa-bell"></i> expirácie pod kontrolou</span>
+                    <span><i class="fas fa-list-check"></i> nákupný zoznam na mieru</span>
+                    <span><i class="fas fa-scale-balanced"></i> porovnanie cien v obchodoch</span>
+                    <span><i class="fas fa-receipt"></i> skenovanie bločkov</span>
+                    <span><i class="fas fa-wallet"></i> prehľad výdavkov na jedlo</span>
+                </div>
                 <div class="hero-buttons">
-                    <button class="btn btn-primary" onclick="showSection('login')">Prihlásiť sa</button>
-                    <button class="btn btn-secondary" onclick="showSection('register')">Zaregistrovať sa</button>
+                    <button class="btn btn-primary btn-download" type="button">
+                        <i class="fas fa-download"></i>
+                        Stiahnuť aplikáciu
+                    </button>
+                    <button class="btn btn-secondary" onclick="scrollToSection('features')">
+                        <i class="fas fa-circle-play"></i>
+                        Pozrieť výhody
+                    </button>
                 </div>
                 <div class="hero-stats">
                     <div class="stat-item">
                         <span class="stat-number">10M+</span>
-                        <span class="stat-label">Produktov</span>
+                        <span class="stat-label">produktov v databáze</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-number">500K+</span>
-                        <span class="stat-label">Používateľov</span>
+                        <span class="stat-number">30%</span>
+                        <span class="stat-label">menej vyhodeného jedla</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-number">5K+</span>
-                        <span class="stat-label">Receptov</span>
+                        <span class="stat-label">receptových nápadov</span>
                     </div>
                 </div>
             </div>
-            <div class="hero-image">
+            <div class="hero-image" id="demo">
                 <div class="phone-mockup">
                     <div class="phone-screen">
                         <!-- DEMO OVERLAY -->
                         <div class="demo-overlay" id="demoOverlay">
+                            <div class="demo-access-note">
+                                <i class="fas fa-lock-open"></i>
+                                <span>Demo je len rýchla ochutnávka. Plné skenovanie, recepty a upozornenia sa odomknú v aplikácii.</span>
+                            </div>
                             <button class="demo-btn" onclick="startDemo()">
                                 <span>Otestovať demo</span>
                                 <i class="fas fa-arrow-right"></i>
@@ -569,7 +590,9 @@
 
     <!-- ===== FEATURES SECTION ===== -->
     <section id="features" class="features">
-        <h2 class="section-title">Hlavné Funkcie</h2>
+        <p class="section-eyebrow">Prečo BiteWise</p>
+        <h2 class="section-title">Menej chaosu v jedle, viac kontroly každý deň</h2>
+        <p class="section-subtitle">BiteWise spája skener potravín, špajzu, výživu a recepty do jednej jednoduchej aplikácie.</p>
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">
@@ -612,6 +635,55 @@
                 </div>
                 <h3>Inteligentné Notifikácie</h3>
                 <p>Automatické upozornenia na expirujúce potraviny a pripomienky pitného režimu</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-list-check"></i>
+                </div>
+                <h3>Nákupný Zoznam na Mieru</h3>
+                <p>Aplikácia navrhne, čo kúpiť podľa receptov, zásob v špajzi a tvojich nutričných cieľov</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-scale-balanced"></i>
+                </div>
+                <h3>Porovnanie Cien v Obchodoch</h3>
+                <p>Porovnaj odhadovanú cenu nákupu v konkrétnych obchodoch a vyber si výhodnejší košík</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <h3>Skenovanie Bločkov</h3>
+                <p>Naskenuj bloček a BiteWise automaticky doplní položky do špajzy aj s dátumom nákupu</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <h3>Sledovanie Výdavkov na Jedlo</h3>
+                <p>Každý bloček sa uloží do databázy, aby si videl mesačné výdavky na potraviny a trendy v nákupoch</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== DOWNLOAD PROMO SECTION ===== -->
+    <section class="app-promo">
+        <div class="app-promo-content">
+            <div class="app-promo-copy">
+                <p class="section-eyebrow">Stiahni si aplikáciu</p>
+                <h2>Začni variť múdrejšie ešte dnes</h2>
+                <p>BiteWise ti ukáže, čo sa oplatí zjesť ako prvé, čo dokúpiť a aký recept z toho spravíš bez zbytočného plytvania.</p>
+            </div>
+            <div class="app-promo-actions">
+                <button class="btn btn-primary btn-download" type="button">
+                    <i class="fas fa-download"></i>
+                    Stiahnuť aplikáciu
+                </button>
+                <div class="promo-proof">
+                    <span><strong>2 min</strong> na prvé nastavenie</span>
+                    <span><strong>0 €</strong> štartovací plán</span>
+                </div>
             </div>
         </div>
     </section>
@@ -1183,8 +1255,10 @@
 
     <!-- ===== RECIPES SHOWCASE SECTION ===== -->
     <section id="recipes" class="recipes-showcase">
+        <p class="section-eyebrow">Ochutnávka receptov</p>
         <h2 class="section-title">Skvelé Recepty</h2>
         <p class="section-subtitle">Objavuj autentické a čerstvé recepty s presným výpočtom výživy</p>
+        <p class="recipe-teaser-copy">Ukážeme ti pár overených nápadov. Celý postup, nákupný zoznam a presné nutričné hodnoty sa zobrazia po nainštalovaní aplikácie.</p>
 
         <div class="recipes-showcase-grid">
             <div class="recipe-showcase-card" onclick="expandRecipe(this)">
@@ -1234,6 +1308,64 @@
                     <p class="recipe-showcase-desc">Vysokoproteínové a nízkokalorické. Ideálne pre tých, ktorí chcú byť vo forme bez obetovania chuti.</p>
                 </div>
             </div>
+            <div class="recipe-showcase-card" onclick="expandRecipe(this)">
+                <div class="recipe-showcase-image">
+                    <div class="recipe-img-placeholder"><i class="fas fa-fish"></i></div>
+                </div>
+                <div class="recipe-showcase-info">
+                    <h3>Losos s Batátmi</h3>
+                    <p class="recipe-category">Overené omega-3 jedlo</p>
+                    <div class="recipe-showcase-stats">
+                        <span><strong>520</strong> kcal</span>
+                        <span><strong>34g</strong> bielkovín</span>
+                        <span><strong>30 min</strong></span>
+                    </div>
+                    <p class="recipe-showcase-desc">Pečený losos, batáty a jogurtový dip. V aplikácii nájdeš presný prepočet tukov, bielkovín a porcie.</p>
+                </div>
+            </div>
+
+            <div class="recipe-showcase-card" onclick="expandRecipe(this)">
+                <div class="recipe-showcase-image">
+                    <div class="recipe-img-placeholder"><i class="fas fa-seedling"></i></div>
+                </div>
+                <div class="recipe-showcase-info">
+                    <h3>Cícerový Šalát s Vajcom</h3>
+                    <p class="recipe-category">Overený rýchly obed</p>
+                    <div class="recipe-showcase-stats">
+                        <span><strong>410</strong> kcal</span>
+                        <span><strong>24g</strong> bielkovín</span>
+                        <span><strong>12 min</strong></span>
+                    </div>
+                    <p class="recipe-showcase-desc">Svieži obed z potravín, ktoré často čakajú v špajzi. BiteWise doplní alternatívy podľa tvojich zásob.</p>
+                </div>
+            </div>
+
+            <div class="recipe-showcase-card" onclick="expandRecipe(this)">
+                <div class="recipe-showcase-image">
+                    <div class="recipe-img-placeholder"><i class="fas fa-mug-hot"></i></div>
+                </div>
+                <div class="recipe-showcase-info">
+                    <h3>Ovsená Kaša s Tvarohom</h3>
+                    <p class="recipe-category">Overené raňajky</p>
+                    <div class="recipe-showcase-stats">
+                        <span><strong>360</strong> kcal</span>
+                        <span><strong>27g</strong> bielkovín</span>
+                        <span><strong>8 min</strong></span>
+                    </div>
+                    <p class="recipe-showcase-desc">Krémové raňajky s vlákninou a proteínom. Appka upraví ovocie podľa toho, čo treba minúť ako prvé.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="recipe-showcase-cta">
+            <div>
+                <strong>Chceš celý postup a presné nutričné hodnoty?</strong>
+                <span>Plné recepty, porcie a nákupné zoznamy sú dostupné v aplikácii BiteWise.</span>
+            </div>
+            <button class="btn btn-primary btn-download" type="button">
+                <i class="fas fa-download"></i>
+                Stiahnuť aplikáciu
+            </button>
         </div>
     </section>
 
@@ -1289,6 +1421,27 @@
                 <button type="submit" class="btn btn-primary btn-block">Zaregistrovať sa</button>
                 <p class="form-link">Už mám účet? <a href="#" onclick="switchAuthMode('login')">Prihlásiť sa</a></p>
             </form>
+        </div>
+    </div>
+
+    <!-- ===== INSTALL PROMPT MODAL ===== -->
+    <div class="modal" id="installPromptModal">
+        <div class="modal-content install-modal">
+            <button class="modal-close" onclick="closeModal('installPromptModal')">×</button>
+            <div class="install-modal-icon">
+                <i class="fas fa-mobile-screen-button"></i>
+            </div>
+            <div class="modal-header">
+                <h2>Pokračuj v aplikácii BiteWise</h2>
+            </div>
+            <div class="install-modal-body">
+                <p id="installPromptText">Tento obsah je len ochutnávka. Plné recepty, skenovanie a personalizované odporúčania nájdeš v aplikácii.</p>
+                <button class="btn btn-primary btn-block btn-download" type="button">
+                    <i class="fas fa-download"></i>
+                    Stiahnuť aplikáciu
+                </button>
+                <button class="btn btn-secondary btn-block" type="button" onclick="closeModal('installPromptModal')">Zatiaľ zostať na webe</button>
+            </div>
         </div>
     </div>
 

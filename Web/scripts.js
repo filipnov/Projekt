@@ -72,7 +72,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function scrollToSection(sectionId) {
     const section = document.getElementById(sectionId);
     if (section) {
-        section.scrollIntoView({ behavior: 'smooth' });
+        const navbar = document.querySelector('.navbar');
+        const offset = (navbar ? navbar.offsetHeight : 0) + 12;
+        const top = section.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({
+            top: Math.max(top, 0),
+            behavior: 'smooth'
+        });
     }
 }
 
@@ -199,6 +205,16 @@ function showRecipeDetail(recipeName) {
     showModal('recipeDetailModal');
 }
 
+function showInstallPrompt(contextName) {
+    const promptText = document.getElementById('installPromptText');
+    if (promptText) {
+        promptText.textContent = contextName
+            ? `Recept "${contextName}" je dostupný v plnej verzii aplikácie BiteWise spolu s postupom, nákupným zoznamom a presnými nutričnými hodnotami.`
+            : 'Tento obsah je len ochutnávka. Plné recepty, skenovanie a personalizované odporúčania nájdeš v aplikácii.';
+    }
+    showModal('installPromptModal');
+}
+
 function switchRecipeTab(tabIndex) {
     // Hide all recipe tabs
     const tabs = document.querySelectorAll('.recipe-tab');
@@ -222,7 +238,7 @@ function switchRecipeTab(tabIndex) {
 // ===== RECIPE SHOWCASE =====
 function expandRecipe(element) {
     const recipeName = element.querySelector('.recipe-showcase-info h3').textContent;
-    showRecipeDetail(recipeName);
+    showInstallPrompt(recipeName);
 }
 
 // ===== PANTRY MANAGEMENT =====
