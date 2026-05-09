@@ -192,8 +192,9 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
   // Volá sa po stlačení "Prihlásiť sa" - prihlásenie a stiahnutie dát
   async function handleLogin() {
+    const trimmedEmail = email.trim();
     // základná validácia: obe polia musia byť vyplnené
-    if (!email || !password) {
+    if (!trimmedEmail || !password) {
       Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
       return;
     }
@@ -212,7 +213,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       const response = await fetch(`${SERVER_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: hashedPassword }),
+        body: JSON.stringify({ email: trimmedEmail, password: hashedPassword }),
       });
 
       const data = await response.json();
@@ -281,82 +282,112 @@ export default function HomeScreen({ setIsLoggedIn }) {
   }
 
   return (
-    <KeyboardWrapper style={styles.authMainLayout}>
+    <KeyboardWrapper
+      style={styles.loginScreen}
+      contentContainerStyle={styles.loginScrollContent}
+    >
       {/* Modal so spinnerom počas spracovania */}
       <Modal visible={isLoading} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.generatingModalContainer}>
             <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
             <Text style={styles.generatingModalTitle}>Kontrolujem údaje...</Text>
-            <Text style={styles.generatingModalSubtitle}>Môže to trvať niekoľko sekúnd</Text>
+            <Text style={styles.generatingModalSubtitle}>
+              Môže to trvať niekoľko sekúnd
+            </Text>
           </View>
         </View>
       </Modal>
-      {/* Logo a prihlasovací formulár */}
-        <Image style={styles.authProfileAvatar} source={logo} />
-        <View style={styles.authCardContainer}>
-          <Text style={styles.authTitleText}>Prihlásenie!</Text>
-          <Text style={styles.authInfoLabel}>Tu vyplň svoje údaje:</Text>
+      <View style={styles.loginHero}>
+        <Image style={styles.loginLogo} source={logo} resizeMode="contain" />
+        <Text style={styles.loginHeroTitle}>Vitaj späť</Text>
+        <Text style={styles.loginHeroSubtitle}>
+          Prihlás sa do svojho účtu Bitewise.
+        </Text>
+      </View>
 
-        {/* Vstup pre e‑mail */}
-        <AutoShrinkTextInput
-          placeholder="e-mail"
-          style={styles.authTextInput}
-          value={email}
-          onChangeText={setEmail}
-          minFontSize={12}
-          maxFontSize={18}
-        />
+      <View style={styles.loginCard}>
+        <Text style={styles.loginCardTitle}>Prihlásenie</Text>
+        <Text style={styles.loginCardSubtitle}>Zadaj e-mail a heslo.</Text>
 
-        {/* Vstup pre heslo */}
-        <View style={localStyles.passwordRow}>
+        <View style={styles.loginField}>
+          <Text style={styles.loginFieldLabel}>E-mail</Text>
           <AutoShrinkTextInput
-            placeholder="heslo"
-            style={[styles.authTextInput, localStyles.passwordInput]}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
+            placeholder="tvoj@email.sk"
+            placeholderTextColor="#9ca3af"
+            style={styles.loginTextInput}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="username"
+            autoComplete="email"
             minFontSize={12}
-            maxFontSize={18}
+            maxFontSize={16}
           />
-          <Pressable
-            onPress={() => setShowPassword((prev) => !prev)}
-            style={localStyles.passwordToggle}
-          >
-            <Text style={localStyles.passwordToggleText}>
-              {showPassword ? "🙈" : "👁"}
-            </Text>
-          </Pressable>
         </View>
 
-        {/* Odkaz na zabudnuté heslo */}
-        <Text
-          onPress={() => navigation.navigate("ForgetPass")}
-          style={styles.authForgotText}
-        >
-          Zabudnuté heslo?
-        </Text>
+        <View style={styles.loginField}>
+          <Text style={styles.loginFieldLabel}>Heslo</Text>
+          <View style={localStyles.passwordRow}>
+            <AutoShrinkTextInput
+              placeholder="heslo"
+              placeholderTextColor="#9ca3af"
+              style={[styles.loginTextInput, styles.loginPasswordInput]}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              textContentType="password"
+              autoComplete="password"
+              minFontSize={12}
+              maxFontSize={16}
+            />
+            <Pressable
+              onPress={() => setShowPassword((prev) => !prev)}
+              style={localStyles.passwordToggle}
+            >
+              <Text style={styles.loginPasswordToggleText}>
+                {showPassword ? "Skryť" : "Ukázať"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
 
-        {/* Tlačidlo prihlásenia */}
         <Pressable
-          style={({ pressed }) =>
-            pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
-          }
-          onPress={handleLogin}
+          onPress={() => navigation.navigate("ForgetPass")}
+          style={styles.loginForgotButton}
         >
-          <Text style={styles.authRegLogBtnText}>Prihlásiť sa!</Text>
+          <Text style={styles.loginForgotText}>Zabudnuté heslo?</Text>
         </Pressable>
 
-        <Text style={styles.authOrText}>ALEBO</Text>
-
-        {/* Tlačidlo registrácie */}
         <Pressable
-          style={({ pressed }) =>
-            pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
-          }
+          disabled={isLoading}
+          style={({ pressed }) => [
+            styles.loginPrimaryButton,
+            (pressed || isLoading) && styles.loginPrimaryButtonPressed,
+          ]}
+          onPress={handleLogin}
+        >
+          <Text style={styles.loginPrimaryButtonText}>
+            {isLoading ? "Prihlasujem..." : "Prihlásiť sa"}
+          </Text>
+        </Pressable>
+
+        <View style={styles.loginDividerRow}>
+          <View style={styles.loginDividerLine} />
+          <Text style={styles.loginDividerText}>alebo</Text>
+          <View style={styles.loginDividerLine} />
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.loginSecondaryButton,
+            pressed && styles.loginSecondaryButtonPressed,
+          ]}
           onPress={() => navigation.navigate("RegistrationScreen")}
         >
-          <Text style={styles.authRegLogBtnText}>Registrovať sa!</Text>
+          <Text style={styles.loginSecondaryButtonText}>Vytvoriť účet</Text>
         </Pressable>
       </View>
     </KeyboardWrapper>
@@ -430,6 +461,7 @@ function AutoShrinkTextInput({
 const localStyles = StyleSheet.create({
   container: {
     position: "relative",
+    width: "100%",
   },
   hiddenText: {
     position: "absolute",
@@ -440,18 +472,19 @@ const localStyles = StyleSheet.create({
   passwordRow: {
     position: "relative",
     justifyContent: "center",
+    width: "100%",
   },
   passwordInput: {
     paddingRight: 42,
   },
   passwordToggle: {
     position: "absolute",
-    right: 10,
+    right: 12,
     top: 0,
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
   },
   passwordToggleText: {
     fontSize: 16,

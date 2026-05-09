@@ -996,7 +996,7 @@ export default function OverviewTab({ navigation }) {
             <Text style={styles.overviewDateArrow}>{">"}</Text>
           </Pressable>
         ) : (
-          <View style={styles.overviewDateButton} />
+          <View style={styles.overviewDateButtonSpacer} />
         )}
       </View>
 
