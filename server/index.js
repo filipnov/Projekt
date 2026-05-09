@@ -544,12 +544,17 @@ async function start() {
   // Vyhľadanie produktov v Open Food Facts podľa textu.
   app.get("/api/searchFoodFacts", async (req, res) => {
     const query = String(req.query.q || "").trim();
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const pageSize = Math.min(
+      20,
+      Math.max(1, Number.parseInt(req.query.pageSize, 10) || 10),
+    );
 
     if (query.length < 2) {
       return res.status(400).json({ error: "Search query is too short" });
     }
 
-    const cacheKey = query.toLowerCase();
+    const cacheKey = `${query.toLowerCase()}::${page}::${pageSize}`;
     const cached = foodFactsSearchCache.get(cacheKey);
 
     if (cached && cached.expiresAt > Date.now()) {
@@ -562,8 +567,8 @@ async function start() {
         search_simple: "1",
         action: "process",
         json: "1",
-        page_size: "10",
-        page: "1",
+        page_size: String(pageSize),
+        page: String(page),
         sort_by: "unique_scans_n",
         fields: OPEN_FOOD_FACTS_SEARCH_FIELDS,
       });

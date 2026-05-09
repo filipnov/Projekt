@@ -13,6 +13,7 @@ import {
   Modal,
   ActivityIndicator,
   Platform,
+  Keyboard,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
@@ -39,12 +40,15 @@ export default function CameraScreen() {
   const navigation = useNavigation();
   const [permission, requestPermission] = useCameraPermissions();
   const [showContent, setShowContent] = useState(false);
-  const [lookupMode, setLookupMode] = useState("scan");
+  const [lookupMode, setLookupMode] = useState("search");
   const [scanned, setScanned] = useState(false);
   const [code, setCode] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchError, setSearchError] = useState("");
+  const [searchPage, setSearchPage] = useState(1);
+  const [hasMoreSearchResults, setHasMoreSearchResults] = useState(false);
+  const [loadingMoreSearchResults, setLoadingMoreSearchResults] = useState(false);
   const [productData, setProductData] = useState(null);
   const [quantityInput, setQuantityInput] = useState("");
   const [awaitingQuantity, setAwaitingQuantity] = useState(false);
@@ -253,22 +257,23 @@ export default function CameraScreen() {
     }
 
     setProductData(finalProduct);
-    setSearchResults([]);
     setSearchError("");
   }
 
-  function buildOpenFoodFactsSearchUrl(query) {
+  function buildOpenFoodFactsSearchUrl(query, page = 1) {
     return `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(
       query,
-    )}&search_simple=1&action=process&json=1&page_size=10&page=1&sort_by=unique_scans_n&fields=${encodeURIComponent(
+    )}&search_simple=1&action=process&json=1&page_size=10&page=${page}&sort_by=unique_scans_n&fields=${encodeURIComponent(
       OFF_SEARCH_FIELDS,
     )}`;
   }
 
-  async function fetchSearchResults(query) {
+  async function fetchSearchResults(query, page = 1) {
     try {
       const response = await fetch(
-        `${SERVER_URL}/api/searchFoodFacts?q=${encodeURIComponent(query)}`,
+        `${SERVER_URL}/api/searchFoodFacts?q=${encodeURIComponent(
+          query,
+        )}&page=${page}`,
       );
 
       if (!response.ok) {
@@ -277,7 +282,7 @@ export default function CameraScreen() {
 
       return await response.json();
     } catch {
-      const response = await fetch(buildOpenFoodFactsSearchUrl(query), {
+      const response = await fetch(buildOpenFoodFactsSearchUrl(query, page), {
         headers: { Accept: "application/json" },
       });
 
@@ -291,33 +296,67 @@ export default function CameraScreen() {
 
   async function searchProductsByName() {
     const query = searchQuery.trim();
+    Keyboard.dismiss();
 
     if (query.length < 2) {
       setSearchError("Zadajte aspoň 2 znaky.");
       setSearchResults([]);
+      setHasMoreSearchResults(false);
       return;
     }
 
     setLoading(true);
     resetLookupState();
     setScanned(false);
+    setSearchPage(1);
+    setHasMoreSearchResults(false);
 
     try {
-      const data = await fetchSearchResults(query);
+      const data = await fetchSearchResults(query, 1);
       const products = Array.isArray(data.products) ? data.products : [];
       const visibleProducts = products.filter((product) => {
         return Boolean(product?.product_name || product?.brands);
       });
 
       setSearchResults(visibleProducts);
+      setHasMoreSearchResults(products.length >= 10);
       setSearchError(
         visibleProducts.length ? "" : "Nenašli sa žiadne produkty.",
       );
     } catch {
       setSearchResults([]);
+      setHasMoreSearchResults(false);
       setSearchError("Vyhľadávanie sa nepodarilo. Skúste to znova.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMoreSearchResults() {
+    const query = searchQuery.trim();
+    if (query.length < 2 || loadingMoreSearchResults) return;
+
+    Keyboard.dismiss();
+    setLoadingMoreSearchResults(true);
+
+    try {
+      const nextPage = searchPage + 1;
+      const data = await fetchSearchResults(query, nextPage);
+      const products = Array.isArray(data.products) ? data.products : [];
+      const visibleProducts = products.filter((product) => {
+        return Boolean(product?.product_name || product?.brands);
+      });
+
+      setSearchResults((currentResults) => [
+        ...currentResults,
+        ...visibleProducts,
+      ]);
+      setSearchPage(nextPage);
+      setHasMoreSearchResults(products.length >= 10);
+    } catch {
+      setSearchError("Ďalšie produkty sa nepodarilo načítať.");
+    } finally {
+      setLoadingMoreSearchResults(false);
     }
   }
 
@@ -332,6 +371,25 @@ export default function CameraScreen() {
     setScanned(false);
     setSearchError("");
     setNotFound(false);
+  }
+
+  function returnToSearchResults() {
+    setProductData(null);
+    setAwaitingQuantity(false);
+    setQuantityInput("");
+    setShowExpInput(false);
+    setShowDatePicker(false);
+    setAwaitingExpirationDate(false);
+    setSelectedExpirationDate(new Date());
+  }
+
+  function clearSearchState() {
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchError("");
+    setSearchPage(1);
+    setHasMoreSearchResults(false);
+    setLoadingMoreSearchResults(false);
   }
 
   async function fetchProductData(barcode) {
@@ -443,7 +501,11 @@ export default function CameraScreen() {
         style={styles.productSearchResult}
       >
         {image ? (
-          <Image source={{ uri: image }} style={styles.productSearchImage} />
+          <Image
+            source={{ uri: image }}
+            style={styles.productSearchImage}
+            resizeMode="contain"
+          />
         ) : (
           <View style={styles.productSearchImagePlaceholder}>
             <Text style={styles.productSearchImagePlaceholderText}>?</Text>
@@ -472,38 +534,97 @@ export default function CameraScreen() {
     if (lookupMode !== "search" || productData) return null;
 
     return (
-      <KeyboardWrapper scroll={false} style={styles.productSearchContainer}>
-        <Text style={styles.manualAddText}>Vyhľadajte produkt podľa názvu.</Text>
+      <KeyboardWrapper
+        scroll={false}
+        style={styles.productSearchKeyboardArea}
+        contentContainerStyle={styles.productSearchKeyboardContent}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+      >
+        <View style={styles.productSearchContainer}>
+          <Text style={styles.manualAddText}>Vyhľadajte produkt podľa názvu.</Text>
 
-        <TextInput
-          style={styles.productSearchInput}
-          value={searchQuery}
-          onChangeText={(value) => {
-            setSearchQuery(value);
-            setSearchError("");
-          }}
-          placeholder="napr. horalky"
-          returnKeyType="search"
-          onSubmitEditing={searchProductsByName}
-        />
+          <TextInput
+            style={styles.productSearchInput}
+            value={searchQuery}
+            onChangeText={(value) => {
+              setSearchQuery(value);
+              setSearchError("");
+            }}
+            placeholder="napr. horalky"
+            returnKeyType="search"
+            onSubmitEditing={searchProductsByName}
+          />
 
-        <Pressable
-          onPress={searchProductsByName}
-          style={styles.primaryActionButton}
-        >
-          <Text style={styles.primaryActionButtonText}>Hľadať</Text>
-        </Pressable>
+          <Pressable
+            onPress={searchProductsByName}
+            style={styles.primaryActionButton}
+          >
+            <Text style={styles.primaryActionButtonText}>Hľadať</Text>
+          </Pressable>
 
-        {!!searchError && (
-          <Text style={styles.productSearchError}>{searchError}</Text>
-        )}
+          {!!searchError && (
+            <Text style={styles.productSearchError}>{searchError}</Text>
+          )}
+        </View>
 
         {searchResults.length > 0 && (
-          <ScrollView style={styles.productSearchResults}>
+          <ScrollView
+            style={styles.productSearchResults}
+            contentContainerStyle={styles.productSearchResultsContent}
+            keyboardShouldPersistTaps="handled"
+          >
             {searchResults.map(renderSearchResult)}
+            {hasMoreSearchResults && (
+              <Pressable
+                onPress={loadMoreSearchResults}
+                style={styles.productSearchLoadMoreButton}
+                disabled={loadingMoreSearchResults}
+              >
+                <Text style={styles.productSearchLoadMoreText}>
+                  {loadingMoreSearchResults ? "Načítavam..." : "Zobraziť viac"}
+                </Text>
+              </Pressable>
+            )}
           </ScrollView>
         )}
       </KeyboardWrapper>
+    );
+  };
+
+  const renderSearchBackground = () => (
+    <View style={styles.productSearchBackground}>
+      <View style={styles.productSearchBackgroundBand} />
+    </View>
+  );
+
+  const renderCameraLayer = () => {
+    if (lookupMode !== "scan") return renderSearchBackground();
+
+    if (!permission) {
+      return (
+        <View style={styles.cameraPermissionContainer}>
+          <Text style={styles.cameraPermissionText}>Načítavam oprávnenia...</Text>
+        </View>
+      );
+    }
+
+    if (!permission.granted) {
+      return (
+        <View style={styles.cameraPermissionContainer}>
+          <Text style={styles.cameraPermissionText}>
+            Táto aplikácia potrebuje prístup ku kamere.
+          </Text>
+          <Button title="Povoliť kameru" onPress={requestPermission} />
+        </View>
+      );
+    }
+
+    return (
+      <CameraView
+        style={{ flex: 1 }}
+        facing="back"
+        onBarcodeScanned={handleBarCodeScanned}
+      />
     );
   };
 
@@ -536,6 +657,7 @@ export default function CameraScreen() {
       setAwaitingExpirationDate(false);
       setShowDatePicker(false);
       setSelectedExpirationDate(new Date());
+      clearSearchState();
     } catch (err) {
       Alert.alert("Chyba", "Nepodarilo sa uložiť produkt.");
     }
@@ -590,21 +712,11 @@ export default function CameraScreen() {
       setAwaitingExpirationDate(false);
       setShowDatePicker(false);
       setSelectedExpirationDate(new Date());
+      clearSearchState();
     } catch (err) {
       Alert.alert("Chyba", "Nepodarilo sa pridať produkt.");
     }
   };
-
-  if (!permission) return <Text>Načítavam oprávnenia...</Text>;
-  if (!permission.granted)
-    return (
-      <View style={{ marginTop: 500, width: "80%", alignSelf: "center" }}>
-        <Text style={{ textAlign: "center" }}>
-          Táto aplikácia potrebuje prístup ku kamere.
-        </Text>
-        <Button title="Povoliť kameru" onPress={requestPermission} />
-      </View>
-    );
 
   return (
     <View style={{ flex: 1 }}>
@@ -629,18 +741,24 @@ export default function CameraScreen() {
           </View>
         </View>
       </Modal>
-      <CameraView
-        style={{ flex: 1 }}
-        facing="back"
-        onBarcodeScanned={
-          lookupMode === "scan" ? handleBarCodeScanned : undefined
-        }
-      />
+      {renderCameraLayer()}
 
       {renderLookupModeSwitch()}
+      {renderSearchContent()}
+
+      <Pressable
+        style={({ pressed }) =>
+          pressed
+            ? [styles.screenBackButton, styles.screenBackButtonPressed]
+            : styles.screenBackButton
+        }
+        onPress={() => navigation.goBack()}
+      >
+        <Image source={arrow} style={styles.screenBackButtonImage} />
+      </Pressable>
 
       <View style={{ position: "absolute", bottom: 20, alignSelf: "center" }}>
-        {lookupMode === "search" ? renderSearchContent() : renderContent()}
+        {lookupMode === "scan" && renderContent()}
 
         {!productData && lookupMode === "scan" && (
           <Pressable
@@ -650,15 +768,6 @@ export default function CameraScreen() {
             <Text style={styles.manualAddButtonText}>Zadať manuálne</Text>
           </Pressable>
         )}
-
-        <Pressable
-          style={({ pressed }) =>
-            pressed ? styles.backArrowPressed : styles.backArrowContainer
-          }
-          onPress={() => navigation.goBack()}
-        >
-          <Image source={arrow} style={styles.backArrowImage} />
-        </Pressable>
 
         {productData && (
           <ScrollView
@@ -674,6 +783,17 @@ export default function CameraScreen() {
               alignItems: "center",
             }}
           >
+            {lookupMode === "search" && searchResults.length > 0 && (
+              <Pressable
+                style={styles.backToSearchResultsButton}
+                onPress={returnToSearchResults}
+              >
+                <Text style={styles.backToSearchResultsButtonText}>
+                  Späť na výsledky
+                </Text>
+              </Pressable>
+            )}
+
             <Text
               style={{ fontSize: 18, fontWeight: "bold", textAlign: "center" }}
             >
