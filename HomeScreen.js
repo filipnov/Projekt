@@ -17,12 +17,42 @@ import logo from "./assets/logo_name.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from "./googleAuthConfig";
 import { ensurePasswordHash } from "./passwordUtils";
 import { loadTotalsForDate, saveTotalsForDate } from "./dailyTotalsStorage";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
 } from "./notifications";
+
+const GOOGLE_LOGIN_NOT_CONFIGURED =
+  "Google prihlásenie ešte nie je nakonfigurované. Doplň GOOGLE_WEB_CLIENT_ID v googleAuthConfig.js a GOOGLE_CLIENT_IDS na serveri.";
+
+function getGoogleSignInOptions() {
+  const options = {
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    offlineAccess: false,
+  };
+
+  if (GOOGLE_IOS_CLIENT_ID) {
+    options.iosClientId = GOOGLE_IOS_CLIENT_ID;
+  }
+
+  return options;
+}
+
+function requestGoogleConsent() {
+  return new Promise((resolve) => {
+    Alert.alert(
+      "Súhlas so spracovaním údajov",
+      "Pre vytvorenie účtu cez Google potrebujeme uložiť tvoj e-mail a meno z Google účtu.",
+      [
+        { text: "Zrušiť", style: "cancel", onPress: () => resolve(false) },
+        { text: "Súhlasím", onPress: () => resolve(true) },
+      ],
+    );
+  });
+}
 
 export default function HomeScreen({ setIsLoggedIn }) {
   // URL backendu
@@ -121,6 +151,161 @@ export default function HomeScreen({ setIsLoggedIn }) {
     }
   }
 
+  async function completeLoginSession(
+    user,
+    { authProvider = "password", storedPassword = null } = {},
+  ) {
+    if (!user?.email) {
+      throw new Error("Missing user email after login");
+    }
+
+    const userNick = user.nick || user.email.split("@")[0] || "Používateľ";
+
+    setIsLoggedIn(true);
+    await AsyncStorage.setItem("userEmail", user.email);
+    await AsyncStorage.setItem("userNick", userNick);
+    await AsyncStorage.setItem("authProvider", authProvider);
+
+    if (storedPassword) {
+      await AsyncStorage.setItem("userPass", storedPassword);
+    } else {
+      await AsyncStorage.removeItem("userPass");
+    }
+
+    await pullAllUserData(user.email);
+    await ensureNotificationsSetup();
+
+    const todayKey = getTodayKey();
+    let totalsToUse = await loadTotalsForDate(todayKey, DEFAULT_TOTALS);
+
+    if (!totalsToUse) {
+      try {
+        const isoDate = todayKey;
+        const url = `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(user.email)}&date=${encodeURIComponent(isoDate)}`;
+        const dbResponse = await fetch(url);
+        if (dbResponse.ok) {
+          const dbData = await dbResponse.json();
+          if (dbData && dbData.totals) {
+            totalsToUse = { ...DEFAULT_TOTALS, ...dbData.totals };
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching eatenTotals from DB:", err);
+      }
+    }
+
+    if (!totalsToUse) {
+      totalsToUse = { ...DEFAULT_TOTALS };
+    }
+
+    await saveTotalsForDate(todayKey, totalsToUse, true);
+
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Dashboard", params: { email: user.email } }],
+    });
+  }
+
+  async function postGoogleLogin(idToken, gdprConsent = false) {
+    const response = await fetch(`${SERVER_URL}/api/google-login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idToken,
+        gdprConsent,
+        gdprConsentAt: new Date().toISOString(),
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return { response, data };
+  }
+
+  async function handleGoogleLogin({ silent = false } = {}) {
+    if (!GOOGLE_WEB_CLIENT_ID) {
+      if (!silent) {
+        Alert.alert("Google prihlásenie", GOOGLE_LOGIN_NOT_CONFIGURED);
+      }
+      return false;
+    }
+
+    let statusCodes = {};
+    setIsLoading(true);
+
+    try {
+      const googleSignIn = await import("@react-native-google-signin/google-signin");
+      const { GoogleSignin } = googleSignIn;
+      statusCodes = googleSignIn.statusCodes || {};
+
+      GoogleSignin.configure(getGoogleSignInOptions());
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+
+      const googleResponse = silent
+        ? await GoogleSignin.signInSilently()
+        : await GoogleSignin.signIn();
+
+      if (googleResponse?.type !== "success") {
+        return false;
+      }
+
+      let idToken = googleResponse.data?.idToken;
+      if (!idToken) {
+        const tokens = await GoogleSignin.getTokens();
+        idToken = tokens?.idToken;
+      }
+
+      if (!idToken) {
+        if (!silent) {
+          Alert.alert(
+            "Google prihlásenie",
+            "Google nevrátil prihlasovací token. Skontroluj webClientId v konfigurácii.",
+          );
+        }
+        return false;
+      }
+
+      let { response, data } = await postGoogleLogin(idToken, false);
+
+      if (
+        response.status === 409 &&
+        data.code === "GOOGLE_GDPR_REQUIRED" &&
+        !silent
+      ) {
+        const consentGranted = await requestGoogleConsent();
+        if (!consentGranted) {
+          return false;
+        }
+        ({ response, data } = await postGoogleLogin(idToken, true));
+      }
+
+      if (!response.ok) {
+        if (!silent) {
+          Alert.alert("Chyba", data.error || "Google prihlásenie zlyhalo.");
+        }
+        return false;
+      }
+
+      await completeLoginSession(data.user, { authProvider: "google" });
+      return true;
+    } catch (error) {
+      const wasCancelled =
+        error?.code === statusCodes.SIGN_IN_CANCELLED ||
+        error?.code === statusCodes.IN_PROGRESS;
+
+      if (!wasCancelled && !silent) {
+        Alert.alert(
+          "Google prihlásenie",
+          "Google prihlásenie sa nepodarilo spustiť. Skontroluj, či používaš development build a či je Google Sign-In nakonfigurovaný.",
+        );
+      }
+
+      console.error("Google login error:", error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     // Pokus o automatické prihlásenie zo saved údajov (ak existujú)
     const tryAutoLogin = async () => {
@@ -129,8 +314,17 @@ export default function HomeScreen({ setIsLoggedIn }) {
         // 'userEmail' a 'userPass' sa ukladajú po úspešnom prihlásení
         const storedEmail = await AsyncStorage.getItem("userEmail");
         const storedPass = await AsyncStorage.getItem("userPass");
+        const storedProvider = await AsyncStorage.getItem("authProvider");
 
         console.log("Stored credentials:", storedEmail ? storedEmail : "<none>");
+
+        if (storedProvider === "google") {
+          const restored = await handleGoogleLogin({ silent: true });
+          if (!restored) {
+            console.warn("Google autologin failed");
+          }
+          return;
+        }
 
         // Ak máme e‑mail aj heslo, skúsime prihlásiť bez zásahu používateľa
         if (storedEmail && storedPass) {
@@ -160,16 +354,11 @@ export default function HomeScreen({ setIsLoggedIn }) {
           console.log("Login response status:", response.status);
 
           if (response.ok) {
-            // úspech: stiahneme všetky dáta (produkty/recepty/história)
             console.log("✅ Autologin success, pulling user data");
-            await pullAllUserData(storedEmail);
-            // plánovanie notifikácií (po prípadnom súhlase)
-            await ensureNotificationsSetup();
-            console.log("✅ Data pulled, navigating to Dashboard");
-            setIsLoggedIn(true);
-
-            // Reset navigácie a otvorenie Dashboardu ako root
-            navigation.reset({ index: 0, routes: [{ name: "Dashboard" }] }); // Routuje na prvú položku = Dashboard
+            await completeLoginSession(data.user, {
+              authProvider: "password",
+              storedPassword: storedPassHash,
+            });
           } else {
             // uložené údaje sú neplatné alebo server ich odmietol
             console.warn("Autologin failed:", data.error);
@@ -224,52 +413,9 @@ export default function HomeScreen({ setIsLoggedIn }) {
         return;
       }
 
-      // úspech: nastavíme prihlásenie a uložíme základné info lokálne
-      setIsLoggedIn(true);
-      await AsyncStorage.setItem("userEmail", data.user.email);
-      await AsyncStorage.setItem("userNick", data.user.nick);
-      await AsyncStorage.setItem("userPass", hashedPassword);
-
-      // stiahneme zvyšok používateľských dát (produkty, recepty, história)
-      await pullAllUserData(data.user.email);
-      await ensureNotificationsSetup();
-
-      // Určíme počiatočné denné totals (čo zobrazí Dashboard):
-      // - najprv lokálna cache v dailyConsumption (rýchle)
-      // - ak nie je, pokus o dnešné dáta zo servera
-      // - ak zlyhá, použijeme nulové hodnoty
-      const todayKey = getTodayKey();
-      let totalsToUse = await loadTotalsForDate(todayKey, DEFAULT_TOTALS);
-
-      if (!totalsToUse) {
-        // Nemáme lokálne hodnoty -> skúsime dnešné hodnoty zo servera
-        try {
-          const isoDate = todayKey; // YYYY-MM-DD (lokálny čas)
-          const url = `${SERVER_URL}/api/getDailyConsumption?email=${encodeURIComponent(data.user.email)}&date=${encodeURIComponent(isoDate)}`;
-          const dbResponse = await fetch(url);
-          if (dbResponse.ok) {
-            const dbData = await dbResponse.json();
-            if (dbData && dbData.totals) {
-              totalsToUse = { ...DEFAULT_TOTALS, ...dbData.totals };
-            }
-          }
-        } catch (err) {
-          // chyba siete alebo servera -> padneme na nuly
-          console.error("Error fetching eatenTotals from DB:", err);
-        }
-      }
-
-      if (!totalsToUse) {
-        // Nikde nie sú dáta: nastavíme bezpečné nuly
-        totalsToUse = { ...DEFAULT_TOTALS };
-      }
-
-      // Uložíme zvolené totals, aby ich ostatné obrazovky čítali konzistentne
-      await saveTotalsForDate(todayKey, totalsToUse, true);
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Dashboard", params: { email: data.user.email } }],
+      await completeLoginSession(data.user, {
+        authProvider: "password",
+        storedPassword: hashedPassword,
       });
     } catch (error) {
       console.error(error);
@@ -285,6 +431,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
     <KeyboardWrapper
       style={styles.loginScreen}
       contentContainerStyle={styles.loginScrollContent}
+      safeArea
     >
       {/* Modal so spinnerom počas spracovania */}
       <Modal visible={isLoading} transparent animationType="fade">
@@ -381,8 +528,25 @@ export default function HomeScreen({ setIsLoggedIn }) {
         </View>
 
         <Pressable
+          disabled={isLoading}
+          style={({ pressed }) => [
+            styles.loginGoogleButton,
+            pressed && styles.loginGoogleButtonPressed,
+          ]}
+          onPress={() => handleGoogleLogin()}
+        >
+          <View style={styles.loginGoogleIcon}>
+            <Text style={styles.loginGoogleIconText}>G</Text>
+          </View>
+          <Text style={styles.loginGoogleButtonText}>
+            Pokračovať cez Google
+          </Text>
+        </Pressable>
+
+        <Pressable
           style={({ pressed }) => [
             styles.loginSecondaryButton,
+            styles.loginCreateAccountButton,
             pressed && styles.loginSecondaryButtonPressed,
           ]}
           onPress={() => navigation.navigate("RegistrationScreen")}

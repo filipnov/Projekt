@@ -40,6 +40,72 @@ const OPEN_FOOD_FACTS_USER_AGENT =
   "Bitewise/1.0 (https://app.bitewise.it.com)";
 const FOOD_FACTS_SEARCH_CACHE_MS = 10 * 60 * 1000;
 const foodFactsSearchCache = new Map();
+const GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+const GOOGLE_ALLOWED_CLIENT_IDS = (
+  process.env.GOOGLE_CLIENT_IDS ||
+  process.env.GOOGLE_WEB_CLIENT_ID ||
+  ""
+)
+  .split(",")
+  .map((clientId) => clientId.trim())
+  .filter(Boolean);
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function createGoogleNick(profile) {
+  return (
+    profile.name ||
+    profile.given_name ||
+    normalizeEmail(profile.email).split("@")[0] ||
+    "Používateľ"
+  );
+}
+
+async function verifyGoogleIdToken(idToken) {
+  if (!GOOGLE_ALLOWED_CLIENT_IDS.length) {
+    const error = new Error("Google login is not configured on the server");
+    error.status = 503;
+    throw error;
+  }
+
+  const response = await fetch(
+    `${GOOGLE_TOKENINFO_URL}?id_token=${encodeURIComponent(idToken)}`,
+  );
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(payload.error_description || "Invalid Google token");
+    error.status = 401;
+    throw error;
+  }
+
+  if (!GOOGLE_ALLOWED_CLIENT_IDS.includes(payload.aud)) {
+    const error = new Error("Google token audience is not allowed");
+    error.status = 401;
+    throw error;
+  }
+
+  if (payload.email_verified !== true && payload.email_verified !== "true") {
+    const error = new Error("Google email is not verified");
+    error.status = 401;
+    throw error;
+  }
+
+  if (!payload.sub || !payload.email) {
+    const error = new Error("Google token is missing required identity data");
+    error.status = 401;
+    throw error;
+  }
+
+  return {
+    googleId: payload.sub,
+    email: normalizeEmail(payload.email),
+    name: createGoogleNick(payload),
+    picture: payload.picture || null,
+  };
+}
 
 // Servovanie .well-known (Android app links / assetlinks)
 app.use(
@@ -123,6 +189,9 @@ async function start() {
       if (!user) {
         return res.status(401).json({ error: "Invalid email or password" }); // neexistuje
       }
+      if (!user.password) {
+        return res.status(401).json({ error: "Invalid email or password" }); // Google účet bez hesla
+      }
 
       // Porovnanie hesla s hashom v DB
       const isMatch = await bcrypt.compare(password, user.password); // porovná heslo s hashom
@@ -139,6 +208,98 @@ async function start() {
     } catch (err) {
       console.error("Login error:", err); // log chyby
       res.status(500).json({ error: "Server error" }); // serverová chyba
+    }
+  });
+
+  // ------------------- GOOGLE LOGIN -------------------
+  // Overí Google idToken a prihlási alebo vytvorí používateľa.
+  app.post("/api/google-login", async (req, res) => {
+    try {
+      const {
+        idToken,
+        gdprConsent,
+        gdprConsentAt,
+        gdprPolicyVersion,
+      } = req.body;
+
+      if (!idToken || typeof idToken !== "string") {
+        return res.status(400).json({ error: "Missing Google token" });
+      }
+
+      const googleProfile = await verifyGoogleIdToken(idToken);
+      const now = new Date();
+      const existingUser = await users.findOne({ email: googleProfile.email });
+
+      if (existingUser) {
+        const updates = {
+          googleId: googleProfile.googleId,
+          googlePicture: googleProfile.picture,
+          googleEmailVerified: true,
+          lastGoogleLoginAt: now,
+          updatedAt: now,
+        };
+
+        if (!existingUser.nick) {
+          updates.nick = googleProfile.name;
+        }
+
+        await users.updateOne(
+          { _id: existingUser._id },
+          {
+            $set: updates,
+            $addToSet: { authProviders: "google" },
+          },
+        );
+
+        return res.json({
+          ok: true,
+          message: "Google login successful",
+          isNewUser: false,
+          user: {
+            email: existingUser.email,
+            nick: existingUser.nick || googleProfile.name,
+          },
+        });
+      }
+
+      if (!gdprConsent) {
+        return res.status(409).json({
+          error: "GDPR súhlas je povinný pre vytvorenie Google účtu.",
+          code: "GOOGLE_GDPR_REQUIRED",
+        });
+      }
+
+      await users.insertOne({
+        email: googleProfile.email,
+        password: null,
+        nick: googleProfile.name,
+        createdAt: now,
+        authProvider: "google",
+        authProviders: ["google"],
+        googleId: googleProfile.googleId,
+        googlePicture: googleProfile.picture,
+        googleEmailVerified: true,
+        lastGoogleLoginAt: now,
+        gdprConsent: true,
+        gdprConsentAt: gdprConsentAt ? new Date(gdprConsentAt) : now,
+        gdprPolicyVersion: gdprPolicyVersion || "1.0",
+      });
+
+      return res.status(201).json({
+        ok: true,
+        message: "Google account created",
+        isNewUser: true,
+        user: {
+          email: googleProfile.email,
+          nick: googleProfile.name,
+        },
+      });
+    } catch (err) {
+      const status = err.status || 500;
+      console.error("Google login error:", err);
+      return res.status(status).json({
+        error: status === 500 ? "Server error" : err.message,
+      });
     }
   });
 

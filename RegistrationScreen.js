@@ -17,7 +17,6 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo_name.png";
-import arrow from "./assets/left_arrow.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
@@ -105,6 +104,7 @@ export default function RegistrationScreen() {
         setNick("");
         setPassword("");
         setPasswordConfirm("");
+        setGdprConsent(false);
 
         // Potvrdenie pre používateľa a návrat na Home
         Alert.alert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
@@ -127,8 +127,11 @@ export default function RegistrationScreen() {
   }
 
   return (
-    <KeyboardWrapper style={styles.authMainLayout}>
-      {/* Modal s loading spinnerom */}
+    <KeyboardWrapper
+      style={styles.loginScreen}
+      contentContainerStyle={styles.registerScrollContent}
+      safeArea
+    >
       <Modal visible={loading} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.generatingModalContainer}>
@@ -140,125 +143,147 @@ export default function RegistrationScreen() {
           </View>
         </View>
       </Modal>
-      {/* Logo aplikácie */}
-      <Image style={styles.authProfileAvatarReg} source={logo} />
 
-      <View style={styles.authCardContainer}>
-        <Text style={styles.authTitleText}>Registrácia!</Text>
-        <Text style={styles.authInfoLabel}>Zadaj email:</Text>
-        <AutoShrinkTextInput
-          placeholder="e-mail"
-          style={styles.authTextInput}
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-          minFontSize={12}
-          maxFontSize={18}
-        />
-        {/* Vstup pre prezývku */}
-        <Text style={styles.authInfoLabel}>Zadaj ako ťa máme volať:</Text>
-        <AutoShrinkTextInput
-          placeholder="prezývka"
-          style={styles.authTextInput}
-          value={nick}
-          onChangeText={setNick}
-          autoCapitalize="words"
-          minFontSize={12}
-          maxFontSize={18}
-        />
-        {/* Vstup pre heslo */}
-        <Text style={styles.authInfoLabel}>Zadaj svoje heslo:</Text>
-        <View style={localStyles.passwordRow}>
+      <View style={styles.registerHero}>
+        <Image style={styles.registerLogo} source={logo} resizeMode="contain" />
+        <Text style={styles.loginHeroTitle}>Vytvor účet</Text>
+        <Text style={styles.loginHeroSubtitle}>
+          Začni sledovať špajzu, jedlá a svoje nutričné ciele.
+        </Text>
+      </View>
+
+      <View style={styles.registerCard}>
+        <Text style={styles.loginCardTitle}>Registrácia</Text>
+        <Text style={styles.loginCardSubtitle}>Vyplň základné údaje.</Text>
+
+        <View style={styles.loginField}>
+          <Text style={styles.loginFieldLabel}>E-mail</Text>
           <AutoShrinkTextInput
-            placeholder="heslo"
-            style={[styles.authTextInput, localStyles.passwordInput]}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
+            placeholder="tvoj@email.sk"
+            placeholderTextColor="#9ca3af"
+            style={styles.loginTextInput}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
             autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            textContentType="username"
             minFontSize={12}
-            maxFontSize={18}
+            maxFontSize={16}
           />
-          <Pressable
-            onPress={() => setShowPassword((prev) => !prev)}
-            style={localStyles.passwordToggle}
-          >
-            <Text style={localStyles.passwordToggleText}>
-              {showPassword ? "🙈" : "👁"}
-            </Text>
-          </Pressable>
         </View>
-        {/* Opakované zadanie hesla */}
-        <Text style={styles.authInfoLabel}>Zopakuj heslo:</Text>
-        <View style={localStyles.passwordRow}>
+
+        <View style={styles.loginField}>
+          <Text style={styles.loginFieldLabel}>Prezývka</Text>
           <AutoShrinkTextInput
-            placeholder="heslo znova"
-            style={[styles.authTextInput, localStyles.passwordInput]}
-            value={passwordConfirm}
-            onChangeText={setPasswordConfirm}
-            secureTextEntry={!showPasswordConfirm}
-            autoCapitalize="none"
+            placeholder="ako ťa máme volať"
+            placeholderTextColor="#9ca3af"
+            style={styles.loginTextInput}
+            value={nick}
+            onChangeText={setNick}
+            autoCapitalize="words"
             minFontSize={12}
-            maxFontSize={18}
+            maxFontSize={16}
           />
-          <Pressable
-            onPress={() => setShowPasswordConfirm((prev) => !prev)}
-            style={localStyles.passwordToggle}
-          >
-            <Text style={localStyles.passwordToggleText}>
-              {showPasswordConfirm ? "🙈" : "👁"}
-            </Text>
-          </Pressable>
         </View>
-        {/* GDPR súhlas */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginVertical: 10,
-          }}
-        >
+
+        <View style={styles.loginField}>
+          <Text style={styles.loginFieldLabel}>Heslo</Text>
+          <View style={localStyles.passwordRow}>
+            <AutoShrinkTextInput
+              placeholder="heslo"
+              placeholderTextColor="#9ca3af"
+              style={[styles.loginTextInput, styles.loginPasswordInput]}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              textContentType="newPassword"
+              autoComplete="new-password"
+              minFontSize={12}
+              maxFontSize={16}
+            />
+            <Pressable
+              onPress={() => setShowPassword((prev) => !prev)}
+              style={localStyles.passwordToggle}
+            >
+              <Text style={styles.loginPasswordToggleText}>
+                {showPassword ? "Skryť" : "Ukázať"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.loginField}>
+          <Text style={styles.loginFieldLabel}>Zopakuj heslo</Text>
+          <View style={localStyles.passwordRow}>
+            <AutoShrinkTextInput
+              placeholder="heslo znova"
+              placeholderTextColor="#9ca3af"
+              style={[styles.loginTextInput, styles.loginPasswordInput]}
+              value={passwordConfirm}
+              onChangeText={setPasswordConfirm}
+              secureTextEntry={!showPasswordConfirm}
+              autoCapitalize="none"
+              textContentType="newPassword"
+              autoComplete="new-password"
+              minFontSize={12}
+              maxFontSize={16}
+            />
+            <Pressable
+              onPress={() => setShowPasswordConfirm((prev) => !prev)}
+              style={localStyles.passwordToggle}
+            >
+              <Text style={styles.loginPasswordToggleText}>
+                {showPasswordConfirm ? "Skryť" : "Ukázať"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.registerConsentRow}>
           <Switch
             value={gdprConsent}
             onValueChange={setGdprConsent}
-            trackColor={{ false: "#ccc", true: "#4CAF50" }}
+            trackColor={{ false: "#d1d5db", true: "#9adea6" }}
             thumbColor={gdprConsent ? "#2E7D32" : "#f4f3f4"}
-            style={{ alignSelf: "center" }}
           />
-          <Text style={{ marginLeft: 10, flex: 1 }}>
-            Súhlasím so spracovaním svojho emailu a prezývky na účely
+          <Text style={styles.registerConsentText}>
+            Súhlasím so spracovaním svojho e-mailu a prezývky na účely
             registrácie a zasielania notifikácií o účte podľa zásad ochrany
             osobných údajov.
           </Text>
         </View>
-        {/* Akcie: registrácia + návrat späť */}
-        <View style={styles.buttonLayout}>
-          <Pressable
-            style={({ pressed }) =>
-              pressed ? styles.authRegLogBtnPressed : styles.authRegLogBtn
-            }
-            onPress={() => !loading && handleRegistration()}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" />
-            ) : (
-              <Text style={styles.authRegLogBtnText}>Registrovať sa!</Text>
-            )}
-          </Pressable>
-          <Pressable
-            style={({ pressed }) =>
-              pressed
-                ? styles.authBackArrowPressed
-                : styles.authBackArrowContainer
-            }
-            onPress={() => !loading && navigation.navigate("HomeScreen")}
-          >
-            <Image source={arrow} style={styles.authBackArrow} />
-          </Pressable>
-        </View>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.loginPrimaryButton,
+            (pressed || loading) && styles.loginPrimaryButtonPressed,
+          ]}
+          onPress={() => !loading && handleRegistration()}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="white" />
+          ) : (
+            <Text style={styles.loginPrimaryButtonText}>Registrovať sa</Text>
+          )}
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.loginSecondaryButton,
+            styles.registerBackButton,
+            pressed && styles.loginSecondaryButtonPressed,
+          ]}
+          onPress={() => !loading && navigation.navigate("HomeScreen")}
+          disabled={loading}
+        >
+          <Text style={styles.loginSecondaryButtonText}>
+            Späť na prihlásenie
+          </Text>
+        </Pressable>
       </View>
     </KeyboardWrapper>
   );
@@ -340,6 +365,7 @@ function AutoShrinkTextInput({
 const localStyles = StyleSheet.create({
   container: {
     position: "relative",
+    width: "100%",
   },
   hiddenText: {
     position: "absolute",
@@ -350,18 +376,19 @@ const localStyles = StyleSheet.create({
   passwordRow: {
     position: "relative",
     justifyContent: "center",
+    width: "100%",
   },
   passwordInput: {
     paddingRight: 42,
   },
   passwordToggle: {
     position: "absolute",
-    right: 10,
+    right: 12,
     top: 0,
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
   },
   passwordToggleText: {
     fontSize: 16,

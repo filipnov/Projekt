@@ -1,0 +1,23 @@
+V Google Cloud Console vytvoriť OAuth klientov.
+
+
+Web client ID: vložiť do googleAuthConfig.js (line 3) ako GOOGLE_WEB_CLIENT_ID.
+
+Rovnaký Web client ID vložiť na server do .env ako GOOGLE_CLIENT_IDS.
+
+Android OAuth client: package name je com.bitewise.app, treba doplniť SHA-1/SHA-256 podpisy.
+
+iOS OAuth client: bundle id je com.bitewise.app, a v app.json (line 59) treba nahradiť REPLACE_WITH_IOS_REVERSED_CLIENT_ID.
+
+
+
+
+Spraviť nový development/native build.
+
+Google Sign-In knižnica používa natívny kód, takže podľa Expo dokumentácie nefunguje v Expo Go, treba development build alebo EAS build: Expo Google authentication.
+
+
+
+Backend musí bežať s novým env.
+
+Server overuje Google idToken, kontroluje aud proti povoleným client ID a až potom vytvorí alebo prihlási používateľa. To je presne odporúčaný model podľa Google: klient pošle ID token backendu a backend ho overí, nie obyčajné user ID: Google backend auth.
