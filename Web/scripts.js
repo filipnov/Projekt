@@ -1,3 +1,11 @@
+// ===== START DEMO =====
+function startDemo() {
+    const overlay = document.getElementById('demoOverlay');
+    if (overlay) {
+        overlay.classList.add('hidden');
+    }
+}
+
 // ===== THEME TOGGLE =====
 function toggleTheme() {
     const body = document.body;
@@ -161,9 +169,9 @@ function switchDashTab(tabIndex) {
     const tabs = document.querySelectorAll('.dashboard-tab');
     tabs.forEach(tab => tab.classList.remove('active'));
     
-    // Remove active class from all sidebar items
-    const sidebarItems = document.querySelectorAll('.sidebar-item');
-    sidebarItems.forEach(item => item.classList.remove('active'));
+    // Remove active class from all nav items
+    const navItems = document.querySelectorAll('.bottom-nav-item');
+    navItems.forEach(item => item.classList.remove('active'));
     
     // Show selected tab
     const tabIds = ['tab-overview', 'tab-pantry', 'tab-recipes', 'tab-settings'];
@@ -172,8 +180,12 @@ function switchDashTab(tabIndex) {
         selectedTab.classList.add('active');
     }
     
-    // Add active class to clicked sidebar item
-    sidebarItems[tabIndex].classList.add('active');
+    // Add active class to clicked nav item
+    // Map tab index to nav item index: 0->0, 1->3, 2->1, 3->4
+    const navIndexMap = [0, 3, 1, 4];
+    if (navItems[navIndexMap[tabIndex]]) {
+        navItems[navIndexMap[tabIndex]].classList.add('active');
+    }
     
     currentDashTab = tabIndex;
 }

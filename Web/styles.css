@@ -49,6 +49,134 @@ body.dark-mode {
     --border: #334155;
 }
 
+/* ===== DEMO OVERLAY ===== */
+.demo-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    border-radius: 32px;
+    box-shadow: 0 10px 30px 0 rgba(0,0,0,0.10);
+    transition: opacity 0.5s, visibility 0.5s;
+}
+.demo-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+.demo-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    padding: 18px 36px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.2s;
+}
+.demo-btn:hover {
+    background: var(--primary-dark);
+}
+}
+
+.intro-phone .phone-screen {
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.intro-app {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
+.intro-content {
+    text-align: center;
+    color: white;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    filter: blur(8px);
+    pointer-events: none;
+}
+
+.intro-logo {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-15px);
+    }
+}
+
+.intro-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.intro-subtitle {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.intro-btn {
+    background: white;
+    color: #5d8c3a;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    filter: none;
+    backdrop-filter: none;
+    position: relative;
+    z-index: 10001;
+    margin-top: 20px;
+}
+
+.intro-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.intro-btn:active {
+    transform: translateY(0);
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -59,6 +187,11 @@ body {
     color: var(--text-primary);
     line-height: 1.6;
     transition: background-color 0.3s ease, color 0.3s ease;
+    overflow: auto;
+}
+
+body.intro-hidden {
+    overflow: auto;
 }
 
 /* ===== NAVIGATION ===== */
@@ -244,11 +377,13 @@ body {
 }
 
 /* ===== HERO SECTION ===== */
+
 .hero {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 60px 20px;
-    min-height: 90vh;
+    padding: 0 20px;
+    min-height: 100dvh;
+    height: 100dvh;
     display: flex;
     align-items: center;
 }
@@ -258,6 +393,8 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 60px;
     align-items: center;
+    height: 100dvh;
+    min-height: 100dvh;
 }
 
 .hero-text h1 {
@@ -309,27 +446,200 @@ body {
 }
 
 /* Phone Mockup */
+
+/* === PHONE MOCKUP & DEMO APP RESPONSIVE === */
 .phone-mockup {
     perspective: 1000px;
+    width: 100%;
+    max-width: 450px;
+    height: 90dvh;
+    max-height: 90dvh;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .phone-screen {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
     border-radius: 40px;
-    padding: 12px;
+    padding: 10px;
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
-    animation: float 3s ease-in-out infinite;
+    width: 100%;
+    height: 90dvh;
+    max-height: 90dvh;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
 .app-preview {
     background: var(--bg-primary);
     border-radius: 35px;
-    padding: 20px;
-    height: 600px;
+    padding: 0;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 0;
+}
+
+@media (max-width: 1200px) {
+    .hero-content {
+        height: 100dvh;
+        min-height: 100dvh;
+    }
+    .phone-mockup {
+        max-width: 380px;
+        height: 80dvh;
+        max-height: 80dvh;
+    }
+    .phone-screen {
+        border-radius: 32px;
+        height: 80dvh;
+        max-height: 80dvh;
+    }
+}
+
+@media (max-width: 900px) {
+    .hero-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        height: 100dvh;
+        min-height: 100dvh;
+    }
+    .phone-mockup {
+        max-width: 320px;
+        height: 70dvh;
+        max-height: 70dvh;
+    }
+    .phone-screen {
+        border-radius: 24px;
+        height: 70dvh;
+        max-height: 70dvh;
+    }
+}
+
+@media (max-width: 600px) {
+    .hero-content {
+        gap: 16px;
+        height: 100dvh;
+        min-height: 100dvh;
+    }
+    .phone-mockup {
+        max-width: 100vw;
+        height: 60dvh;
+        max-height: 60dvh;
+    }
+    .phone-screen {
+        border-radius: 16px;
+        height: 60dvh;
+        max-height: 60dvh;
+        min-height: 200px;
+        padding: 4px;
+    }
+    .app-preview {
+        border-radius: 12px;
+    }
+}
+
+@media (max-width: 400px) {
+    .hero-content {
+        height: 100dvh;
+        min-height: 100dvh;
+    }
+    .phone-mockup {
+        max-width: 100vw;
+        height: 50dvh;
+        max-height: 50dvh;
+    }
+    .phone-screen {
+        border-radius: 8px;
+        height: 50dvh;
+        max-height: 50dvh;
+        min-height: 120px;
+        padding: 2px;
+    }
+    .app-preview {
+        border-radius: 6px;
+    }
+}
+
+.app-preview .dashboard-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--bg-primary);
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: none;
+}
+
+.app-preview .dashboard-sidebar {
+    display: none;
+}
+
+.app-preview .dashboard-main {
+    padding: 6px;
+    background: var(--bg-primary);
+    overflow: hidden;
+    flex: 1;
+    height: calc(100% - 55px);
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+}
+
+.dashboard-bottom-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border);
+    height: 55px;
+    width: 100%;
+    padding: 0;
+    gap: 0;
+}
+
+.bottom-nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 0;
+    color: var(--text-secondary);
+    font-size: 9px;
+    transition: all 0.3s ease;
+}
+
+.bottom-nav-item i {
+    font-size: 18px;
+}
+
+.bottom-nav-item span {
+    font-size: 8px;
+    font-weight: 500;
+}
+
+.bottom-nav-item:hover {
+    color: var(--primary);
+    background: rgba(93, 140, 58, 0.05);
+}
+
+.bottom-nav-item.active {
+    color: var(--primary);
+    background: rgba(93, 140, 58, 0.1);
 }
 
 .preview-bar {
@@ -922,7 +1232,7 @@ body {
     transform: translateY(-5px);
     box-shadow: var(--shadow-lg);
 }
-primary-light
+
 .recipe-image {
     width: 100%;
     height: 150px;
@@ -1147,7 +1457,7 @@ primary-light
     transform: translateY(-10px);
     box-shadow: var(--shadow-xl);
 }
-primary-light
+
 .recipe-showcase-image {
     width: 100%;
     height: 200px;
@@ -1342,6 +1652,629 @@ primary-light
 .recipe-detail-image {
     font-size: 80px;
     flex-shrink: 0;
+}
+
+/* ===== PHONE MOCKUP DASHBOARD RESPONSIVE STYLES ===== */
+
+.app-preview .dashboard-tab {
+    display: none;
+}
+
+.app-preview .dashboard-tab.active {
+    display: block;
+}
+
+.app-preview .tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.app-preview .tab-header h3 {
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.app-preview .date-display {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.app-preview .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.app-preview .stat-card {
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.app-preview .stat-card .stat-icon {
+    font-size: 24px;
+}
+
+.app-preview .stat-value {
+    font-size: 16px;
+}
+
+.app-preview .stat-label {
+    font-size: 11px;
+}
+
+.app-preview .progress-text {
+    font-size: 9px;
+}
+
+.app-preview .charts-section {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.app-preview .chart-container {
+    padding: 10px;
+}
+
+.app-preview .chart-container h4 {
+    font-size: 12px;
+    margin: 0 0 8px 0;
+}
+
+.app-preview .donut-chart {
+    max-width: 150px;
+    margin: 0 auto;
+}
+
+.app-preview .chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+}
+
+.app-preview .bar-chart {
+    display: flex;
+    gap: 5px;
+    align-items: flex-end;
+    height: 100px;
+}
+
+.app-preview .bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+}
+
+.app-preview .bar-label {
+    font-size: 9px;
+}
+
+.app-preview .bar-container {
+    height: 60px;
+    width: 100%;
+}
+
+.app-preview .bar-value {
+    font-size: 8px;
+}
+
+.app-preview .pantry-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.app-preview .pantry-item {
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.app-preview .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.app-preview .item-category {
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.app-preview .expiration-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.app-preview .pantry-item h4 {
+    font-size: 13px;
+    margin: 4px 0;
+}
+
+.app-preview .item-details {
+    font-size: 9px;
+    margin: 6px 0;
+}
+
+.app-preview .item-details p {
+    margin: 2px 0;
+}
+
+.app-preview .item-actions {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.app-preview .recipes-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.app-preview .recipe-card {
+    padding: 8px;
+    border-radius: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.app-preview .recipe-image {
+    font-size: 32px;
+    min-width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-preview .recipe-content {
+    flex: 1;
+}
+
+.app-preview .recipe-content h4 {
+    font-size: 12px;
+    margin: 0 0 4px 0;
+}
+
+.app-preview .recipe-meta {
+    display: flex;
+    gap: 8px;
+    font-size: 10px;
+    margin-bottom: 4px;
+}
+
+.app-preview .recipe-desc {
+    font-size: 9px;
+    margin: 0 0 4px 0;
+}
+
+.app-preview .recipe-tags {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.app-preview .tag {
+    font-size: 8px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    background: var(--bg-secondary);
+}
+
+.app-preview .settings-container {
+    font-size: 12px;
+}
+
+.app-preview .settings-section {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.app-preview .settings-section h4 {
+    font-size: 12px;
+    margin: 0 0 8px 0;
+}
+
+.app-preview .settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.app-preview .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.app-preview .form-group label {
+    font-size: 10px;
+}
+
+.app-preview .form-group input,
+.app-preview .form-group select {
+    font-size: 11px;
+    padding: 4px;
+}
+
+.app-preview .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.app-preview .settings-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.app-preview .toggle-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.app-preview .toggle-item strong {
+    font-size: 11px;
+}
+
+.app-preview .toggle-item p {
+    font-size: 9px;
+    margin: 2px 0 0 0;
+}
+
+/* ===== OVERVIEW TAB MOBILE STYLES ===== */
+
+.app-preview .greeting-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+}
+
+.app-preview .greeting-icon {
+    background: var(--bg-secondary);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
+.app-preview .greeting-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.app-preview .overview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.app-preview .overview-header h3 {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.app-preview .date-navigation {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.app-preview .date-btn {
+    background: var(--bg-secondary);
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.app-preview .date-btn:hover {
+    background: var(--border);
+}
+
+.app-preview .date-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 70px;
+    text-align: center;
+}
+
+.app-preview .period-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.app-preview .period-btn {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    padding: 4px 6px;
+    border-radius: 18px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.app-preview .period-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.app-preview .period-btn:hover:not(.active) {
+    background: var(--bg-primary);
+    border-color: var(--primary);
+}
+
+.app-preview .calories-card-large {
+    background: var(--bg-secondary);
+    border-left: 4px solid var(--primary);
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+}
+
+.app-preview .calories-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.app-preview .calories-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+.app-preview .calories-badge {
+    background: rgba(93, 140, 58, 0.15);
+    color: var(--primary);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.app-preview .calories-large-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 2px;
+}
+
+.app-preview .calories-remaining {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.app-preview .calories-bar-large {
+    background: var(--bg-primary);
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 2px;
+}
+
+.app-preview .calories-fill-large {
+    background: var(--primary);
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.app-preview .calories-text-small {
+    font-size: 8px;
+    color: var(--text-secondary);
+}
+
+.app-preview .nutrition-section {
+    margin-bottom: 5px;
+}
+
+.app-preview .nutrition-section h3 {
+    font-size: 11px;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+    color: var(--text-primary);
+}
+
+.app-preview .nutrition-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+
+.app-preview .nutrition-card {
+    background: var(--bg-secondary);
+    border-left: 3px solid var(--primary);
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.app-preview .nutrition-card.carbs {
+    border-left-color: #5d8c3a;
+}
+
+.app-preview .nutrition-card.sugar {
+    border-left-color: #f59e0b;
+}
+
+.app-preview .nutrition-card.fat {
+    border-left-color: #ec5757;
+}
+
+.app-preview .nutrition-card.fiber {
+    border-left-color: #10b981;
+}
+
+.app-preview .nutrition-card.sodium {
+    border-left-color: #8b5cf6;
+}
+
+.app-preview .nutrition-label {
+    font-size: 8px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.app-preview .nutrition-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.app-preview .nutrition-bar {
+    background: var(--bg-primary);
+    height: 2px;
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.app-preview .nutrition-fill {
+    background: var(--primary);
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.app-preview .hydration-card {
+    background: var(--bg-secondary);
+    border-left: 3px solid #3b82f6;
+    padding: 6px;
+    border-radius: 5px;
+    position: relative;
+}
+
+.app-preview .hydration-label {
+    font-size: 7px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 1px;
+}
+
+.app-preview .hydration-value {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.app-preview .hydration-bar {
+    background: var(--bg-primary);
+    height: 2px;
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.app-preview .hydration-fill {
+    background: #3b82f6;
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.app-preview .hydration-add-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.app-preview .hydration-add-btn:hover {
+    background: var(--primary-light);
+}
+
+.app-preview .bmi-card {
+    background: var(--bg-secondary);
+    padding: 6px;
+    border-radius: 5px;
+}
+
+.app-preview .bmi-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: left;
+    margin-bottom: 2px;
+}
+
+.app-preview .bmi-status {
+    font-size: 9px;
+    color: var(--text-secondary);
+    text-align: left;
+    margin-bottom: 2px;
+}
+
+.app-preview .bmi-bar {
+    background: var(--bg-primary);
+    height: 2px;
+    border-radius: 1px;
+    overflow: hidden;
+}
+
+.app-preview .bmi-fill {
+    background: linear-gradient(90deg, #5d8c3a 0%, #10b981 100%);
+    height: 100%;
+    border-radius: 2px;
 }
 
 .recipe-detail-info h2 {

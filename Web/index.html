@@ -9,6 +9,8 @@
 </head>
 <body>
     <!-- ===== NAVIGÁCIA ===== -->
+
+    <!-- ===== NAVIGÁCIA ===== -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
@@ -58,13 +60,505 @@
             <div class="hero-image">
                 <div class="phone-mockup">
                     <div class="phone-screen">
-                        <div class="app-preview">
-                            <div class="preview-bar">Ahoj, Janko!</div>
-                            <div class="preview-chart"></div>
-                            <div class="preview-items">
-                                <div class="preview-item"></div>
-                                <div class="preview-item"></div>
-                                <div class="preview-item"></div>
+                        <!-- DEMO OVERLAY -->
+                        <div class="demo-overlay" id="demoOverlay">
+                            <button class="demo-btn" onclick="startDemo()">
+                                <span>Otestovať demo</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                        <div class="app-preview" id="phone-dashboard">
+                            <!-- Main Content -->
+                            <div class="dashboard-main">
+                                <!-- TAB 1: PREHĽAD -->
+                                <div class="dashboard-tab active" id="tab-overview">
+                                    <div class="greeting-header">
+                                        <div class="greeting-icon">
+                                            <i class="fas fa-apple-alt"></i>
+                                        </div>
+                                        <h2>Ahoj Damián!</h2>
+                                    </div>
+
+                                    <!-- Prehľad Header -->
+                                    <div class="overview-header">
+                                        <h3>Prehľad</h3>
+                                        <div class="date-navigation">
+                                            <button class="date-btn"><i class="fas fa-chevron-left"></i></button>
+                                            <span class="date-value">6.5.2026</span>
+                                            <button class="date-btn"><i class="fas fa-chevron-right"></i></button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Time Period Selector -->
+                                    <div class="period-selector">
+                                        <button class="period-btn active">Dnes</button>
+                                        <button class="period-btn">Týždeň</button>
+                                        <button class="period-btn">Rok</button>
+                                    </div>
+
+                                    <!-- Large Calories Card -->
+                                    <div class="calories-card-large">
+                                        <div class="calories-card-header">
+                                            <div class="calories-label">KALÓRIE</div>
+                                            <span class="calories-badge">Dnes</span>
+                                        </div>
+                                        <div class="calories-large-value">1800 kcal</div>
+                                        <div class="calories-remaining">Ešte ti chýba 433 kcal</div>
+                                        <div class="calories-bar-large">
+                                            <div class="calories-fill-large" style="width: 80.6%"></div>
+                                        </div>
+                                        <div class="calories-text-small">1800 / 2233 kcal</div>
+                                    </div>
+
+                                    <!-- Makronutrienty Section -->
+                                    <div class="nutrition-section">
+                                        <h3>Makronutrienty</h3>
+                                        <div class="nutrition-grid">
+                                            <div class="nutrition-card proteins">
+                                                <div class="nutrition-label">BIELKOVINY</div>
+                                                <div class="nutrition-value">88 / 112 g</div>
+                                                <div class="nutrition-bar">
+                                                    <div class="nutrition-fill" style="width: 78.6%"></div>
+                                                </div>
+                                            </div>
+                                            <div class="nutrition-card carbs">
+                                                <div class="nutrition-label">SACHARIDY</div>
+                                                <div class="nutrition-value">250 / 279 g</div>
+                                                <div class="nutrition-bar">
+                                                    <div class="nutrition-fill" style="width: 89.6%"></div>
+                                                </div>
+                                            </div>
+                                            <div class="nutrition-card fat">
+                                                <div class="nutrition-label">TUKY</div>
+                                                <div class="nutrition-value">60 / 74 g</div>
+                                                <div class="nutrition-bar">
+                                                    <div class="nutrition-fill" style="width: 81.1%"></div>
+                                                </div>
+                                            </div>
+                                            <div class="nutrition-card fiber">
+                                                <div class="nutrition-label">VLÁKNINA</div>
+                                                <div class="nutrition-value">30 / 38 g</div>
+                                                <div class="nutrition-bar">
+                                                    <div class="nutrition-fill" style="width: 78.9%"></div>
+                                                </div>
+                                            </div>
+                                            <div class="nutrition-card sugar">
+                                                <div class="nutrition-label">PRIDANÉ CUKRY</div>
+                                                <div class="nutrition-value">38 / 33 g</div>
+                                                <div class="nutrition-bar">
+                                                    <div class="nutrition-fill" style="width: 115.2%; background: #ec5757;"></div>
+                                                </div>
+                                            </div>
+                                            <div class="nutrition-card sodium">
+                                                <div class="nutrition-label">SOĽ</div>
+                                                <div class="nutrition-value">2.8 / 3.75 g</div>
+                                                <div class="nutrition-bar">
+                                                    <div class="nutrition-fill" style="width: 74.7%"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hydratácia Section -->
+                                    <div class="nutrition-section">
+                                        <h3>Hydratácia</h3>
+                                        <div class="hydration-card">
+                                            <div class="hydration-label">VODA</div>
+                                            <div class="hydration-value">2500 / 3700 ml</div>
+                                            <div class="hydration-bar">
+                                                <div class="hydration-fill" style="width: 67.6%"></div>
+                                            </div>
+                                            <button class="hydration-add-btn">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- BMI Section -->
+                                    <div class="nutrition-section">
+                                        <h3>BMI</h3>
+                                        <div class="bmi-card">
+                                            <div class="bmi-value">BMI: 20.2</div>
+                                            <div class="bmi-status">Normálna váha</div>
+                                            <div class="bmi-bar">
+                                                <div class="bmi-fill" style="width: 45%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 2: ŠPAJZA -->
+                                <div class="dashboard-tab" id="tab-pantry">
+                                    <div class="tab-header">
+                                        <h3>Moja Špajza</h3>
+                                        <button class="btn btn-small" onclick="alert('Pridaj produkt cez skenovanie alebo manuálne')">
+                                            <i class="fas fa-plus"></i> Pridať Produkt
+                                        </button>
+                                    </div>
+
+                                    <div class="pantry-grid">
+                                        <div class="pantry-item warning">
+                                            <div class="item-header">
+                                                <span class="item-category">Ovocie</span>
+                                                <span class="expiration-badge warning">Expiruje za 2 dni</span>
+                                            </div>
+                                            <h4>Banány</h4>
+                                            <div class="item-details">
+                                                <p><strong>Kúpené:</strong> 3. mája 2026</p>
+                                                <p><strong>Expiruje:</strong> 7. mája 2026</p>
+                                                <p><strong>Množstvo:</strong> 1 kg</p>
+                                            </div>
+                                            <div class="item-actions">
+                                                <button class="btn btn-mini" onclick="showRecipeIdeas('Banány')"><i class="fas fa-book"></i> Recepty</button>
+                                                <button class="btn btn-mini danger" onclick="removePantryItem()"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <div class="pantry-item danger">
+                                            <div class="item-header">
+                                                <span class="item-category">Mliečne Výrobky</span>
+                                                <span class="expiration-badge danger">Expiruje dnes!</span>
+                                            </div>
+                                            <h4>Jogurt Prírodný</h4>
+                                            <div class="item-details">
+                                                <p><strong>Kúpené:</strong> 28. apríla 2026</p>
+                                                <p><strong>Expiruje:</strong> 5. mája 2026</p>
+                                                <p><strong>Množstvo:</strong> 150 g</p>
+                                            </div>
+                                            <div class="item-actions">
+                                                <button class="btn btn-mini" onclick="showRecipeIdeas('Jogurt')"><i class="fas fa-book"></i> Recepty</button>
+                                                <button class="btn btn-mini danger" onclick="removePantryItem()"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <div class="pantry-item success">
+                                            <div class="item-header">
+                                                <span class="item-category">Hydina</span>
+                                                <span class="expiration-badge success">OK</span>
+                                            </div>
+                                            <h4>Kuracie Filé</h4>
+                                            <div class="item-details">
+                                                <p><strong>Kúpené:</strong> 4. mája 2026</p>
+                                                <p><strong>Expiruje:</strong> 10. mája 2026</p>
+                                                <p><strong>Množstvo:</strong> 500 g</p>
+                                                <p><strong>Kalórie:</strong> 165 kcal / 100g</p>
+                                            </div>
+                                            <div class="item-actions">
+                                                <button class="btn btn-mini" onclick="showRecipeIdeas('Kuracie Filé')"><i class="fas fa-book"></i> Recepty</button>
+                                                <button class="btn btn-mini danger" onclick="removePantryItem()"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <div class="pantry-item success">
+                                            <div class="item-header">
+                                                <span class="item-category">Zelenina</span>
+                                                <span class="expiration-badge success">OK</span>
+                                            </div>
+                                            <h4>Zelenina - Mešť</h4>
+                                            <div class="item-details">
+                                                <p><strong>Kúpené:</strong> 4. mája 2026</p>
+                                                <p><strong>Expiruje:</strong> 11. mája 2026</p>
+                                                <p><strong>Množstvo:</strong> 1 kg (zmiešaná)</p>
+                                                <p><strong>Kalórie:</strong> 25-35 kcal / 100g</p>
+                                            </div>
+                                            <div class="item-actions">
+                                                <button class="btn btn-mini" onclick="showRecipeIdeas('Zelenina')"><i class="fas fa-book"></i> Recepty</button>
+                                                <button class="btn btn-mini danger" onclick="removePantryItem()"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <div class="pantry-item success">
+                                            <div class="item-header">
+                                                <span class="item-category">Zrná a Múka</span>
+                                                <span class="expiration-badge success">OK</span>
+                                            </div>
+                                            <h4>Polohrubá Múka</h4>
+                                            <div class="item-details">
+                                                <p><strong>Kúpené:</strong> 1. apríla 2026</p>
+                                                <p><strong>Expiruje:</strong> 1. septembra 2026</p>
+                                                <p><strong>Množstvo:</strong> 1 kg</p>
+                                                <p><strong>Kalórie:</strong> 364 kcal / 100g</p>
+                                            </div>
+                                            <div class="item-actions">
+                                                <button class="btn btn-mini" onclick="showRecipeIdeas('Múka')"><i class="fas fa-book"></i> Recepty</button>
+                                                <button class="btn btn-mini danger" onclick="removePantryItem()"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 3: RECEPTY -->
+                                <div class="dashboard-tab" id="tab-recipes">
+                                    <div class="tab-header">
+                                        <h3>Recepty</h3>
+                                        <input type="text" class="search-input" placeholder="Hľadať recepty..." onkeyup="filterRecipes(this.value)">
+                                    </div>
+
+                                    <div class="recipes-grid">
+                                        <div class="recipe-card">
+                                            <div class="recipe-image">
+                                                <i class="fas fa-utensils"></i>
+                                            </div>
+                                            <div class="recipe-content">
+                                                <h4>Bryndzové Halušky</h4>
+                                                <div class="recipe-meta">
+                                                    <span><i class="fas fa-clock"></i> 45 min</span>
+                                                    <span><i class="fas fa-fire"></i> 650 kcal</span>
+                                                </div>
+                                                <p class="recipe-desc">Tradičná slovenská jedlo s bryndzou a slaninou</p>
+                                                <div class="recipe-tags">
+                                                    <span class="tag">Slovenská kuchyňa</span>
+                                                    <span class="tag">Vegetariánske</span>
+                                                </div>
+                                                <button class="btn btn-small" onclick="showRecipeDetail('Bryndzové Halušky')">Zobraziť Recept</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="recipe-card">
+                                            <div class="recipe-image">
+                                                <i class="fas fa-bowl-food"></i>
+                                            </div>
+                                            <div class="recipe-content">
+                                                <h4>Kapustnica</h4>
+                                                <div class="recipe-meta">
+                                                    <span><i class="fas fa-clock"></i> 90 min</span>
+                                                    <span><i class="fas fa-fire"></i> 280 kcal</span>
+                                                </div>
+                                                <p class="recipe-desc">Husté mäsité polievky s údenom a huby</p>
+                                                <div class="recipe-tags">
+                                                    <span class="tag">Polievka</span>
+                                                    <span class="tag">Mäsité</span>
+                                                </div>
+                                                <button class="btn btn-small" onclick="showRecipeDetail('Kapustnica')">Zobraziť Recept</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="recipe-card">
+                                            <div class="recipe-image">
+                                                <i class="fas fa-drumstick-bite"></i>
+                                            </div>
+                                            <div class="recipe-content">
+                                                <h4>Grillované Kuracie Prsia</h4>
+                                                <div class="recipe-meta">
+                                                    <span><i class="fas fa-clock"></i> 20 min</span>
+                                                    <span><i class="fas fa-fire"></i> 165 kcal</span>
+                                                </div>
+                                                <p class="recipe-desc">Zdravá a rýchla voľba pre fitness nadšencov</p>
+                                                <div class="recipe-tags">
+                                                    <span class="tag">Proteín</span>
+                                                    <span class="tag">Nízky obsah tuku</span>
+                                                </div>
+                                                <button class="btn btn-small" onclick="showRecipeDetail('Grillované Kuracie Prsia')">Zobraziť Recept</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="recipe-card">
+                                            <div class="recipe-image">
+                                                <i class="fas fa-leaf"></i>
+                                            </div>
+                                            <div class="recipe-content">
+                                                <h4>Zelená Šaláta s Kuracím Mäsom</h4>
+                                                <div class="recipe-meta">
+                                                    <span><i class="fas fa-clock"></i> 15 min</span>
+                                                    <span><i class="fas fa-fire"></i> 250 kcal</span>
+                                                </div>
+                                                <p class="recipe-desc">Ľahka, svieža a výživná voľba na obed</p>
+                                                <div class="recipe-tags">
+                                                    <span class="tag">Saláta</span>
+                                                    <span class="tag">Vegan možný</span>
+                                                </div>
+                                                <button class="btn btn-small" onclick="showRecipeDetail('Zelená Šaláta s Kuracím Mäsom')">Zobraziť Recept</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="recipe-card">
+                                            <div class="recipe-image">
+                                                <i class="fas fa-fish"></i>
+                                            </div>
+                                            <div class="recipe-content">
+                                                <h4>Pečená Ryba s Zeleninou</h4>
+                                                <div class="recipe-meta">
+                                                    <span><i class="fas fa-clock"></i> 35 min</span>
+                                                    <span><i class="fas fa-fire"></i> 320 kcal</span>
+                                                </div>
+                                                <p class="recipe-desc">Bohatá na Omega-3 mastné kyseliny</p>
+                                                <div class="recipe-tags">
+                                                    <span class="tag">Zdravá</span>
+                                                    <span class="tag">Ryba</span>
+                                                </div>
+                                                <button class="btn btn-small" onclick="showRecipeDetail('Pečená Ryba s Zeleninou')">Zobraziť Recept</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="recipe-card">
+                                            <div class="recipe-image">
+                                                <i class="fas fa-carrot"></i>
+                                            </div>
+                                            <div class="recipe-content">
+                                                <h4>Hummus - Recepty</h4>
+                                                <div class="recipe-meta">
+                                                    <span><i class="fas fa-clock"></i> 10 min</span>
+                                                    <span><i class="fas fa-fire"></i> 160 kcal</span>
+                                                </div>
+                                                <p class="recipe-desc">Vegánske zdravé presnackovanie s hummusom</p>
+                                                <div class="recipe-tags">
+                                                    <span class="tag">Vegan</span>
+                                                    <span class="tag">Nízke kalórie</span>
+                                                </div>
+                                                <button class="btn btn-small" onclick="showRecipeDetail('Hummus')">Zobraziť Recept</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 4: NASTAVENIA -->
+                                <div class="dashboard-tab" id="tab-settings">
+                                    <div class="tab-header">
+                                        <h3>Nastavenia Konta</h3>
+                                    </div>
+
+                                    <div class="settings-container">
+                                        <div class="settings-section">
+                                            <h4><i class="fas fa-user"></i> Osobné Údaje</h4>
+                                            <div class="settings-form">
+                                                <div class="form-group">
+                                                    <label>Meno:</label>
+                                                    <input type="text" value="Janko Hraško" readonly>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Email:</label>
+                                                    <input type="email" value="janko@example.com" readonly>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Prezývka:</label>
+                                                    <input type="text" value="JankoH" onchange="alert('Zmena uložená')">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-section">
+                                            <h4><i class="fas fa-dumbbell"></i> Fitness Profil</h4>
+                                            <div class="settings-form">
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Vek (rokov):</label>
+                                                        <input type="number" value="28" onchange="alert('Zmena uložená')">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Pohlavie:</label>
+                                                        <select onchange="alert('Zmena uložená')">
+                                                            <option selected>Muž</option>
+                                                            <option>Žena</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Výška (cm):</label>
+                                                        <input type="number" value="180" onchange="alert('Zmena uložená')">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Váha (kg):</label>
+                                                        <input type="number" value="82" onchange="alert('Zmena uložená')">
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Úroveň Aktivity:</label>
+                                                    <select onchange="alert('Zmena uložená')">
+                                                        <option>Sedavá práca</option>
+                                                        <option selected>Mierna aktivita</option>
+                                                        <option>Vysoká aktivita</option>
+                                                        <option>Veľmi vysoká aktivita</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-section">
+                                            <h4><i class="fas fa-bullseye"></i> Nutričné Ciele</h4>
+                                            <div class="settings-form">
+                                                <div class="form-group">
+                                                    <label>Denný Cieľ Kalórií (kcal):</label>
+                                                    <input type="number" value="2500" onchange="alert('Zmena uložená')">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Cieľ Bielkovín (g):</label>
+                                                    <input type="number" value="100" onchange="alert('Zmena uložená')">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Cieľ Vody (litrov):</label>
+                                                    <input type="number" value="2" onchange="alert('Zmena uložená')" step="0.5">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-section">
+                                            <h4><i class="fas fa-bell"></i> Notifikácie</h4>
+                                            <div class="settings-toggles">
+                                                <div class="toggle-item">
+                                                    <div>
+                                                        <strong>Upozornenia na Expiraciu</strong>
+                                                        <p>Dostať upozornenie keď sa potraviny blížia k expirácii</p>
+                                                    </div>
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" checked>
+                                                        <span class="slider"></span>
+                                                    </label>
+                                                </div>
+                                                <div class="toggle-item">
+                                                    <div>
+                                                        <strong>Pripomienky Pitného Režimu</strong>
+                                                        <p>Denné upozornenia na pitný režim</p>
+                                                    </div>
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox" checked>
+                                                        <span class="slider"></span>
+                                                    </label>
+                                                </div>
+                                                <div class="toggle-item">
+                                                    <div>
+                                                        <strong>Newsletter a Tipy</strong>
+                                                        <p>Dostať nutričné tipy a recepty</p>
+                                                    </div>
+                                                    <label class="toggle-switch">
+                                                        <input type="checkbox">
+                                                        <span class="slider"></span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="settings-section">
+                                            <h4><i class="fas fa-sign-out-alt"></i> Bezpečnosť</h4>
+                                            <button class="btn btn-secondary" onclick="alert('Zmeniť heslo - sekcia sa otvára')">Zmeniť Heslo</button>
+                                            <button class="btn btn-danger" style="margin-top: 10px;" onclick="if(confirm('Naozaj sa chceš odhlásiť?')) alert('Odhlásiť - presmerovanie na prihlasovanie')">Odhlásiť sa</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bottom Navigation -->
+                            <div class="dashboard-bottom-nav">
+                                <button class="bottom-nav-item active" onclick="switchDashTab(0)" title="Prehľad">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    <span>Prehľad</span>
+                                </button>
+                                <button class="bottom-nav-item" onclick="switchDashTab(2)" title="Recepty">
+                                    <i class="fas fa-utensils"></i>
+                                    <span>Recepty</span>
+                                </button>
+                                <button class="bottom-nav-item" onclick="alert('Pridať nový produkt')" title="Pridať">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Pridať</span>
+                                </button>
+                                <button class="bottom-nav-item" onclick="switchDashTab(1)" title="Špajza">
+                                    <i class="fas fa-warehouse"></i>
+                                    <span>Špajza</span>
+                                </button>
+                                <button class="bottom-nav-item" onclick="switchDashTab(3)" title="Nastavenia">
+                                    <i class="fas fa-cog"></i>
+                                    <span>Nastavenia</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -122,8 +616,8 @@
         </div>
     </section>
 
-    <!-- ===== DASHBOARD SECTION ===== -->
-    <section id="dashboard" class="dashboard-section">
+    <!-- ===== DASHBOARD SECTION (MOVED TO PHONE MOCKUP) ===== -->
+    <section id="dashboard" class="dashboard-section" style="display: none;">
         <h2 class="section-title">Interaktívny Dashboard</h2>
         
         <div class="dashboard-container">
