@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from "./googleAuthConfig";
+import { useAppTheme } from "./ThemeContext";
 import { ensurePasswordHash } from "./passwordUtils";
 import { loadTotalsForDate, saveTotalsForDate } from "./dailyTotalsStorage";
 // Funkcie pre notifikácie
@@ -59,6 +60,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
   const SERVER_URL = "https://app.bitewise.it.com";
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
+  const { colors, isDark } = useAppTheme();
 
   const getTodayKey = (date = new Date()) => {
     const yyyy = date.getFullYear();
@@ -429,17 +431,24 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
   return (
     <KeyboardWrapper
-      style={styles.loginScreen}
+      style={[styles.loginScreen, { backgroundColor: colors.authBackground }]}
       contentContainerStyle={styles.loginScrollContent}
       safeArea
     >
       {/* Modal so spinnerom počas spracovania */}
       <Modal visible={isLoading} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.generatingModalContainer}>
+          <View
+            style={[
+              styles.generatingModalContainer,
+              { backgroundColor: colors.surface },
+            ]}
+          >
             <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
-            <Text style={styles.generatingModalTitle}>Kontrolujem údaje...</Text>
-            <Text style={styles.generatingModalSubtitle}>
+            <Text style={[styles.generatingModalTitle, { color: colors.text }]}>
+              Kontrolujem údaje...
+            </Text>
+            <Text style={[styles.generatingModalSubtitle, { color: colors.mutedText }]}>
               Môže to trvať niekoľko sekúnd
             </Text>
           </View>
@@ -447,22 +456,42 @@ export default function HomeScreen({ setIsLoggedIn }) {
       </Modal>
       <View style={styles.loginHero}>
         <Image style={styles.loginLogo} source={logo} resizeMode="contain" />
-        <Text style={styles.loginHeroTitle}>Vitaj späť</Text>
-        <Text style={styles.loginHeroSubtitle}>
+        <Text style={[styles.loginHeroTitle, { color: colors.text }]}>Vitaj späť</Text>
+        <Text style={[styles.loginHeroSubtitle, { color: colors.mutedText }]}>
           Prihlás sa do svojho účtu Bitewise.
         </Text>
       </View>
 
-      <View style={styles.loginCard}>
-        <Text style={styles.loginCardTitle}>Prihlásenie</Text>
-        <Text style={styles.loginCardSubtitle}>Zadaj e-mail a heslo.</Text>
+      <View
+        style={[
+          styles.loginCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            elevation: isDark ? 0 : 8,
+          },
+        ]}
+      >
+        <Text style={[styles.loginCardTitle, { color: colors.text }]}>
+          Prihlásenie
+        </Text>
+        <Text style={[styles.loginCardSubtitle, { color: colors.mutedText }]}>
+          Zadaj e-mail a heslo.
+        </Text>
 
         <View style={styles.loginField}>
-          <Text style={styles.loginFieldLabel}>E-mail</Text>
+          <Text style={[styles.loginFieldLabel, { color: colors.textSoft }]}>E-mail</Text>
           <AutoShrinkTextInput
             placeholder="tvoj@email.sk"
-            placeholderTextColor="#9ca3af"
-            style={styles.loginTextInput}
+            placeholderTextColor={colors.placeholder}
+            style={[
+              styles.loginTextInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -476,12 +505,20 @@ export default function HomeScreen({ setIsLoggedIn }) {
         </View>
 
         <View style={styles.loginField}>
-          <Text style={styles.loginFieldLabel}>Heslo</Text>
+          <Text style={[styles.loginFieldLabel, { color: colors.textSoft }]}>Heslo</Text>
           <View style={localStyles.passwordRow}>
             <AutoShrinkTextInput
               placeholder="heslo"
-              placeholderTextColor="#9ca3af"
-              style={[styles.loginTextInput, styles.loginPasswordInput]}
+              placeholderTextColor={colors.placeholder}
+              style={[
+                styles.loginTextInput,
+                styles.loginPasswordInput,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
+                },
+              ]}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -505,7 +542,9 @@ export default function HomeScreen({ setIsLoggedIn }) {
           onPress={() => navigation.navigate("ForgetPass")}
           style={styles.loginForgotButton}
         >
-          <Text style={styles.loginForgotText}>Zabudnuté heslo?</Text>
+          <Text style={[styles.loginForgotText, { color: colors.primary }]}>
+            Zabudnuté heslo?
+          </Text>
         </Pressable>
 
         <Pressable
@@ -522,23 +561,35 @@ export default function HomeScreen({ setIsLoggedIn }) {
         </Pressable>
 
         <View style={styles.loginDividerRow}>
-          <View style={styles.loginDividerLine} />
-          <Text style={styles.loginDividerText}>alebo</Text>
-          <View style={styles.loginDividerLine} />
+          <View style={[styles.loginDividerLine, { backgroundColor: colors.border }]} />
+          <Text style={[styles.loginDividerText, { color: colors.mutedText }]}>alebo</Text>
+          <View style={[styles.loginDividerLine, { backgroundColor: colors.border }]} />
         </View>
 
         <Pressable
           disabled={isLoading}
           style={({ pressed }) => [
             styles.loginGoogleButton,
-            pressed && styles.loginGoogleButtonPressed,
+            {
+              backgroundColor: colors.surfaceAlt,
+              borderColor: colors.border,
+            },
+            pressed && {
+              backgroundColor: colors.surfacePressed,
+              transform: [{ scale: 0.99 }],
+            },
           ]}
           onPress={() => handleGoogleLogin()}
         >
-          <View style={styles.loginGoogleIcon}>
-            <Text style={styles.loginGoogleIconText}>G</Text>
+          <View
+            style={[
+              styles.loginGoogleIcon,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Text style={[styles.loginGoogleIconText, { color: colors.text }]}>G</Text>
           </View>
-          <Text style={styles.loginGoogleButtonText}>
+          <Text style={[styles.loginGoogleButtonText, { color: colors.text }]}>
             Pokračovať cez Google
           </Text>
         </Pressable>
@@ -547,11 +598,17 @@ export default function HomeScreen({ setIsLoggedIn }) {
           style={({ pressed }) => [
             styles.loginSecondaryButton,
             styles.loginCreateAccountButton,
-            pressed && styles.loginSecondaryButtonPressed,
+            {
+              backgroundColor: colors.surfaceAlt,
+              borderColor: colors.primary,
+            },
+            pressed && { backgroundColor: colors.surfacePressed },
           ]}
           onPress={() => navigation.navigate("RegistrationScreen")}
         >
-          <Text style={styles.loginSecondaryButtonText}>Vytvoriť účet</Text>
+          <Text style={[styles.loginSecondaryButtonText, { color: colors.primary }]}>
+            Vytvoriť účet
+          </Text>
         </Pressable>
       </View>
     </KeyboardWrapper>

@@ -13,6 +13,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import styles from "../../styles";
+import { useAppTheme } from "../../ThemeContext";
 
 const SERVER_URL = "https://app.bitewise.it.com";
 
@@ -484,6 +485,7 @@ const ADDITIONAL_PREFERENCES = [
 ];
 
 export default function RecipesTab() {
+  const { colors, isDark } = useAppTheme();
   const [selectedRecept, setSelectedRecept] = useState(null);
   const [generatedRecipeModal, setGeneratedRecipeModal] = useState(null);
   const [showGenerateError, setShowGenerateError] = useState(false);
@@ -736,7 +738,12 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
 
   return (
     <>
-      <View style={styles.recipesContainer}>
+      <View
+        style={[
+          styles.recipesContainer,
+          { backgroundColor: colors.dashboardBackground },
+        ]}
+      >
         <Pressable
           onPress={() => setGenerateModalVisible(true)}
           style={styles.recipeButton}
@@ -1046,7 +1053,9 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
         </View>
       </Modal>
 
-      <Text style={styles.sectionTitle}>Overené klasické recepty</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Overené klasické recepty
+      </Text>
 
       <View style={styles.grid}>
         {STATIC_RECIPES.map((item) => (
@@ -1068,10 +1077,17 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
           </Pressable>
         ))}
       </View>
-      <Text style={styles.sectionTitle}>Uložené recepty</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Uložené recepty
+      </Text>
 
       {savedRecipes.length === 0 && (
-        <Text style={styles.pantryEmptyMessage}>
+        <Text
+          style={[
+            styles.pantryEmptyMessage,
+            { backgroundColor: colors.surfaceAlt, color: colors.mutedText },
+          ]}
+        >
           Nemáš uložené žiadne recepty.
         </Text>
       )}
@@ -1105,8 +1121,17 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
           closeRecipeModal();
         }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.recipeModalCard}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+          <View
+            style={[
+              styles.recipeModalCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                elevation: isDark ? 0 : 8,
+              },
+            ]}
+          >
             <ScrollView contentContainerStyle={styles.recipeModalContent}>
               {/* IMAGE */}
               <Image
@@ -1125,12 +1150,14 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
 
               {/* TITLE */}
               <View style={styles.recipeModalHeader}>
-                <Text style={styles.recipeModalTitle}>
+                <Text style={[styles.recipeModalTitle, { color: colors.text }]}>
                   {selectedRecept?.nazov ||
                     selectedRecept?.name ||
                     generatedRecipeModal?.name}
                 </Text>
-                <Text style={styles.recipeModalSubtitle}>Recept</Text>
+                <Text style={[styles.recipeModalSubtitle, { color: colors.mutedText }]}>
+                  Recept
+                </Text>
               </View>
 
               {/* RECEPT (statický aj generovaný) */}
@@ -1138,26 +1165,58 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                 <>
                   {/* CATEGORY & TIME */}
                   <View style={styles.recipeMetaRow}>
-                    <View style={styles.recipeMetaChip}>
-                      <Text style={styles.recipeMetaLabel}>Kategória</Text>
-                      <Text style={styles.recipeMetaValue}>
+                    <View
+                      style={[
+                        styles.recipeMetaChip,
+                        {
+                          backgroundColor: colors.primarySoft,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.recipeMetaLabel, { color: colors.mutedText }]}>Kategória</Text>
+                      <Text style={[styles.recipeMetaValue, { color: colors.text }]}>
                         {activeRecipe?.category}
                       </Text>
                     </View>
-                    <View style={styles.recipeMetaChip}>
-                      <Text style={styles.recipeMetaLabel}>Čas prípravy</Text>
-                      <Text style={styles.recipeMetaValue}>
+                    <View
+                      style={[
+                        styles.recipeMetaChip,
+                        {
+                          backgroundColor: colors.primarySoft,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.recipeMetaLabel, { color: colors.mutedText }]}>Čas prípravy</Text>
+                      <Text style={[styles.recipeMetaValue, { color: colors.text }]}>
                         {activeRecipe?.estimatedCookingTime}
                       </Text>
                     </View>
                   </View>
 
                   {/* --- NUTRITION TABLE --- */}
-                  <View style={styles.recipeSectionCard}>
-                    <Text style={styles.recipeSectionTitle}>
+                  <View
+                    style={[
+                      styles.recipeSectionCard,
+                      {
+                        backgroundColor: colors.surfaceAlt,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.recipeSectionTitle, { color: colors.text }]}>
                       Nutričné hodnoty
                     </Text>
-                    <View style={styles.nutritionContainer}>
+                    <View
+                      style={[
+                        styles.nutritionContainer,
+                        {
+                          backgroundColor: colors.primarySoft,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
                       {(() => {
                         const nutrition = activeRecipe?.nutrition || {};
                         const values = [
@@ -1191,11 +1250,17 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                         ];
 
                         return values.map((item, idx) => (
-                          <View key={idx} style={styles.nutritionRow}>
-                            <Text style={styles.nutritionLabel}>
+                          <View
+                            key={idx}
+                            style={[
+                              styles.nutritionRow,
+                              { borderBottomColor: colors.border },
+                            ]}
+                          >
+                            <Text style={[styles.nutritionLabel, { color: colors.textSoft }]}>
                               {item.label}:
                             </Text>
-                            <Text style={styles.nutritionValue}>
+                            <Text style={[styles.nutritionValue, { color: colors.text }]}>
                               {item.value ?? "-"} {item.unit}
                             </Text>
                           </View>
@@ -1204,9 +1269,17 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                     </View>
                   </View>
                   {/* INGREDIENTS */}
-                  <View style={styles.recipeSectionCard}>
+                  <View
+                    style={[
+                      styles.recipeSectionCard,
+                      {
+                        backgroundColor: colors.surfaceAlt,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
                     <View style={styles.ingredientsHeader}>
-                      <Text style={styles.ingredientsTitle}>Ingrediencie</Text>
+                      <Text style={[styles.ingredientsTitle, { color: colors.text }]}>Ingrediencie</Text>
                       {/* Info button */}
                       <Pressable
                         onPress={() => setShowUnitInfo(true)}
@@ -1218,7 +1291,13 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
 
                     {/* Zoznam ingrediencií */}
                     {(activeRecipe?.ingredients || [])?.map((ing, idx) => (
-                      <Text key={idx} style={styles.recipeIngredientItem}>
+                      <Text
+                        key={idx}
+                        style={[
+                          styles.recipeIngredientItem,
+                          { color: colors.text },
+                        ]}
+                      >
                         • {ing.name}: {ing.amountGrams} g
                       </Text>
                     ))}
@@ -1231,20 +1310,27 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                     animationType="fade"
                     onRequestClose={() => setShowUnitInfo(false)}
                   >
-                    <View style={styles.modalOverlay}>
+                    <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
                       <View
-                        style={[styles.modalContainer, styles.unitInfoModal]}
+                        style={[
+                          styles.modalContainer,
+                          styles.unitInfoModal,
+                          {
+                            backgroundColor: colors.surface,
+                            borderColor: colors.border,
+                          },
+                        ]}
                       >
-                        <Text style={styles.unitInfoTitle}>
+                        <Text style={[styles.unitInfoTitle, { color: colors.text }]}>
                           Jednotky surovín
                         </Text>
-                        <Text style={styles.unitInfoText}>
+                        <Text style={[styles.unitInfoText, { color: colors.textSoft }]}>
                           • 1 polievková lyžica = cca 15 g
                         </Text>
-                        <Text style={styles.unitInfoText}>
+                        <Text style={[styles.unitInfoText, { color: colors.textSoft }]}>
                           • 1 malá čajová lyžica = cca 5 g
                         </Text>
-                        <Text style={styles.unitInfoText}>
+                        <Text style={[styles.unitInfoText, { color: colors.textSoft }]}>
                           • 1 pohár = cca 250 ml / 240 g tekutiny
                         </Text>
 
@@ -1260,11 +1346,27 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                     </View>
                   </Modal>
                   {/* STEPS */}
-                  <View style={styles.recipeSectionCard}>
-                    <Text style={styles.stepsTitle}>Postup</Text>
+                  <View
+                    style={[
+                      styles.recipeSectionCard,
+                      {
+                        backgroundColor: colors.surfaceAlt,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.stepsTitle, { color: colors.text }]}>Postup</Text>
                     {(activeRecipe?.steps || [])?.map((step, idx) => (
-                      <View key={idx} style={styles.stepContainer}>
-                        <Text style={styles.stepText}>{step}</Text>
+                      <View
+                        key={idx}
+                        style={[
+                          styles.stepContainer,
+                          { borderBottomColor: colors.primary },
+                        ]}
+                      >
+                        <Text style={[styles.stepText, { color: colors.textSoft }]}>
+                          {step}
+                        </Text>
                       </View>
                     ))}
                   </View>

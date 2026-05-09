@@ -9,10 +9,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import logo from "./assets/logo_slogan.png";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+import { useAppTheme } from "./ThemeContext";
 
 export default function WelcomeScreen() {
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
+  const { colors } = useAppTheme();
 
   // Kontrola, či už používateľ onboarding videl
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function WelcomeScreen() {
 
   return (
     // Wrapper kvôli klávesnici (bezpečné aj pri tomto screen-e)
-    <KeyboardWrapper style={styles.mainLayout}>
+    <KeyboardWrapper style={[styles.mainLayout, { backgroundColor: colors.background }]}>
       {/* Safe area zabráni, aby content vošiel do výrezu/notchu */}
       <SafeAreaView style={styles.welcomeSafeArea} edges={["top", "bottom"]}>
         {/* ScrollView zabezpečí, že na menších obrazovkách nič neodtečie mimo */}
@@ -62,12 +64,19 @@ export default function WelcomeScreen() {
           />
 
           {/* Karta s textom a tlačidlami */}
-          <View style={styles.welcomeCardContainer}>
+          <View
+            style={[
+              styles.welcomeCardContainer,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
             {/* Nadpis */}
-            <Text style={styles.welcomeTitle}>Vitaj u nás!</Text>
+            <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+              Vitaj u nás!
+            </Text>
 
             {/* Popis aplikácie */}
-            <Text style={styles.welcomeText}>
+            <Text style={[styles.welcomeText, { color: colors.textSoft }]}>
               Míňaj menej jedla, jedz múdrejšie.
               {"\n\n"}
               Naskenuj svoje potraviny, objav recepty z toho, čo máš doma, a

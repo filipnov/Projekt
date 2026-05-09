@@ -23,6 +23,7 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { scheduleExpirationNotificationForProduct } from "./notifications";
 import { updateTotalsForDate } from "./dailyTotalsStorage";
+import { useAppTheme } from "./ThemeContext";
 
 const SERVER_URL = "https://app.bitewise.it.com";
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
@@ -38,6 +39,7 @@ export default function CameraScreen() {
     return `${yyyy}-${mm}-${dd}`;
   };
   const navigation = useNavigation();
+  const { colors, isDark } = useAppTheme();
   const [permission, requestPermission] = useCameraPermissions();
   const [showContent, setShowContent] = useState(false);
   const [lookupMode, setLookupMode] = useState("search");
@@ -63,6 +65,16 @@ export default function CameraScreen() {
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [awaitingExpirationDate, setAwaitingExpirationDate] = useState(false);
+  const themedInputStyle = {
+    backgroundColor: colors.inputBackground,
+    borderColor: colors.inputBorder,
+    color: colors.text,
+  };
+  const themedPanelStyle = {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+  };
   useEffect(() => {
     AsyncStorage.getItem("isPer100g").then((storedValue) => {
       if (storedValue !== null) setIsPer100g(JSON.parse(storedValue));
@@ -422,16 +434,20 @@ export default function CameraScreen() {
     if (!showContent || productData) return null;
 
     return (
-      <KeyboardWrapper scroll={false} style={styles.manualAddContainer}>
-        <Text style={styles.manualAddText}>
+      <KeyboardWrapper
+        scroll={false}
+        style={[styles.manualAddContainer, themedPanelStyle]}
+      >
+        <Text style={[styles.manualAddText, { color: colors.text }]}>
           Zadajte EAN pre pridanie produktu.
         </Text>
 
         <TextInput
-          style={styles.manualAddInput}
+          style={[styles.manualAddInput, themedInputStyle]}
           value={code}
           onChangeText={setCode}
           keyboardType="numeric"
+          placeholderTextColor={colors.placeholder}
         />
 
         <Pressable
@@ -450,7 +466,17 @@ export default function CameraScreen() {
     if (productData) return null;
 
     return (
-      <View style={styles.lookupModeSwitch}>
+      <View
+        style={[
+          styles.lookupModeSwitch,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderWidth: 1,
+            elevation: isDark ? 0 : 5,
+          },
+        ]}
+      >
         <Pressable
           onPress={() => changeLookupMode("scan")}
           style={[
@@ -461,6 +487,7 @@ export default function CameraScreen() {
           <Text
             style={[
               styles.lookupModeText,
+              { color: colors.text },
               lookupMode === "scan" && styles.lookupModeTextActive,
             ]}
           >
@@ -477,6 +504,7 @@ export default function CameraScreen() {
           <Text
             style={[
               styles.lookupModeText,
+              { color: colors.text },
               lookupMode === "search" && styles.lookupModeTextActive,
             ]}
           >
@@ -498,7 +526,13 @@ export default function CameraScreen() {
       <Pressable
         key={key}
         onPress={() => selectSearchProduct(product)}
-        style={styles.productSearchResult}
+        style={[
+          styles.productSearchResult,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
+        ]}
       >
         {image ? (
           <Image
@@ -507,21 +541,48 @@ export default function CameraScreen() {
             resizeMode="contain"
           />
         ) : (
-          <View style={styles.productSearchImagePlaceholder}>
-            <Text style={styles.productSearchImagePlaceholderText}>?</Text>
+          <View
+            style={[
+              styles.productSearchImagePlaceholder,
+              { backgroundColor: colors.surfaceAlt },
+            ]}
+          >
+            <Text
+              style={[
+                styles.productSearchImagePlaceholderText,
+                { color: colors.mutedText },
+              ]}
+            >
+              ?
+            </Text>
           </View>
         )}
         <View style={styles.productSearchResultTextBox}>
-          <Text style={styles.productSearchResultName} numberOfLines={2}>
+          <Text
+            style={[styles.productSearchResultName, { color: colors.text }]}
+            numberOfLines={2}
+          >
             {title}
           </Text>
           {!!brand && (
-            <Text style={styles.productSearchResultMeta} numberOfLines={1}>
+            <Text
+              style={[
+                styles.productSearchResultMeta,
+                { color: colors.mutedText },
+              ]}
+              numberOfLines={1}
+            >
               {brand}
             </Text>
           )}
           {!!quantity && (
-            <Text style={styles.productSearchResultMeta} numberOfLines={1}>
+            <Text
+              style={[
+                styles.productSearchResultMeta,
+                { color: colors.mutedText },
+              ]}
+              numberOfLines={1}
+            >
               {quantity}
             </Text>
           )}
@@ -540,17 +601,20 @@ export default function CameraScreen() {
         contentContainerStyle={styles.productSearchKeyboardContent}
         keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
-        <View style={styles.productSearchContainer}>
-          <Text style={styles.manualAddText}>Vyhľadajte produkt podľa názvu.</Text>
+        <View style={[styles.productSearchContainer, themedPanelStyle]}>
+          <Text style={[styles.manualAddText, { color: colors.text }]}>
+            Vyhľadajte produkt podľa názvu.
+          </Text>
 
           <TextInput
-            style={styles.productSearchInput}
+            style={[styles.productSearchInput, themedInputStyle]}
             value={searchQuery}
             onChangeText={(value) => {
               setSearchQuery(value);
               setSearchError("");
             }}
             placeholder="napr. horalky"
+            placeholderTextColor={colors.placeholder}
             returnKeyType="search"
             onSubmitEditing={searchProductsByName}
           />
@@ -563,7 +627,9 @@ export default function CameraScreen() {
           </Pressable>
 
           {!!searchError && (
-            <Text style={styles.productSearchError}>{searchError}</Text>
+            <Text style={[styles.productSearchError, { color: colors.danger }]}>
+              {searchError}
+            </Text>
           )}
         </View>
 
@@ -592,8 +658,18 @@ export default function CameraScreen() {
   };
 
   const renderSearchBackground = () => (
-    <View style={styles.productSearchBackground}>
-      <View style={styles.productSearchBackgroundBand} />
+    <View
+      style={[
+        styles.productSearchBackground,
+        { backgroundColor: colors.dashboardBackground },
+      ]}
+    >
+      <View
+        style={[
+          styles.productSearchBackgroundBand,
+          { backgroundColor: isDark ? colors.surfaceAlt : "#d8f0dc" },
+        ]}
+      />
     </View>
   );
 
@@ -602,16 +678,28 @@ export default function CameraScreen() {
 
     if (!permission) {
       return (
-        <View style={styles.cameraPermissionContainer}>
-          <Text style={styles.cameraPermissionText}>Načítavam oprávnenia...</Text>
+        <View
+          style={[
+            styles.cameraPermissionContainer,
+            { backgroundColor: colors.dashboardBackground },
+          ]}
+        >
+          <Text style={[styles.cameraPermissionText, { color: colors.text }]}>
+            Načítavam oprávnenia...
+          </Text>
         </View>
       );
     }
 
     if (!permission.granted) {
       return (
-        <View style={styles.cameraPermissionContainer}>
-          <Text style={styles.cameraPermissionText}>
+        <View
+          style={[
+            styles.cameraPermissionContainer,
+            { backgroundColor: colors.dashboardBackground },
+          ]}
+        >
+          <Text style={[styles.cameraPermissionText, { color: colors.text }]}>
             Táto aplikácia potrebuje prístup ku kamere.
           </Text>
           <Button title="Povoliť kameru" onPress={requestPermission} />
@@ -719,22 +807,24 @@ export default function CameraScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.dashboardBackground }}>
       {/* 🔄 SPINNER – VŽDY NAD VŠETKÝM */}
       <Modal visible={loading} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.generatingModalContainer}>
-            <ActivityIndicator size="large" color="hsla(129,56%,43%,1)" />
-            <Text style={styles.generatingModalTitle}>Hľadám produkt…</Text>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.generatingModalContainer, themedPanelStyle]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[styles.generatingModalTitle, { color: colors.text }]}>
+              Hľadám produkt…
+            </Text>
           </View>
         </View>
       </Modal>
       {/* ❌ PRODUKT NENÁJDENÝ */}
       <Modal visible={notFound} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.generatingModalContainer}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.generatingModalContainer, themedPanelStyle]}>
             <Text
-              style={{ fontSize: 18, fontWeight: "bold", color: "#c62828" }}
+              style={{ fontSize: 18, fontWeight: "bold", color: colors.danger }}
             >
               Produkt nenájdený
             </Text>
@@ -762,10 +852,19 @@ export default function CameraScreen() {
 
         {!productData && lookupMode === "scan" && (
           <Pressable
-            style={styles.manualAddButton}
+            style={({ pressed }) => [
+              styles.manualAddButton,
+              {
+                backgroundColor: pressed ? colors.surfacePressed : colors.surface,
+                borderColor: colors.border,
+                borderWidth: 1,
+              },
+            ]}
             onPress={() => setShowContent((prev) => !prev)}
           >
-            <Text style={styles.manualAddButtonText}>Zadať manuálne</Text>
+            <Text style={[styles.manualAddButtonText, { color: colors.text }]}>
+              Zadať manuálne
+            </Text>
           </Pressable>
         )}
 
@@ -774,7 +873,9 @@ export default function CameraScreen() {
             style={{
               // maxHeight: 450,
               marginBottom: 100,
-              backgroundColor: "#fff",
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderWidth: 1,
               borderRadius: 10,
               padding: 10,
               width: 300,
@@ -785,7 +886,13 @@ export default function CameraScreen() {
           >
             {lookupMode === "search" && searchResults.length > 0 && (
               <Pressable
-                style={styles.backToSearchResultsButton}
+                style={[
+                  styles.backToSearchResultsButton,
+                  {
+                    backgroundColor: colors.surfaceAlt,
+                    borderColor: colors.primary,
+                  },
+                ]}
                 onPress={returnToSearchResults}
               >
                 <Text style={styles.backToSearchResultsButtonText}>
@@ -795,7 +902,12 @@ export default function CameraScreen() {
             )}
 
             <Text
-              style={{ fontSize: 18, fontWeight: "bold", textAlign: "center" }}
+              style={{
+                color: colors.text,
+                fontSize: 18,
+                fontWeight: "bold",
+                textAlign: "center",
+              }}
             >
               {productData.name}
             </Text>
@@ -809,13 +921,16 @@ export default function CameraScreen() {
 
             {awaitingQuantity ? (
               <KeyboardWrapper scroll={false} style={{ marginTop: 10 }}>
-                <Text>Zadajte hmotnosť produktu (g) :</Text>
+                <Text style={{ color: colors.text }}>
+                  Zadajte hmotnosť produktu (g) :
+                </Text>
 
                 <TextInput
-                  style={styles.manualAddInput}
+                  style={[styles.manualAddInput, themedInputStyle]}
                   value={quantityInput}
                   onChangeText={setQuantityInput}
                   placeholder="50"
+                  placeholderTextColor={colors.placeholder}
                   keyboardType="numeric"
                 />
 
@@ -843,7 +958,9 @@ export default function CameraScreen() {
               </KeyboardWrapper>
             ) : (
               !awaitingExpirationDate && (
-                <Text>Hmotnosť: {productData.quantity} g</Text>
+                <Text style={{ color: colors.text }}>
+                  Hmotnosť: {productData.quantity} g
+                </Text>
               )
             )}
 
@@ -893,7 +1010,7 @@ export default function CameraScreen() {
                     unit: "g",
                   },
                 ].map((row) => (
-                  <Text key={row.label}>
+                  <Text key={row.label} style={{ color: colors.text }}>
                     {showNutriValues && isPer100g
                       ? `${row.label} (100g): ${row.per100 ?? "N/A"} ${row.unit}`
                       : `${row.label}: ${row.total ?? "N/A"} ${row.unit}`}
@@ -944,9 +1061,18 @@ export default function CameraScreen() {
                   // borderTopColor: "#eee",
                 }}
               >
-                <View style={{ backgroundColor: "#eee", borderRadius: 15, paddingTop: 10 }}>
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceAlt,
+                    borderColor: colors.border,
+                    borderRadius: 15,
+                    borderWidth: 1,
+                    paddingTop: 10,
+                  }}
+                >
                   <Text
                     style={{
+                      color: colors.text,
                       fontWeight: "bold",
                       textAlign: "center",
                       fontSize: 17,

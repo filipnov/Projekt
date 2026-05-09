@@ -17,6 +17,7 @@ import arrow from "./assets/left_arrow.png";
 import { useNavigation } from "@react-navigation/native";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+import { useAppTheme } from "./ThemeContext";
 
 const SERVER = "https://app.bitewise.it.com";
 const UPDATE_URL = `${SERVER}/api/updateProfile`;
@@ -52,6 +53,7 @@ const ACTIVITY_OPTIONS = [
 
 export default function ProfileCompletition() {
   const navigation = useNavigation();
+  const { colors, isDark } = useAppTheme();
 
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
@@ -141,7 +143,7 @@ export default function ProfileCompletition() {
   // Moderný štýl
   const containerStyle = {
     flex: 1,
-    backgroundColor: "hsla(0, 0%, 98%, 1)",
+    backgroundColor: colors.background,
   };
 
   const headerStyle = {
@@ -174,55 +176,55 @@ export default function ProfileCompletition() {
   const screenTitleStyle = {
     fontSize: 26,
     fontWeight: "900",
-    color: "hsla(0, 0%, 15%, 1)",
+    color: colors.text,
   };
 
   const subtitleStyle = {
     fontSize: 13,
-    color: "hsla(0, 0%, 50%, 1)",
+    color: colors.mutedText,
     marginTop: 2,
     fontWeight: "500",
   };
 
   const cardStyle = {
-    backgroundColor: "white",
+    backgroundColor: colors.surface,
     marginHorizontal: 12,
     marginBottom: 12,
     borderRadius: 16,
     padding: 14,
-    elevation: 1,
+    elevation: isDark ? 0 : 1,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: colors.border,
   };
 
   const cardHeaderStyle = {
     fontSize: 15,
     fontWeight: "700",
-    color: "hsla(0, 0%, 15%, 1)",
+    color: colors.text,
     marginBottom: 14,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(129, 190, 95, 0.2)",
+    borderBottomColor: colors.border,
   };
 
   const inputLabelStyle = {
     fontSize: 14,
     fontWeight: "700",
-    color: "hsla(0, 0%, 15%, 1)",
+    color: colors.text,
     marginTop: 10,
     marginBottom: 6,
   };
 
   const modernTextInputStyle = {
-    backgroundColor: "rgba(129, 190, 95, 0.05)",
+    backgroundColor: colors.inputBackground,
     borderWidth: 1.5,
-    borderColor: "rgba(129, 190, 95, 0.3)",
+    borderColor: colors.inputBorder,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
     fontWeight: "500",
-    color: "hsla(0, 0%, 15%, 1)",
+    color: colors.text,
   };
 
   const buttonRowStyle = {
@@ -239,22 +241,22 @@ export default function ProfileCompletition() {
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: isSelected ? color : "rgba(0, 0, 0, 0.05)",
+    backgroundColor: isSelected ? color : colors.surfaceAlt,
     borderWidth: isSelected ? 0 : 1.5,
-    borderColor: isSelected ? color : "rgba(0, 0, 0, 0.1)",
+    borderColor: isSelected ? color : colors.border,
     elevation: isSelected ? 1 : 0,
   });
 
   const modernButtonTextStyle = (isSelected) => ({
-    color: isSelected ? "white" : "hsla(0, 0%, 20%, 1)",
+    color: isSelected ? "white" : colors.text,
     fontWeight: isSelected ? "700" : "600",
     fontSize: 13,
   });
 
   const selectButtonStyle = {
-    backgroundColor: "rgba(129, 190, 95, 0.08)",
+    backgroundColor: colors.primarySoft,
     borderWidth: 1.5,
-    borderColor: "rgba(129, 190, 95, 0.4)",
+    borderColor: colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -264,7 +266,7 @@ export default function ProfileCompletition() {
   };
 
   const primaryButtonStyle = {
-    backgroundColor: "hsla(129, 56%, 43%, 1)",
+    backgroundColor: colors.primary,
     borderRadius: 14,
     paddingVertical: 12,
     marginHorizontal: 12,
@@ -316,7 +318,7 @@ export default function ProfileCompletition() {
             value={height}
             onChangeText={setHeight}
             keyboardType="numeric"
-            placeholderTextColor="rgba(0, 0, 0, 0.3)"
+            placeholderTextColor={colors.placeholder}
           />
 
           <Text style={inputLabelStyle}>Váha (kg)</Text>
@@ -326,7 +328,7 @@ export default function ProfileCompletition() {
             value={weight}
             onChangeText={setWeight}
             keyboardType="numeric"
-            placeholderTextColor="rgba(0, 0, 0, 0.3)"
+            placeholderTextColor={colors.placeholder}
           />
 
           <Text style={inputLabelStyle}>Vek (rokov)</Text>
@@ -336,7 +338,7 @@ export default function ProfileCompletition() {
             value={age}
             onChangeText={setAge}
             keyboardType="numeric"
-            placeholderTextColor="rgba(0, 0, 0, 0.3)"
+            placeholderTextColor={colors.placeholder}
           />
         </View>
 
@@ -374,13 +376,13 @@ export default function ProfileCompletition() {
             onPress={() => setActivityModalVisible(true)}
           >
             <Text
-              style={{ color: "hsla(0, 0%, 15%, 1)", fontWeight: "600", fontSize: 15 }}
+              style={{ color: colors.text, fontWeight: "600", fontSize: 15 }}
             >
               {selectedActivity.label} →
             </Text>
             <Text
               style={{
-                color: "hsla(0, 0%, 50%, 1)",
+                color: colors.mutedText,
                 fontSize: 12,
                 marginTop: 4,
                 fontWeight: "500",
@@ -447,12 +449,13 @@ export default function ProfileCompletition() {
 
       {/* Activity Modal */}
       <Modal visible={activityModalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
           <View
             style={[
               styles.modalCard,
               {
-                backgroundColor: "white",
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
                 borderRadius: 20,
                 maxHeight: "85%",
               },
@@ -464,7 +467,7 @@ export default function ProfileCompletition() {
                 style={{
                   fontSize: 18,
                   fontWeight: "700",
-                  color: "hsla(0, 0%, 15%, 1)",
+                  color: colors.text,
                 }}
               >
                 Vyber úroveň aktivity
@@ -472,7 +475,7 @@ export default function ProfileCompletition() {
               <Text
                 style={{
                   fontSize: 12,
-                  color: "hsla(0, 0%, 50%, 1)",
+                  color: colors.mutedText,
                   marginTop: 4,
                 }}
               >
@@ -492,11 +495,11 @@ export default function ProfileCompletition() {
                     paddingVertical: 12,
                     backgroundColor:
                       selectedActivity?.label === option.label
-                        ? "rgba(129, 190, 95, 0.1)"
+                        ? colors.primarySoft
                         : "transparent",
                     borderRadius: 12,
                     borderWidth: selectedActivity?.label === option.label ? 1.5 : 0,
-                    borderColor: "rgba(129, 190, 95, 0.3)",
+                    borderColor: colors.border,
                   }}
                   onPress={() => {
                     setSelectedActivity(option);
@@ -512,7 +515,7 @@ export default function ProfileCompletition() {
                       borderColor:
                         selectedActivity?.label === option.label
                           ? "hsla(129, 56%, 43%, 1)"
-                          : "hsla(0, 0%, 50%, 1)",
+                          : colors.mutedText,
                       justifyContent: "center",
                       alignItems: "center",
                       marginRight: 12,
@@ -536,7 +539,7 @@ export default function ProfileCompletition() {
                       style={{
                         fontWeight: "700",
                         fontSize: 15,
-                        color: "hsla(0, 0%, 15%, 1)",
+                        color: colors.text,
                         marginBottom: 2,
                       }}
                     >
@@ -544,7 +547,7 @@ export default function ProfileCompletition() {
                     </Text>
                     <Text
                       style={{
-                        color: "hsla(0, 0%, 50%, 1)",
+                        color: colors.mutedText,
                         fontSize: 12,
                         fontWeight: "500",
                         lineHeight: 16,

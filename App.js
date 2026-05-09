@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StatusBar } from "expo-status-bar";
 import HomeScreen from './HomeScreen';
 import RegistrationScreen from './RegistrationScreen';
 import Dashboard from './Dashboard/Dashboard';
@@ -9,11 +14,26 @@ import ResetPass from "./ResetPass";
 import ProfileCompletition from './ProfileCompletition';    
 import CameraScreen from './CameraScreen';
 import WelcomeScreen from "./WelcomeScreen";
+import { AppThemeProvider, useAppTheme } from "./ThemeContext";
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+function AppNavigator() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { colors, isDark } = useAppTheme();
+
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.primary,
+    },
+  };
 
   // ---- Deeplink konfigurácia ----
   const linking = {
@@ -27,7 +47,8 @@ export default function App() {
   };
 
   return (
-    <NavigationContainer linking={linking} fallback={<></>}>
+    <NavigationContainer linking={linking} fallback={<></>} theme={navigationTheme}>
+      <StatusBar style={isDark ? "light" : "dark"} backgroundColor={colors.background} />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="WelcomeScreen" component={WelcomeScreen}/>
         <Stack.Screen name="HomeScreen">
@@ -52,5 +73,13 @@ export default function App() {
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <AppThemeProvider>
+      <AppNavigator />
+    </AppThemeProvider>
   );
 }

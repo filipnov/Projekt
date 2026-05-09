@@ -20,6 +20,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import styles from "../../styles";
 import { removeExpirationNotificationForProduct } from "../../notifications";
 import { updateTotalsForDate } from "../../dailyTotalsStorage";
+import { useAppTheme } from "../../ThemeContext";
 
 // Základná URL servera – všetky API volania idú cez tento hostname.
 const SERVER_URL = "https://app.bitewise.it.com";
@@ -66,6 +67,7 @@ const buildExpirationKey = (product) => {
 };
 
 export default function PantryTab() {
+  const { colors } = useAppTheme();
   // Email prihláseného používateľa (načítaný z AsyncStorage).
   const [email, setEmail] = useState(null);
   // Lokálny zoznam všetkých produktov v špajzi.
@@ -577,16 +579,27 @@ export default function PantryTab() {
 
     return (
       // Polopriesvitné pozadie modálu.
-      <View style={styles.pantryOverlay}>
+      <View style={[styles.pantryOverlay, { backgroundColor: colors.overlay }]}>
         {/* Samotné okno modálu */}
-        <View style={styles.pantryWindow}>
+        <View
+          style={[
+            styles.pantryWindow,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+              borderWidth: 1,
+            },
+          ]}
+        >
           {loadingWindow ? (
             // Loading stav.
             <ActivityIndicator size="large" />
           ) : !product ? (
             // Keď produkt neexistuje (napr. vymazaný).
             <>
-              <Text style={styles.pantryTitle}>Product not found</Text>
+              <Text style={[styles.pantryTitle, { color: colors.text }]}>
+                Product not found
+              </Text>
               <Pressable onPress={close} style={styles.pantryCloseButton}>
                 <Text style={styles.pantryCloseButtonText}>Close</Text>
               </Pressable>
@@ -594,7 +607,9 @@ export default function PantryTab() {
           ) : (
             <>
               {/* Názov produktu */}
-              <Text style={styles.pantryWindowTitle}>{product.name}</Text>
+              <Text style={[styles.pantryWindowTitle, { color: colors.text }]}>
+                {product.name}
+              </Text>
               <Image
                 source={{ uri: product.image }}
                 style={styles.pantryModalImage}
@@ -609,8 +624,8 @@ export default function PantryTab() {
                     styles.pantryInfoRowExpiration,
                   ]}
                 >
-                  <Text style={styles.pantryNutritionLabel}>Exspirácia:</Text>
-                  <Text>{expirationLabel ?? "—"}</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Exspirácia:</Text>
+                  <Text style={{ color: colors.text }}>{expirationLabel ?? "—"}</Text>
                 </View>
               )}
 
@@ -618,14 +633,14 @@ export default function PantryTab() {
                 style={[styles.pantryInfoRowBase, styles.pantryInfoRowCount]}
               >
                 {/* Počet kusov v špajzi */}
-                <Text style={styles.pantryNutritionLabel}>Počet v špajzi:</Text>
-                <Text>{count ?? 1}</Text>
+                <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Počet v špajzi:</Text>
+                <Text style={{ color: colors.text }}>{count ?? 1}</Text>
               </View>
 
               {/* Karta s výživovými hodnotami */}
-              <View style={styles.pantryNutritionCard}>
+              <View style={[styles.pantryNutritionCard, { backgroundColor: colors.primarySoft }]}>
                 <View style={styles.pantryNutritionRow}>
-                  <Text style={styles.pantryNutritionHeaderText}>
+                  <Text style={[styles.pantryNutritionHeaderText, { color: colors.text }]}>
                     {isPer100g ? "Hodnoty na 100g" : "Hodnoty na celý produkt"}
                   </Text>
                 </View>
@@ -635,8 +650,8 @@ export default function PantryTab() {
                     styles.pantryNutritionValueRowGap3,
                   ]}
                 >
-                  <Text style={styles.pantryNutritionLabel}>Kalórie: {""}</Text>
-                  <Text>{caloriesValue} kcal</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Kalórie: {""}</Text>
+                  <Text style={{ color: colors.text }}>{caloriesValue} kcal</Text>
                 </View>
                 <View
                   style={[
@@ -644,28 +659,28 @@ export default function PantryTab() {
                     styles.pantryNutritionValueRowGap1,
                   ]}
                 >
-                  <Text style={styles.pantryNutritionLabel}>Bielkoviny: </Text>
-                  <Text>{proteinsValue} g</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Bielkoviny: </Text>
+                  <Text style={{ color: colors.text }}>{proteinsValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={styles.pantryNutritionLabel}>Sacharidy:</Text>
-                  <Text>{carbsValue} g</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Sacharidy:</Text>
+                  <Text style={{ color: colors.text }}>{carbsValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={styles.pantryNutritionLabel}>Tuky:</Text>
-                  <Text>{fatValue} g</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Tuky:</Text>
+                  <Text style={{ color: colors.text }}>{fatValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={styles.pantryNutritionLabel}>Vlákniny:</Text>
-                  <Text>{fiberValue} g</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Vlákniny:</Text>
+                  <Text style={{ color: colors.text }}>{fiberValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={styles.pantryNutritionLabel}>Cukry:</Text>
-                  <Text>{sugarValue} g</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Cukry:</Text>
+                  <Text style={{ color: colors.text }}>{sugarValue} g</Text>
                 </View>
                 <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={styles.pantryNutritionLabel}>Soľ:</Text>
-                  <Text>{saltValue} g</Text>
+                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Soľ:</Text>
+                  <Text style={{ color: colors.text }}>{saltValue} g</Text>
                 </View>
               </View>
               {/* Akcia: zjesť (odstrániť) */}
@@ -710,11 +725,25 @@ export default function PantryTab() {
       </Modal>
 
       {/* Hlavný scrollovateľný obsah */}
-      <ScrollView style={styles.pantryMealContainer}>
+      <ScrollView
+        style={[
+          styles.pantryMealContainer,
+          { backgroundColor: colors.dashboardBackground },
+        ]}
+      >
         {/* Sekcia naskenovaných položiek */}
-        <Text style={styles.pantrySectionTitle}>Naskenované položky</Text>
+        <Text style={[styles.pantrySectionTitle, { color: colors.text }]}>
+          Naskenované položky
+        </Text>
         {!hasScannedItems && (
-          <Text style={styles.pantryEmptyMessage}>Nemáš naskenované položky.</Text>
+          <Text
+            style={[
+              styles.pantryEmptyMessage,
+              { backgroundColor: colors.surfaceAlt, color: colors.mutedText },
+            ]}
+          >
+            Nemáš naskenované položky.
+          </Text>
         )}
         <View style={styles.pantryRow}>
           {groupedMealBoxes.map((group) => (
@@ -723,14 +752,24 @@ export default function PantryTab() {
         </View>
 
         {/* Sekcia vlastných položiek */}
-        <Text style={styles.pantrySectionTitle}>Vlastné položky</Text>
+        <Text style={[styles.pantrySectionTitle, { color: colors.text }]}>
+          Vlastné položky
+        </Text>
         {/* Riadok s inputom a tlačidlom pridania */}
         <View style={styles.pantryCustomInputRow}>
           <TextInput
             placeholder="Názov potraviny"
             value={customName}
             onChangeText={setCustomName}
-            style={styles.pantryCustomInput}
+            style={[
+              styles.pantryCustomInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
+            placeholderTextColor={colors.placeholder}
           />
           <Pressable
             onPress={addCustomMealBox}
@@ -742,15 +781,28 @@ export default function PantryTab() {
         </View>
 
         {/* Zoznam vlastných položiek */}
-        <View style={styles.pantryCustomList}>
+        <View
+          style={[
+            styles.pantryCustomList,
+            { backgroundColor: colors.surfaceAlt },
+          ]}
+        >
           {!hasCustomItems ? (
-            <Text style={styles.pantryItemText}>
+            <Text style={[styles.pantryItemText, { color: colors.mutedText }]}>
               Zatiaľ nemáš vlastné položky.
             </Text>
           ) : (
             customMealBoxes.map((item) => (
-              <View key={item.productId} style={styles.pantryCustomItemRow}>
-                <Text style={styles.pantryCustomItemText}>{item.name}</Text>
+              <View
+                key={item.productId}
+                style={[
+                  styles.pantryCustomItemRow,
+                  { borderBottomColor: colors.border },
+                ]}
+              >
+                <Text style={[styles.pantryCustomItemText, { color: colors.text }]}>
+                  {item.name}
+                </Text>
                 <Pressable
                   onPress={() => removeCustomMealBox(item.productId)}
                   style={styles.pantryCustomRemove}

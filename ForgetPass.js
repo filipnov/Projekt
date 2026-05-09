@@ -13,10 +13,12 @@ import logo from "./assets/logo_name.png";
 import arrow from "./assets/left_arrow.png";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+import { useAppTheme } from "./ThemeContext";
 
 export default function PasswordForgetScreen() {
   const SERVER_URL = "https://app.bitewise.it.com";
   const navigation = useNavigation();
+  const { colors } = useAppTheme();
 
   const [email, setEmail] = useState("");
 
@@ -41,12 +43,21 @@ export default function PasswordForgetScreen() {
   };
 
   return (
-    <KeyboardWrapper style={styles.authMainLayout}>
+    <KeyboardWrapper
+      style={[styles.authMainLayout, { backgroundColor: colors.authBackground }]}
+    >
       <Image style={styles.authProfileAvatar} source={logo} />
 
-      <View style={styles.authCardContainer}>
-        <Text style={styles.authTitleText}>Zabudnuté heslo?</Text>
-        <Text style={styles.authText}>
+      <View
+        style={[
+          styles.authCardContainer,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.authTitleText, { color: colors.text }]}>
+          Zabudnuté heslo?
+        </Text>
+        <Text style={[styles.authText, { color: colors.textSoft }]}>
           Zadaj e-mail použitý pri registrácii a pomocou neho si vytvor nové heslo!
         </Text>
 
@@ -54,7 +65,15 @@ export default function PasswordForgetScreen() {
           placeholder="e-mail"
           value={email}
           onChangeText={setEmail}
-          style={styles.authTextInput}
+          style={[
+            styles.authTextInput,
+            {
+              backgroundColor: colors.inputBackground,
+              borderColor: colors.inputBorder,
+              color: colors.text,
+            },
+          ]}
+          placeholderTextColor={colors.placeholder}
         />
 
         <View style={styles.buttonLayout}>

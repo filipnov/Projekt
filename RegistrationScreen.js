@@ -21,10 +21,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { hashPassword } from "./passwordUtils";
+import { useAppTheme } from "./ThemeContext";
 
 export default function RegistrationScreen() {
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
+  const { colors, isDark } = useAppTheme();
 
   // Stav formulára (vstupy používateľa)
   const [email, setEmail] = useState("");
@@ -128,16 +130,23 @@ export default function RegistrationScreen() {
 
   return (
     <KeyboardWrapper
-      style={styles.loginScreen}
+      style={[styles.loginScreen, { backgroundColor: colors.authBackground }]}
       contentContainerStyle={styles.registerScrollContent}
       safeArea
     >
       <Modal visible={loading} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={styles.generatingModalContainer}>
+          <View
+            style={[
+              styles.generatingModalContainer,
+              { backgroundColor: colors.surface },
+            ]}
+          >
             <ActivityIndicator size="large" color="hsla(129, 56%, 43%, 1)" />
-            <Text style={styles.generatingModalTitle}>Registrujem účet...</Text>
-            <Text style={styles.generatingModalSubtitle}>
+            <Text style={[styles.generatingModalTitle, { color: colors.text }]}>
+              Registrujem účet...
+            </Text>
+            <Text style={[styles.generatingModalSubtitle, { color: colors.mutedText }]}>
               Prosím počkaj chvíľu
             </Text>
           </View>
@@ -146,22 +155,42 @@ export default function RegistrationScreen() {
 
       <View style={styles.registerHero}>
         <Image style={styles.registerLogo} source={logo} resizeMode="contain" />
-        <Text style={styles.loginHeroTitle}>Vytvor účet</Text>
-        <Text style={styles.loginHeroSubtitle}>
+        <Text style={[styles.loginHeroTitle, { color: colors.text }]}>Vytvor účet</Text>
+        <Text style={[styles.loginHeroSubtitle, { color: colors.mutedText }]}>
           Začni sledovať špajzu, jedlá a svoje nutričné ciele.
         </Text>
       </View>
 
-      <View style={styles.registerCard}>
-        <Text style={styles.loginCardTitle}>Registrácia</Text>
-        <Text style={styles.loginCardSubtitle}>Vyplň základné údaje.</Text>
+      <View
+        style={[
+          styles.registerCard,
+          {
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            elevation: isDark ? 0 : 8,
+          },
+        ]}
+      >
+        <Text style={[styles.loginCardTitle, { color: colors.text }]}>
+          Registrácia
+        </Text>
+        <Text style={[styles.loginCardSubtitle, { color: colors.mutedText }]}>
+          Vyplň základné údaje.
+        </Text>
 
         <View style={styles.loginField}>
-          <Text style={styles.loginFieldLabel}>E-mail</Text>
+          <Text style={[styles.loginFieldLabel, { color: colors.textSoft }]}>E-mail</Text>
           <AutoShrinkTextInput
             placeholder="tvoj@email.sk"
-            placeholderTextColor="#9ca3af"
-            style={styles.loginTextInput}
+            placeholderTextColor={colors.placeholder}
+            style={[
+              styles.loginTextInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -175,11 +204,18 @@ export default function RegistrationScreen() {
         </View>
 
         <View style={styles.loginField}>
-          <Text style={styles.loginFieldLabel}>Prezývka</Text>
+          <Text style={[styles.loginFieldLabel, { color: colors.textSoft }]}>Prezývka</Text>
           <AutoShrinkTextInput
             placeholder="ako ťa máme volať"
-            placeholderTextColor="#9ca3af"
-            style={styles.loginTextInput}
+            placeholderTextColor={colors.placeholder}
+            style={[
+              styles.loginTextInput,
+              {
+                backgroundColor: colors.inputBackground,
+                borderColor: colors.inputBorder,
+                color: colors.text,
+              },
+            ]}
             value={nick}
             onChangeText={setNick}
             autoCapitalize="words"
@@ -189,12 +225,20 @@ export default function RegistrationScreen() {
         </View>
 
         <View style={styles.loginField}>
-          <Text style={styles.loginFieldLabel}>Heslo</Text>
+          <Text style={[styles.loginFieldLabel, { color: colors.textSoft }]}>Heslo</Text>
           <View style={localStyles.passwordRow}>
             <AutoShrinkTextInput
               placeholder="heslo"
-              placeholderTextColor="#9ca3af"
-              style={[styles.loginTextInput, styles.loginPasswordInput]}
+              placeholderTextColor={colors.placeholder}
+              style={[
+                styles.loginTextInput,
+                styles.loginPasswordInput,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
+                },
+              ]}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -216,12 +260,20 @@ export default function RegistrationScreen() {
         </View>
 
         <View style={styles.loginField}>
-          <Text style={styles.loginFieldLabel}>Zopakuj heslo</Text>
+          <Text style={[styles.loginFieldLabel, { color: colors.textSoft }]}>Zopakuj heslo</Text>
           <View style={localStyles.passwordRow}>
             <AutoShrinkTextInput
               placeholder="heslo znova"
-              placeholderTextColor="#9ca3af"
-              style={[styles.loginTextInput, styles.loginPasswordInput]}
+              placeholderTextColor={colors.placeholder}
+              style={[
+                styles.loginTextInput,
+                styles.loginPasswordInput,
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
+                },
+              ]}
               value={passwordConfirm}
               onChangeText={setPasswordConfirm}
               secureTextEntry={!showPasswordConfirm}
@@ -242,14 +294,22 @@ export default function RegistrationScreen() {
           </View>
         </View>
 
-        <View style={styles.registerConsentRow}>
+        <View
+          style={[
+            styles.registerConsentRow,
+            {
+              backgroundColor: colors.surfaceAlt,
+              borderColor: colors.border,
+            },
+          ]}
+        >
           <Switch
             value={gdprConsent}
             onValueChange={setGdprConsent}
             trackColor={{ false: "#d1d5db", true: "#9adea6" }}
             thumbColor={gdprConsent ? "#2E7D32" : "#f4f3f4"}
           />
-          <Text style={styles.registerConsentText}>
+          <Text style={[styles.registerConsentText, { color: colors.textSoft }]}>
             Súhlasím so spracovaním svojho e-mailu a prezývky na účely
             registrácie a zasielania notifikácií o účte podľa zásad ochrany
             osobných údajov.
@@ -275,12 +335,16 @@ export default function RegistrationScreen() {
           style={({ pressed }) => [
             styles.loginSecondaryButton,
             styles.registerBackButton,
-            pressed && styles.loginSecondaryButtonPressed,
+            {
+              backgroundColor: colors.surfaceAlt,
+              borderColor: colors.primary,
+            },
+            pressed && { backgroundColor: colors.surfacePressed },
           ]}
           onPress={() => !loading && navigation.navigate("HomeScreen")}
           disabled={loading}
         >
-          <Text style={styles.loginSecondaryButtonText}>
+          <Text style={[styles.loginSecondaryButtonText, { color: colors.primary }]}>
             Späť na prihlásenie
           </Text>
         </Pressable>

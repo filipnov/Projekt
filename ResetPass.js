@@ -9,12 +9,14 @@ import arrow from "./assets/left_arrow.png";
 import * as Linking from "expo-linking";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
+import { useAppTheme } from "./ThemeContext";
 
 export default function ResetPasswordScreen() {
   // URL backendu
   const SERVER_URL = "https://app.bitewise.it.com";
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
+  const { colors } = useAppTheme();
 
   // Lokálny stav pre nové heslo a token z linku
   const [newPassword, setNewPassword] = useState("");
@@ -96,19 +98,38 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <KeyboardWrapper style={styles.authMainLayout}>
+    <KeyboardWrapper
+      style={[styles.authMainLayout, { backgroundColor: colors.authBackground }]}
+    >
       <Image style={styles.authProfileAvatar} source={logo} />
 
-      <View style={styles.authCardContainer}>
-        <Text style={styles.authTitleText}>Reset hesla</Text>
-        <Text style={styles.authText}>Zadaj nové heslo a potvrď.</Text>
+      <View
+        style={[
+          styles.authCardContainer,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.authTitleText, { color: colors.text }]}>
+          Reset hesla
+        </Text>
+        <Text style={[styles.authText, { color: colors.textSoft }]}>
+          Zadaj nové heslo a potvrď.
+        </Text>
 
         <TextInput
           placeholder="Nové heslo"
           secureTextEntry
           value={newPassword}
           onChangeText={setNewPassword}
-          style={styles.authTextInput}
+          style={[
+            styles.authTextInput,
+            {
+              backgroundColor: colors.inputBackground,
+              borderColor: colors.inputBorder,
+              color: colors.text,
+            },
+          ]}
+          placeholderTextColor={colors.placeholder}
         />
 
         <View style={styles.buttonLayout}>

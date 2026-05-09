@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import styles from "../../styles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { THEME_OPTIONS, useAppTheme } from "../../ThemeContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -23,9 +24,17 @@ export default function SettingsTab({
   setNick,
 }) {
   const SERVER = "https://app.bitewise.it.com";
+  const {
+    colors,
+    isDark,
+    resolvedTheme,
+    setThemePreference,
+    themePreference,
+  } = useAppTheme();
 
   const [checked100g, setChecked100g] = useState();
   const [checkedExpiration, setCheckedExpiration] = useState();
+  const [themeOptionsExpanded, setThemeOptionsExpanded] = useState(false);
 
   const [nickModalVisible, setNickModalVisible] = useState(false);
   const [currentNick, setCurrentNick] = useState("");
@@ -118,6 +127,8 @@ export default function SettingsTab({
       "dailyConsumption",
       "userEmail",
       "userNick",
+      "userPass",
+      "authProvider",
       "eatenTotals",
       "drunkWater",
       "mealBox",
@@ -130,7 +141,7 @@ export default function SettingsTab({
 
   const settingsContainerStyle = {
     flex: 1,
-    backgroundColor: "hsla(0, 0%, 98%, 1)",
+    backgroundColor: colors.background,
   };
 
   const headerStyle = {
@@ -158,24 +169,24 @@ export default function SettingsTab({
   };
 
   const cardStyle = {
-    backgroundColor: "white",
+    backgroundColor: colors.surface,
     marginHorizontal: 16,
     marginBottom: 20,
     borderRadius: 16,
     padding: 16,
-    elevation: 3,
+    elevation: isDark ? 0 : 3,
     borderWidth: 1,
-    borderColor: "rgba(0, 0, 0, 0.05)",
+    borderColor: colors.border,
   };
 
   const cardHeaderStyle = {
     fontSize: 16,
     fontWeight: "700",
-    color: "hsla(0, 0%, 15%, 1)",
+    color: colors.text,
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(129, 190, 95, 0.2)",
+    borderBottomColor: colors.border,
   };
 
   const settingRowStyle = {
@@ -188,13 +199,79 @@ export default function SettingsTab({
   const settingLabelStyle = {
     fontSize: 15,
     fontWeight: "600",
-    color: "hsla(0, 0%, 20%, 1)",
+    color: colors.text,
   };
 
   const settingDescriptionStyle = {
     fontSize: 12,
-    color: "hsla(0, 0%, 50%, 1)",
+    color: colors.mutedText,
     marginTop: 2,
+  };
+
+  const rowBackground = colors.primarySoft;
+  const rowPressedBackground = isDark
+    ? "rgba(74, 222, 128, 0.18)"
+    : "rgba(129, 190, 95, 0.08)";
+
+  const arrowTextStyle = {
+    fontSize: 18,
+    marginLeft: 10,
+    color: colors.mutedText,
+  };
+  const currentThemeOption =
+    THEME_OPTIONS.find((option) => option.key === themePreference) ||
+    THEME_OPTIONS[0];
+
+  const themeSelectorStyle = {
+    gap: 8,
+    marginBottom: 14,
+  };
+
+  const themeOptionStyle = (isSelected, pressed) => ({
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: isSelected ? colors.primary : colors.border,
+    backgroundColor: isSelected
+      ? colors.primarySoft
+      : pressed
+        ? colors.surfacePressed
+        : colors.surfaceAlt,
+  });
+
+  const themeOptionLabelStyle = (isSelected) => ({
+    fontSize: 14,
+    fontWeight: "800",
+    color: isSelected ? colors.primary : colors.text,
+  });
+
+  const themeOptionDescriptionStyle = {
+    color: colors.mutedText,
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: "600",
+  };
+
+  const themeOptionCheckStyle = (isSelected) => ({
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: isSelected ? colors.primary : colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
+  });
+
+  const themeOptionCheckInnerStyle = {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
   };
 
   return (
@@ -211,8 +288,8 @@ export default function SettingsTab({
               settingRowStyle,
               {
                 backgroundColor: pressed
-                  ? "rgba(129, 190, 95, 0.08)"
-                  : "rgba(129, 190, 95, 0.03)",
+                  ? rowPressedBackground
+                  : rowBackground,
                 paddingHorizontal: 12,
                 borderRadius: 12,
                 marginBottom: 8,
@@ -226,7 +303,7 @@ export default function SettingsTab({
                 Zmení svoje osobné údaje a zdravotné informácie
               </Text>
             </View>
-            <Text style={{ fontSize: 18, marginLeft: 10 }}>→</Text>
+            <Text style={arrowTextStyle}>→</Text>
           </Pressable>
 
           <Pressable
@@ -234,8 +311,8 @@ export default function SettingsTab({
               settingRowStyle,
               {
                 backgroundColor: pressed
-                  ? "rgba(129, 190, 95, 0.08)"
-                  : "rgba(129, 190, 95, 0.03)",
+                  ? rowPressedBackground
+                  : rowBackground,
                 paddingHorizontal: 12,
                 borderRadius: 12,
               },
@@ -251,7 +328,7 @@ export default function SettingsTab({
                 </Text>
               </Text>
             </View>
-            <Text style={{ fontSize: 18, marginLeft: 10 }}>→</Text>
+            <Text style={arrowTextStyle}>→</Text>
           </Pressable>
         </View>
 
@@ -259,12 +336,72 @@ export default function SettingsTab({
         <View style={cardStyle}>
           <Text style={cardHeaderStyle}>🎯 Predvoľby</Text>
 
+          <Pressable
+            style={({ pressed }) => [
+              settingRowStyle,
+              {
+                backgroundColor: pressed ? rowPressedBackground : rowBackground,
+                paddingHorizontal: 12,
+                borderRadius: 12,
+                marginBottom: themeOptionsExpanded ? 8 : 12,
+              },
+            ]}
+            onPress={() => setThemeOptionsExpanded((expanded) => !expanded)}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={settingLabelStyle}>Vzhľad aplikácie</Text>
+              <Text style={settingDescriptionStyle}>
+                {currentThemeOption.label}
+                {currentThemeOption.key === "system"
+                  ? ` (${resolvedTheme === "dark" ? "tmavý" : "svetlý"})`
+                  : ""}
+              </Text>
+            </View>
+            <Text style={arrowTextStyle}>
+              {themeOptionsExpanded ? "▲" : "▼"}
+            </Text>
+          </Pressable>
+
+          {themeOptionsExpanded && (
+            <View style={themeSelectorStyle}>
+              {THEME_OPTIONS.map((option) => {
+                const isSelected = themePreference === option.key;
+                return (
+                  <Pressable
+                    key={option.key}
+                    style={({ pressed }) => [
+                      themeOptionStyle(isSelected, pressed),
+                    ]}
+                    onPress={() => {
+                      setThemePreference(option.key);
+                      setThemeOptionsExpanded(false);
+                    }}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text style={themeOptionLabelStyle(isSelected)}>
+                        {option.label}
+                      </Text>
+                      <Text style={themeOptionDescriptionStyle}>
+                        {option.key === "system"
+                          ? `${option.description} (${resolvedTheme === "dark" ? "tmavý" : "svetlý"})`
+                          : option.description}
+                      </Text>
+                    </View>
+                    <View style={themeOptionCheckStyle(isSelected)}>
+                      {isSelected && <View style={themeOptionCheckInnerStyle} />}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
+
           <View
             style={[
               settingRowStyle,
               {
                 paddingHorizontal: 12,
-                backgroundColor: "rgba(129, 190, 95, 0.03)",
+                backgroundColor: rowBackground,
                 borderRadius: 12,
                 marginBottom: 12,
               },
@@ -289,7 +426,7 @@ export default function SettingsTab({
               settingRowStyle,
               {
                 paddingHorizontal: 12,
-                backgroundColor: "rgba(129, 190, 95, 0.03)",
+                backgroundColor: rowBackground,
                 borderRadius: 12,
               },
             ]}
@@ -318,8 +455,8 @@ export default function SettingsTab({
               settingRowStyle,
               {
                 backgroundColor: pressed
-                  ? "rgba(220, 53, 69, 0.1)"
-                  : "rgba(220, 53, 69, 0.05)",
+                  ? colors.dangerPressed
+                  : colors.dangerSoft,
                 paddingHorizontal: 12,
                 borderRadius: 12,
               },
@@ -330,7 +467,7 @@ export default function SettingsTab({
               <Text
                 style={[
                   settingLabelStyle,
-                  { color: "hsla(0, 73%, 60%, 0.96)" },
+                  { color: colors.danger },
                 ]}
               >
                 Odhlásiť sa
@@ -343,7 +480,7 @@ export default function SettingsTab({
               style={{
                 fontSize: 18,
                 marginLeft: 10,
-                color: "hsla(0, 73%, 60%, 0.96)",
+                color: colors.danger,
               }}
             >
               →
@@ -356,7 +493,7 @@ export default function SettingsTab({
           <Text
             style={{
               fontSize: 12,
-              color: "hsla(0, 0%, 50%, 1)",
+              color: colors.mutedText,
               textAlign: "center",
               fontWeight: "500",
             }}
@@ -368,14 +505,23 @@ export default function SettingsTab({
 
       {/* Nick Change Modal */}
       <Modal visible={nickModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.generatingModalContainer, { borderRadius: 20 }]}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+          <View
+            style={[
+              styles.generatingModalContainer,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                borderRadius: 20,
+              },
+            ]}
+          >
             <View style={{ alignItems: "center", marginBottom: 15 }}>
               <Text style={{ fontSize: 24, marginBottom: 10 }}>✏️</Text>
               <Text
                 style={[
                   styles.generatingModalTitle,
-                  { fontSize: 20, fontWeight: "700" },
+                  { color: colors.text, fontSize: 20, fontWeight: "700" },
                 ]}
               >
                 Zmeniť prezývku
@@ -389,10 +535,15 @@ export default function SettingsTab({
               autoCapitalize="words"
               style={[
                 styles.authTextInput,
-                { marginBottom: 16, borderColor: "hsla(129, 56%, 43%, 0.5)" },
+                {
+                  backgroundColor: colors.inputBackground,
+                  borderColor: colors.inputBorder,
+                  color: colors.text,
+                  marginBottom: 16,
+                },
               ]}
               editable={!nickSaving}
-              placeholderTextColor="rgba(0, 0, 0, 0.3)"
+              placeholderTextColor={colors.placeholder}
             />
 
             <View style={styles.nickModalButtonRow}>
@@ -401,11 +552,11 @@ export default function SettingsTab({
                   pressed
                     ? [
                         styles.nickModalButtonPressed,
-                        { backgroundColor: "hsla(129, 56%, 43%, 0.8)" },
+                        { backgroundColor: colors.primaryPressed },
                       ]
                     : [
                         styles.nickModalButton,
-                        { backgroundColor: "hsla(129, 56%, 43%, 1)" },
+                        { backgroundColor: colors.primary },
                       ]
                 }
                 onPress={() => !nickSaving && saveNick()}
@@ -423,11 +574,11 @@ export default function SettingsTab({
                   pressed
                     ? [
                         styles.nickModalButtonPressed,
-                        { backgroundColor: "rgba(0, 0, 0, 0.08)" },
+                        { backgroundColor: colors.surfacePressed },
                       ]
                     : [
                         styles.nickModalButton,
-                        { backgroundColor: "rgba(0, 0, 0, 0.05)" },
+                        { backgroundColor: colors.surfaceAlt },
                       ]
                 }
                 onPress={() => !nickSaving && setNickModalVisible(false)}
@@ -436,7 +587,7 @@ export default function SettingsTab({
                 <Text
                   style={[
                     styles.nickModalButtonText,
-                    { color: "hsla(0, 0%, 15%, 1)" },
+                    { color: colors.text },
                   ]}
                 >
                   Zrušiť

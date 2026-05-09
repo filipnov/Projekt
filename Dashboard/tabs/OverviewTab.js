@@ -16,6 +16,7 @@ import {
 } from "../../dailyTotalsStorage";
 import styles from "../../styles";
 import plus from "../../assets/plus.png";
+import { useAppTheme } from "../../ThemeContext";
 
 // URL backendu (z tohto servera načítavame dáta)
 const SERVER_URL = "https://app.bitewise.it.com";
@@ -129,6 +130,7 @@ const mergeTotalsPreferRemote = (localTotals, remoteTotals) => {
 };
 
 export default function OverviewTab({ navigation }) {
+  const { colors, isDark } = useAppTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
   const [customWaterMl, setCustomWaterMl] = useState("");
@@ -154,6 +156,37 @@ export default function OverviewTab({ navigation }) {
   const activeDateKeyRef = useRef(null);
   const [loadedDateKey, setLoadedDateKey] = useState(null);
   const [hasTotalsData, setHasTotalsData] = useState(false);
+
+  const themed = {
+    screen: { backgroundColor: colors.dashboardBackground },
+    text: { color: colors.text },
+    textSoft: { color: colors.textSoft },
+    muted: { color: colors.mutedText },
+    subtle: { color: colors.subtleText },
+    surface: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      shadowOpacity: isDark ? 0 : 0.08,
+      elevation: isDark ? 0 : 3,
+    },
+    surfaceAlt: {
+      backgroundColor: colors.surfaceAlt,
+      borderColor: colors.border,
+    },
+    progressTrack: {
+      backgroundColor: isDark ? "#2d3a31" : "#e5e7eb",
+    },
+    modalContent: {
+      backgroundColor: colors.surface,
+      borderColor: colors.border,
+      borderWidth: 1,
+    },
+    input: {
+      backgroundColor: colors.inputBackground,
+      borderColor: colors.inputBorder,
+      color: colors.text,
+    },
+  };
 
   const selectedDateKey = getTodayKey(selectedDate);
   const todayKey = getTodayKey();
@@ -677,8 +710,8 @@ export default function OverviewTab({ navigation }) {
 
   if (!weight || !height || !age) {
     return (
-      <View style={styles.overviewMissingProfileContainer}>
-        <Text style={styles.overviewMissingProfileText}>
+      <View style={[styles.overviewMissingProfileContainer, themed.surface]}>
+        <Text style={[styles.overviewMissingProfileText, themed.text]}>
           Vyplň si svoj profil, aby si videl/-a prehľad!
         </Text>
         <Pressable
@@ -867,7 +900,9 @@ export default function OverviewTab({ navigation }) {
   const renderRangeChart = () => {
     if (!chartConfig.data.length) {
       return (
-        <Text style={styles.overviewChartEmptyText}>Žiadne dáta</Text>
+        <Text style={[styles.overviewChartEmptyText, themed.subtle]}>
+          Žiadne dáta
+        </Text>
       );
     }
     const rangeSuffix = rangeView === "year" ? "mesiacov" : "dni";
@@ -892,25 +927,35 @@ export default function OverviewTab({ navigation }) {
     return (
       <View>
         <View style={styles.overviewChartMetaRow}>
-          <Text style={styles.overviewChartMetaLabel}>{rangeMeta}</Text>
-          <Text style={styles.overviewChartMetaValue}>{totalValueLabel}</Text>
+          <Text style={[styles.overviewChartMetaLabel, themed.text]}>
+            {rangeMeta}
+          </Text>
+          <Text style={[styles.overviewChartMetaValue, themed.muted]}>
+            {totalValueLabel}
+          </Text>
         </View>
 
-        <View style={styles.overviewChartSummary}>
+        <View style={[styles.overviewChartSummary, themed.surfaceAlt]}>
           <View style={styles.overviewChartSummaryItem}>
-            <Text style={styles.overviewChartSummaryLabel}>Priemer</Text>
-            <Text style={styles.overviewChartSummaryValue}>
+            <Text style={[styles.overviewChartSummaryLabel, themed.muted]}>
+              Priemer
+            </Text>
+            <Text style={[styles.overviewChartSummaryValue, themed.text]}>
               {averageValueLabel}
             </Text>
-            <Text style={styles.overviewChartSummaryMeta}>{averageSuffix}</Text>
+            <Text style={[styles.overviewChartSummaryMeta, themed.subtle]}>
+              {averageSuffix}
+            </Text>
           </View>
           <View style={styles.overviewChartSummaryItem}>
-            <Text style={styles.overviewChartSummaryLabel}>Maximum</Text>
-            <Text style={styles.overviewChartSummaryValue}>
+            <Text style={[styles.overviewChartSummaryLabel, themed.muted]}>
+              Maximum
+            </Text>
+            <Text style={[styles.overviewChartSummaryValue, themed.text]}>
               {maxValueLabel}
             </Text>
             {chartTopItem ? (
-              <Text style={styles.overviewChartSummaryMeta}>
+              <Text style={[styles.overviewChartSummaryMeta, themed.subtle]}>
                 {isYearView
                   ? maxMetaLabel
                   : `${chartTopItem.label}${chartTopItem.subLabel ? ` (${chartTopItem.subLabel})` : ""}`}
@@ -936,29 +981,32 @@ export default function OverviewTab({ navigation }) {
                 key={`${item.label}-${index}`}
                 style={[
                   styles.overviewChartRowCard,
+                  themed.surfaceAlt,
                   isPeak && styles.overviewChartRowCardHighlight,
                   isCurrentMonth && styles.overviewChartRowCardCurrent,
                 ]}
               >
                 <View style={styles.overviewChartRowHeader}>
                   <View style={styles.overviewChartRowLabelGroup}>
-                    <Text style={styles.overviewChartRowLabel}>{item.label}</Text>
+                    <Text style={[styles.overviewChartRowLabel, themed.text]}>
+                      {item.label}
+                    </Text>
                     {item.subLabel ? (
-                      <Text style={styles.overviewChartRowSubLabel}>
+                      <Text style={[styles.overviewChartRowSubLabel, themed.muted]}>
                         {item.subLabel}
                       </Text>
                     ) : null}
                   </View>
                   <View style={styles.overviewChartRowValueGroup}>
-                    <Text style={styles.overviewChartRowValue}>
+                    <Text style={[styles.overviewChartRowValue, themed.text]}>
                       {rowValueText}
                     </Text>
-                    <Text style={styles.overviewChartRowPercent}>
+                    <Text style={[styles.overviewChartRowPercent, themed.muted]}>
                       {Math.round(percentValue)}%
                     </Text>
                   </View>
                 </View>
-                <View style={styles.overviewChartRowBarTrack}>
+                <View style={[styles.overviewChartRowBarTrack, themed.progressTrack]}>
                   <View
                     style={[
                       styles.overviewChartRowBarFill,
@@ -975,32 +1023,34 @@ export default function OverviewTab({ navigation }) {
   };
 
   return (
-    <View style={styles.overviewScreen}>
+    <View style={[styles.overviewScreen, themed.screen]}>
       <View style={styles.overviewHeader}>
-        <Text style={styles.overviewTitle}>Prehľad</Text>
+        <Text style={[styles.overviewTitle, themed.text]}>Prehľad</Text>
       </View>
 
       <View style={styles.overviewDateRow}>
         <Pressable
-          style={styles.overviewDateButton}
+          style={[styles.overviewDateButton, themed.surface]}
           onPress={() => handleDateShift(-1)}
         >
-          <Text style={styles.overviewDateArrow}>{"<"}</Text>
+          <Text style={[styles.overviewDateArrow, themed.text]}>{"<"}</Text>
         </Pressable>
-        <Text style={styles.overviewDateText}>{currentDate}</Text>
+        <Text style={[styles.overviewDateText, themed.muted]}>
+          {currentDate}
+        </Text>
         {canShiftForward ? (
           <Pressable
-            style={styles.overviewDateButton}
+            style={[styles.overviewDateButton, themed.surface]}
             onPress={() => handleDateShift(1)}
           >
-            <Text style={styles.overviewDateArrow}>{">"}</Text>
+            <Text style={[styles.overviewDateArrow, themed.text]}>{">"}</Text>
           </Pressable>
         ) : (
           <View style={styles.overviewDateButtonSpacer} />
         )}
       </View>
 
-      <View style={styles.overviewRangeRow}>
+      <View style={[styles.overviewRangeRow, themed.surfaceAlt]}>
         {rangeOptions.map((option) => {
           const isActive = rangeView === option.key;
           return (
@@ -1020,6 +1070,7 @@ export default function OverviewTab({ navigation }) {
               <Text
                 style={[
                   styles.overviewRangeButtonText,
+                  themed.muted,
                   isActive && styles.overviewRangeButtonTextActive,
                 ]}
               >
@@ -1031,9 +1082,11 @@ export default function OverviewTab({ navigation }) {
       </View>
 
       {rangeView !== "day" ? (
-        <View style={styles.overviewChartCard}>
+        <View style={[styles.overviewChartCard, themed.surface]}>
           {rangeLoading ? (
-            <Text style={styles.overviewChartLoading}>Načítavam dáta...</Text>
+            <Text style={[styles.overviewChartLoading, themed.muted]}>
+              Načítavam dáta...
+            </Text>
           ) : (
             renderRangeChart()
           )}
@@ -1042,11 +1095,11 @@ export default function OverviewTab({ navigation }) {
 
       {rangeView === "day" ? (
         <>
-          <View style={[styles.overviewCard, styles.overviewCardAccent]}>
+          <View style={[styles.overviewCard, styles.overviewCardAccent, themed.surface]}>
             <View style={styles.overviewCardTopRow}>
               <View>
-                <Text style={styles.overviewCardLabel}>Kalórie</Text>
-                <Text style={styles.overviewCardValueLarge}>
+                <Text style={[styles.overviewCardLabel, themed.muted]}>Kalórie</Text>
+                <Text style={[styles.overviewCardValueLarge, themed.text]}>
                   {overviewData.caloriesConsumed} kcal
                 </Text>
               </View>
@@ -1056,10 +1109,10 @@ export default function OverviewTab({ navigation }) {
                 </View>
               ) : null}
             </View>
-            <Text style={styles.overviewCardSubText}>
+            <Text style={[styles.overviewCardSubText, themed.textSoft]}>
               {overviewData.eatOutput}
             </Text>
-            <View style={styles.overviewProgressBar}>
+            <View style={[styles.overviewProgressBar, themed.progressTrack]}>
               <View
                 style={[
                   styles.overviewProgressFill,
@@ -1070,26 +1123,29 @@ export default function OverviewTab({ navigation }) {
                 ]}
               />
             </View>
-            <Text style={styles.overviewProgressText}>
+            <Text style={[styles.overviewProgressText, themed.muted]}>
               {overviewData.eatenOutput}
             </Text>
           </View>
 
-          <Text style={styles.overviewSectionTitle}>Makronutrienty</Text>
+          <Text style={[styles.overviewSectionTitle, themed.text]}>Makronutrienty</Text>
           <View style={styles.overviewGrid}>
             {macroCards.map((card) => (
               <View
                 key={card.key}
                 style={[
                   styles.overviewStatCard,
+                  themed.surfaceAlt,
                   { borderLeftColor: card.accent },
                 ]}
               >
-                <Text style={styles.overviewStatLabel}>{card.label}</Text>
-                <Text style={styles.overviewStatValue}>
+                <Text style={[styles.overviewStatLabel, themed.muted]}>
+                  {card.label}
+                </Text>
+                <Text style={[styles.overviewStatValue, themed.text]}>
                   {card.consumed} / {card.goal} {card.unit}
                 </Text>
-                <View style={styles.overviewProgressBarSmall}>
+                <View style={[styles.overviewProgressBarSmall, themed.progressTrack]}>
                   <View
                     style={[
                       styles.overviewProgressFill,
@@ -1104,12 +1160,12 @@ export default function OverviewTab({ navigation }) {
             ))}
           </View>
 
-          <Text style={styles.overviewSectionTitle}>Hydratácia</Text>
-          <View style={[styles.overviewCard, styles.overviewCardAccentBlue]}>
+          <Text style={[styles.overviewSectionTitle, themed.text]}>Hydratácia</Text>
+          <View style={[styles.overviewCard, styles.overviewCardAccentBlue, themed.surface]}>
             <View style={styles.overviewCardTopRow}>
               <View>
-                <Text style={styles.overviewCardLabel}>Voda</Text>
-                <Text style={styles.overviewCardValue}>
+                <Text style={[styles.overviewCardLabel, themed.muted]}>Voda</Text>
+                <Text style={[styles.overviewCardValue, themed.text]}>
                   {overviewData.drunkWater} / {overviewData.waterGoal} ml
                 </Text>
               </View>
@@ -1124,7 +1180,7 @@ export default function OverviewTab({ navigation }) {
                 <Image source={plus} style={styles.overviewAddWaterIcon} />
               </Pressable>
             </View>
-            <View style={styles.overviewProgressBar}>
+            <View style={[styles.overviewProgressBar, themed.progressTrack]}>
               <View
                 style={[
                   styles.overviewProgressFill,
@@ -1143,9 +1199,11 @@ export default function OverviewTab({ navigation }) {
         animationType="slide"
         onRequestClose={closeWaterModal}
       >
-        <View style={styles.overviewModalOverlay}>
-          <View style={styles.overviewModalContent}>
-            <Text style={styles.overviewModalTitle}>Vyber možnosť</Text>
+        <View style={[styles.overviewModalOverlay, { backgroundColor: colors.overlay }]}>
+          <View style={[styles.overviewModalContent, themed.modalContent]}>
+            <Text style={[styles.overviewModalTitle, themed.text]}>
+              Vyber možnosť
+            </Text>
 
             {options.map((opt) => (
               <TouchableOpacity
@@ -1153,14 +1211,21 @@ export default function OverviewTab({ navigation }) {
                 style={styles.overviewModalOptionRow}
                 onPress={() => setSelectedOption(opt.label)}
               >
-                <View style={styles.overviewModalRadioOuter}>
+                <View
+                  style={[
+                    styles.overviewModalRadioOuter,
+                    { borderColor: colors.text },
+                  ]}
+                >
                   {selectedOption === opt.label && (
                     <View style={styles.overviewModalRadioInner} />
                   )}
                 </View>
                 <View>
-                  <Text style={styles.overviewModalOptionLabel}>{opt.label}</Text>
-                  <Text style={styles.overviewModalOptionDescription}>
+                  <Text style={[styles.overviewModalOptionLabel, themed.text]}>
+                    {opt.label}
+                  </Text>
+                  <Text style={[styles.overviewModalOptionDescription, themed.muted]}>
                     {opt.description}
                   </Text>
                 </View>
@@ -1171,13 +1236,18 @@ export default function OverviewTab({ navigation }) {
               style={styles.overviewModalOptionRow}
               onPress={() => setSelectedOption(CUSTOM_WATER_OPTION)}
             >
-              <View style={styles.overviewModalRadioOuter}>
+              <View
+                style={[
+                  styles.overviewModalRadioOuter,
+                  { borderColor: colors.text },
+                ]}
+              >
                 {selectedOption === CUSTOM_WATER_OPTION && (
                   <View style={styles.overviewModalRadioInner} />
                 )}
               </View>
               <View style={styles.overviewModalCustomContent}>
-                <Text style={styles.overviewModalOptionLabel}>
+                <Text style={[styles.overviewModalOptionLabel, themed.text]}>
                   Vlastná hodnota
                 </Text>
                 <View style={styles.overviewModalCustomInputRow}>
@@ -1193,9 +1263,10 @@ export default function OverviewTab({ navigation }) {
                     onFocus={() => setSelectedOption(CUSTOM_WATER_OPTION)}
                     placeholder="Zadaj ml"
                     keyboardType="numeric"
-                    style={styles.overviewModalCustomInput}
+                    style={[styles.overviewModalCustomInput, themed.input]}
+                    placeholderTextColor={colors.placeholder}
                   />
-                  <Text style={styles.overviewModalCustomUnit}>ml</Text>
+                  <Text style={[styles.overviewModalCustomUnit, themed.muted]}>ml</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -1222,11 +1293,13 @@ export default function OverviewTab({ navigation }) {
         </View>
       </Modal>
 
-      <Text style={styles.overviewSectionTitle}>BMI</Text>
-      <View style={styles.overviewCard}>
+      <Text style={[styles.overviewSectionTitle, themed.text]}>BMI</Text>
+      <View style={[styles.overviewCard, themed.surface]}>
     
-        <Text style={styles.overviewBmiText}>{overviewData.bmiOutput}</Text>
-        <View style={styles.overviewProgressBar}>
+        <Text style={[styles.overviewBmiText, themed.text]}>
+          {overviewData.bmiOutput}
+        </Text>
+        <View style={[styles.overviewProgressBar, themed.progressTrack]}>
           <View
             style={[
               styles.overviewProgressFill,
