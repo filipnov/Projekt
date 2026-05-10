@@ -2,7 +2,7 @@
 // ResetPass.js
 // Obrazovka na reset hesla cez token z e‑mailu (deep link)
 import React, { useState, useEffect } from "react";
-import { Text, View, Image, TextInput, Pressable, Alert } from "react-native";
+import { Text, View, Image, TextInput, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo_name.png";
 import arrow from "./assets/left_arrow.png";
@@ -10,6 +10,7 @@ import * as Linking from "expo-linking";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
+import { useAlert } from "./AlertContext";
 
 export default function ResetPasswordScreen() {
   // URL backendu
@@ -17,14 +18,15 @@ export default function ResetPasswordScreen() {
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
   const { colors } = useAppTheme();
+  const { showAlert } = useAlert();
 
   // Lokálny stav pre nové heslo a token z linku
   const [newPassword, setNewPassword] = useState("");
   const [token, setToken] = useState("");
 
   // Jednoduché helpery na zobrazovanie hlášok
-  const showError = (message) => Alert.alert("Chyba", message);
-  const showSuccess = (message) => Alert.alert("Úspech", message);
+  const showError = (message) => showAlert("Chyba", message);
+  const showSuccess = (message) => showAlert("Úspech", message);
 
   // Vytiahne token z URL (deep linku)
   // 1) Najprv skontroluje, či URL vôbec existuje

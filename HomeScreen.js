@@ -6,7 +6,6 @@ import {
   View,
   Image,
   Pressable,
-  Alert,
   Modal,
   ActivityIndicator,
   StyleSheet,
@@ -19,6 +18,7 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { GOOGLE_IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from "./googleAuthConfig";
 import { useAppTheme } from "./ThemeContext";
+import { useAlert } from "./AlertContext";
 import { ensurePasswordHash } from "./passwordUtils";
 import { loadTotalsForDate, saveTotalsForDate } from "./dailyTotalsStorage";
 // Funkcie pre notifikácie
@@ -42,9 +42,9 @@ function getGoogleSignInOptions() {
   return options;
 }
 
-function requestGoogleConsent() {
+function requestGoogleConsent(showAlert) {
   return new Promise((resolve) => {
-    Alert.alert(
+    showAlert(
       "Súhlas so spracovaním údajov",
       "Pre vytvorenie účtu cez Google potrebujeme uložiť tvoj e-mail a meno z Google účtu.",
       [
@@ -61,6 +61,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();
+  const { showAlert } = useAlert();
 
   const getTodayKey = (date = new Date()) => {
     const yyyy = date.getFullYear();
@@ -226,7 +227,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
   async function handleGoogleLogin({ silent = false } = {}) {
     if (!GOOGLE_WEB_CLIENT_ID) {
       if (!silent) {
-        Alert.alert("Google prihlásenie", GOOGLE_LOGIN_NOT_CONFIGURED);
+        showAlert("Google prihlásenie", GOOGLE_LOGIN_NOT_CONFIGURED);
       }
       return false;
     }
@@ -258,7 +259,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
       if (!idToken) {
         if (!silent) {
-          Alert.alert(
+          showAlert(
             "Google prihlásenie",
             "Google nevrátil prihlasovací token. Skontroluj webClientId v konfigurácii.",
           );
@@ -273,7 +274,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
         data.code === "GOOGLE_GDPR_REQUIRED" &&
         !silent
       ) {
-        const consentGranted = await requestGoogleConsent();
+        const consentGranted = await requestGoogleConsent(showAlert);
         if (!consentGranted) {
           return false;
         }
@@ -282,7 +283,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
 
       if (!response.ok) {
         if (!silent) {
-          Alert.alert("Chyba", data.error || "Google prihlásenie zlyhalo.");
+          showAlert("Chyba", data.error || "Google prihlásenie zlyhalo.");
         }
         return false;
       }
@@ -295,7 +296,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
         error?.code === statusCodes.IN_PROGRESS;
 
       if (!wasCancelled && !silent) {
-        Alert.alert(
+        showAlert(
           "Google prihlásenie",
           "Google prihlásenie sa nepodarilo spustiť. Skontroluj, či používaš development build a či je Google Sign-In nakonfigurovaný.",
         );
@@ -386,7 +387,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
     const trimmedEmail = email.trim();
     // základná validácia: obe polia musia byť vyplnené
     if (!trimmedEmail || !password) {
-      Alert.alert("Chyba", "Prosím, vyplň všetky polia!");
+      showAlert("Chyba", "Prosím, vyplň všetky polia!");
       return;
     }
     // zapnúť spinner
@@ -395,7 +396,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       const hashedPassword = await ensurePasswordHash(password);
 
       if (!hashedPassword) {
-        Alert.alert("Chyba", "Heslo sa nepodarilo spracovať. Skús to znovu.");
+        showAlert("Chyba", "Heslo sa nepodarilo spracovať. Skús to znovu.");
         return;
       }
 
@@ -411,7 +412,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       console.log(data);
 
       if (!response.ok) {
-        Alert.alert("Chyba", data.error || "Prihlásenie zlyhalo!");
+        showAlert("Chyba", data.error || "Prihlásenie zlyhalo!");
         return;
       }
 
@@ -421,7 +422,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       });
     } catch (error) {
       console.error(error);
-      Alert.alert("Chyba", "Nepodarilo sa pripojiť k serveru!");
+      showAlert("Chyba", "Nepodarilo sa pripojiť k serveru!");
     }
      finally {
       // vypnúť spinner

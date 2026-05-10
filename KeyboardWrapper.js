@@ -29,7 +29,9 @@ export default function KeyboardWrapper({
       {scroll ? (
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={contentContainerStyle}
+          keyboardDismissMode="on-drag"
+          style={{ flex: 1, width: "100%" }}
+          contentContainerStyle={[{ flexGrow: 1 }, contentContainerStyle]}
         >
           {children}
         </ScrollView>
@@ -40,6 +42,16 @@ export default function KeyboardWrapper({
       )}
     </KeyboardAvoidingView>
   );
+
+  if (scroll) {
+    return safeArea ? (
+      <SafeAreaView edges={safeAreaEdges} style={[{ flex: 1 }, style]}>
+        {keyboardContent}
+      </SafeAreaView>
+    ) : (
+      keyboardContent
+    );
+  }
 
   return (
     <TouchableWithoutFeedback

@@ -8,7 +8,6 @@ import {
   View,
   Image,
   Pressable,
-  Alert,
   ActivityIndicator,
   Switch,
   Modal,
@@ -22,11 +21,13 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { hashPassword } from "./passwordUtils";
 import { useAppTheme } from "./ThemeContext";
+import { useAlert } from "./AlertContext";
 
 export default function RegistrationScreen() {
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();
+  const { showAlert } = useAlert();
 
   // Stav formulára (vstupy používateľa)
   const [email, setEmail] = useState("");
@@ -50,7 +51,7 @@ export default function RegistrationScreen() {
   async function handleRegistration() {
     // Jednoduchá kontrola povinného súhlasu
     if (!gdprConsent) {
-      Alert.alert(
+      showAlert(
         "Súhlas je povinný",
         "Pre pokračovanie je potrebné súhlasiť so spracovaním osobných údajov.",
       );
@@ -63,11 +64,11 @@ export default function RegistrationScreen() {
 
     // Základná validácia: všetky polia sú povinné a heslá sa musia zhodovať
     if (!trimmedEmail || !trimmedNick || !password || !passwordConfirm) {
-      Alert.alert("Registrácia nebola úspešná!", "Prosím vyplň všetky polia!");
+      showAlert("Registrácia nebola úspešná!", "Prosím vyplň všetky polia!");
       return;
     }
     if (password !== passwordConfirm) {
-      Alert.alert("Registrácia nebola úspešná!", "Heslá sa nezhodujú!");
+      showAlert("Registrácia nebola úspešná!", "Heslá sa nezhodujú!");
       return;
     }
 
@@ -109,16 +110,16 @@ export default function RegistrationScreen() {
         setGdprConsent(false);
 
         // Potvrdenie pre používateľa a návrat na Home
-        Alert.alert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
+        showAlert("Registrácia bola úspešná!", `Vitaj, ${trimmedNick}!`);
         navigation.reset({ index: 0, routes: [{ name: "HomeScreen" }] });
       } else {
         // Zobrazíme správu zo servera, ak existuje, inak default
         const msg = data.error || data.message || "Server vrátil chybu.";
-        Alert.alert("Registrácia zlyhala", msg);
+        showAlert("Registrácia zlyhala", msg);
       }
     } catch (err) {
       // Sieťová chyba / problém so serverom
-      Alert.alert(
+      showAlert(
         "Chyba siete",
         err.message || "Nepodarilo sa spojiť so serverom.",
       );

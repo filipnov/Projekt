@@ -7,13 +7,13 @@ import {
   Modal,
   TextInput,
   ActivityIndicator,
-  Alert,
   ScrollView,
   Dimensions,
 } from "react-native";
 import styles from "../../styles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { THEME_OPTIONS, useAppTheme } from "../../ThemeContext";
+import { useAlert } from "../../AlertContext";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -24,13 +24,8 @@ export default function SettingsTab({
   setNick,
 }) {
   const SERVER = "https://app.bitewise.it.com";
-  const {
-    colors,
-    isDark,
-    resolvedTheme,
-    setThemePreference,
-    themePreference,
-  } = useAppTheme();
+  const { colors, isDark, resolvedTheme, setThemePreference, themePreference } = useAppTheme();
+  const { showAlert } = useAlert();
 
   const [checked100g, setChecked100g] = useState();
   const [checkedExpiration, setCheckedExpiration] = useState();
@@ -82,14 +77,14 @@ export default function SettingsTab({
   const saveNick = async () => {
     const trimmedNick = (nickInput || "").trim();
     if (!trimmedNick) {
-      Alert.alert("Chyba", "Prezývka nemôže byť prázdna.");
+      showAlert("Chyba", "Prezývka nemôže byť prázdna.");
       return;
     }
 
     const email = await AsyncStorage.getItem("userEmail");
 
     if (!email) {
-      Alert.alert(
+      showAlert(
         "Chyba",
         "Nenašiel som email používateľa. Skús sa prosím odhlásiť a prihlásiť znova.",
       );
@@ -106,7 +101,7 @@ export default function SettingsTab({
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       const msg = data.error || data.message || "Server vrátil chybu.";
-      Alert.alert("Nepodarilo sa zmeniť prezývku", msg);
+      showAlert("Nepodarilo sa zmeniť prezývku", msg);
       setNickSaving(false);
       return;
     }
@@ -116,7 +111,7 @@ export default function SettingsTab({
     if (setNick) setNick(trimmedNick);
     setNickModalVisible(false);
     setNickSaving(false);
-    Alert.alert("Hotovo", "Prezývka bola zmenená.");
+    showAlert("Hotovo", "Prezývka bola zmenená.");
   };
 
   const handleLogout = async () => {

@@ -7,6 +7,8 @@ import {
   Modal,
   TouchableOpacity,
   TextInput,
+  Animated,
+  Easing,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -156,6 +158,7 @@ export default function OverviewTab({ navigation }) {
   const activeDateKeyRef = useRef(null);
   const [loadedDateKey, setLoadedDateKey] = useState(null);
   const [hasTotalsData, setHasTotalsData] = useState(false);
+  const celebrationAnim = useRef(new Animated.Value(0)).current;
 
   const themed = {
     screen: { backgroundColor: colors.dashboardBackground },
@@ -388,6 +391,45 @@ export default function OverviewTab({ navigation }) {
     [email],
   );
 
+  const mergeRangeTotalsWithLocal = useCallback(
+    async (startDate, endDate, remoteRange) => {
+      const mergedMap = new Map();
+      (remoteRange || []).forEach((entry) => {
+        if (entry?.date) mergedMap.set(entry.date, entry);
+      });
+
+      const dateKeys = buildDateKeysInRange(startDate, endDate);
+      const localEntries = await Promise.all(
+        dateKeys.map(async (dateKey) => {
+          const localTotals = await loadStoredTotalsForDate(
+            dateKey,
+            DEFAULT_TOTALS,
+          );
+
+          if (!localTotals) return null;
+
+          const remoteEntry = mergedMap.get(dateKey);
+          if (remoteEntry) {
+            return {
+              ...remoteEntry,
+              totals: mergeTotalsPreferRemote(localTotals, remoteEntry.totals),
+            };
+          }
+
+          return { date: dateKey, totals: localTotals };
+        }),
+      );
+
+      localEntries.forEach((entry) => {
+        if (!entry?.date) return;
+        mergedMap.set(entry.date, entry);
+      });
+
+      return Array.from(mergedMap.values());
+    },
+    [],
+  );
+
   // Načíta uložené dáta pri otvorení Prehľadu
   // Cieľ: mať rýchly štart (lokálne údaje) + vždy aktuálne hodnoty (server)
   const loadTotalsForDate = useCallback(
@@ -445,16 +487,28 @@ export default function OverviewTab({ navigation }) {
     let isActive = true;
 
     setRangeLoading(true);
-    fetchRangeTotals(startKey, endKey).then((range) => {
+    (async () => {
+      const range = await fetchRangeTotals(startKey, endKey);
+      const mergedRange = await mergeRangeTotalsWithLocal(
+        startDate,
+        endDate,
+        range,
+      );
       if (!isActive) return;
-      setRangeTotals(range);
+      setRangeTotals(mergedRange);
       setRangeLoading(false);
-    });
+    })();
 
     return () => {
       isActive = false;
     };
-  }, [email, rangeView, selectedDate, fetchRangeTotals]);
+  }, [
+    email,
+    rangeView,
+    selectedDate,
+    fetchRangeTotals,
+    mergeRangeTotalsWithLocal,
+  ]);
 
   // Ukladá denné súhrny do lokálneho úložiska
   // Pozn.: ukladáme až po prvom načítaní, aby sme neprepísali hodnoty 0
@@ -708,6 +762,52 @@ export default function OverviewTab({ navigation }) {
     profileLoaded,
   ]);
 
+  const dailyGoal = Number(overviewData.caloriesGoal) || 0;
+  const dailyConsumed = Number(overviewData.caloriesConsumed) || 0;
+  const dailyRatio = dailyGoal > 0 ? dailyConsumed / dailyGoal : 0;
+  const isDailyGoalMet = dailyRatio >= 1;
+  const isDailyGoalOver = dailyRatio >= 1.5;
+  const showGoalBanner = rangeView === "day" && isTodaySelected && isDailyGoalMet;
+
+  useEffect(() => {
+    if (!showGoalBanner) {
+      celebrationAnim.stopAnimation();
+      celebrationAnim.setValue(0);
+      return;
+    }
+
+    celebrationAnim.setValue(0);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(celebrationAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(celebrationAnim, {
+          toValue: 0,
+          duration: 700,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    loop.start();
+    return () => loop.stop();
+  }, [showGoalBanner, celebrationAnim]);
+
+  const celebrationScale = celebrationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.12],
+  });
+
+  const celebrationRotate = celebrationAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "8deg"],
+  });
+
   if (!weight || !height || !age) {
     return (
       <View style={[styles.overviewMissingProfileContainer, themed.surface]}>
@@ -786,8 +886,6 @@ export default function OverviewTab({ navigation }) {
     },
   ];
 
-  const dailyGoal = Number(overviewData.caloriesGoal) || 0;
-
   const buildChartData = () => {
     if (rangeView === "day") {
       return { title: "", rangeLabel: "", data: [] };
@@ -812,14 +910,13 @@ export default function OverviewTab({ navigation }) {
           totals?.calories !== undefined && totals?.calories !== null
             ? totals.calories
             : null;
-        const goalMet =
-          typeof entry?.goalMet === "boolean"
-            ? entry.goalMet
-            : dailyGoal > 0
-              ? (calories || 0) >= dailyGoal
-              : false;
+        const hasCalories = calories !== null;
+        const ratio = hasCalories && dailyGoal > 0 ? calories / dailyGoal : null;
+        const fallbackGoalMet = typeof entry?.goalMet === "boolean" ? entry.goalMet : false;
+        const goalMet = ratio !== null ? ratio >= 1 : fallbackGoalMet;
+        const overLimit = ratio !== null ? ratio >= 1.5 : false;
         const value =
-          calories !== null
+          hasCalories
             ? calories
             : dailyGoal > 0 && goalMet
               ? dailyGoal
@@ -832,6 +929,7 @@ export default function OverviewTab({ navigation }) {
           value,
           percent,
           goalMet,
+          status: overLimit ? "over" : goalMet ? "met" : "none",
         };
       });
 
@@ -855,12 +953,16 @@ export default function OverviewTab({ navigation }) {
         const dateObj = parseDateKey(entry.date);
         if (dateObj.getFullYear() !== year) return;
         const monthIndex = dateObj.getMonth();
-        const calories = entry?.totals?.calories || 0;
+        const calories =
+          entry?.totals?.calories !== undefined && entry?.totals?.calories !== null
+            ? entry.totals.calories
+            : null;
+        const ratio = calories !== null && dailyGoal > 0 ? calories / dailyGoal : null;
         const goalMet =
-          typeof entry?.goalMet === "boolean"
-            ? entry.goalMet
-            : dailyGoal > 0
-              ? calories >= dailyGoal
+          ratio !== null
+            ? ratio >= 1
+            : typeof entry?.goalMet === "boolean"
+              ? entry.goalMet
               : false;
 
         if (goalMet) monthStats[monthIndex].metDays += 1;
@@ -970,8 +1072,13 @@ export default function OverviewTab({ navigation }) {
             const barPercent = Math.min(percentValue, 100);
             const isPeak = item === chartTopItem && !isYearView;
             const isCurrentMonth = isYearView && item.isCurrent;
-            const isGoalMet = !isYearView && percentValue >= 100;
-            const barColor = isGoalMet ? "#2f7d32" : "#5d8c3a";
+            const isOverLimit = !isYearView && item.status === "over";
+            const isGoalMet = !isYearView && (item.status === "met" || item.status === "over");
+            const barColor = isOverLimit
+              ? "#ef4444"
+              : isGoalMet
+                ? "#2f7d32"
+                : "#5d8c3a";
             const rowValueText = isYearView
               ? `${item.value} / ${item.daysInMonth} dní`
               : `${Math.round(item.value)} kcal`;
@@ -984,6 +1091,8 @@ export default function OverviewTab({ navigation }) {
                   themed.surfaceAlt,
                   isPeak && styles.overviewChartRowCardHighlight,
                   isCurrentMonth && styles.overviewChartRowCardCurrent,
+                  isGoalMet && styles.overviewChartRowCardSuccess,
+                  isOverLimit && styles.overviewChartRowCardOver,
                 ]}
               >
                 <View style={styles.overviewChartRowHeader}>
@@ -1024,6 +1133,55 @@ export default function OverviewTab({ navigation }) {
 
   return (
     <View style={[styles.overviewScreen, themed.screen]}>
+      {showGoalBanner ? (
+        <View
+          style={[
+            styles.overviewGoalBanner,
+            {
+              backgroundColor: isDailyGoalOver
+                ? colors.dangerSoft
+                : colors.primarySoft,
+              borderColor: isDailyGoalOver ? colors.danger : colors.primary,
+            },
+          ]}
+        >
+          <View style={styles.overviewGoalBannerRow}>
+            <View style={styles.overviewGoalBannerTextBlock}>
+              <Text
+                style={[
+                  styles.overviewGoalBannerTitle,
+                  { color: isDailyGoalOver ? colors.danger : colors.primary },
+                ]}
+              >
+                {isDailyGoalOver
+                  ? "Pozor, dosť si prekročil cieľ"
+                  : "Denný cieľ splnený"}
+              </Text>
+              <Text style={[styles.overviewGoalBannerText, themed.textSoft]}>
+                {isDailyGoalOver
+                  ? "Skus trochu ubrat, aby si ostal v rovnovahe."
+                  : "Skvelá práca, pokračuj!"}
+              </Text>
+            </View>
+            <View style={styles.overviewGoalConfettiContainer}>
+              <Animated.Text
+                style={[
+                  styles.overviewGoalConfetti,
+                  {
+                    opacity: celebrationAnim,
+                    transform: [
+                      { scale: celebrationScale },
+                      { rotate: celebrationRotate },
+                    ],
+                  },
+                ]}
+              >
+                {isDailyGoalOver ? "❗" : "🎉"}
+              </Animated.Text>
+            </View>
+          </View>
+        </View>
+      ) : null}
       <View style={styles.overviewHeader}>
         <Text style={[styles.overviewTitle, themed.text]}>Prehľad</Text>
       </View>

@@ -5,7 +5,6 @@ import {
   View,
   TextInput,
   Pressable,
-  Alert,
   Image,
   Modal,
   ScrollView,
@@ -18,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
+import { useAlert } from "./AlertContext";
 
 const SERVER = "https://app.bitewise.it.com";
 const UPDATE_URL = `${SERVER}/api/updateProfile`;
@@ -54,6 +54,7 @@ const ACTIVITY_OPTIONS = [
 export default function ProfileCompletition() {
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();
+  const { showAlert } = useAlert();
 
   const [weight, setWeight] = useState("");
   const [height, setHeight] = useState("");
@@ -100,12 +101,12 @@ export default function ProfileCompletition() {
 
   async function handleCompletion() {
     if (!weight.trim() || !height.trim() || !age.trim()) {
-      Alert.alert("Prosím vyplň všetky polia!");
+      showAlert("Prosím vyplň všetky polia!");
       return;
     }
 
     if (!email) {
-      Alert.alert("Chyba", "Email používateľa sa nenašiel");
+      showAlert("Chyba", "Email používateľa sa nenašiel");
       return;
     }
 
@@ -130,13 +131,13 @@ export default function ProfileCompletition() {
 
       if (resp.ok) {
         await AsyncStorage.setItem("userProfile", JSON.stringify(body));
-        Alert.alert("Úspech", "Údaje boli uložené ✅");
+        showAlert("Úspech", "Údaje boli uložené ✅");
         navigation.goBack();
       } else {
-        Alert.alert("Chyba", data.error || "Server error");
+        showAlert("Chyba", data.error || "Server error");
       }
     } catch {
-      Alert.alert("Network error", "Skús to prosím neskôr.");
+      showAlert("Network error", "Skús to prosím neskôr.");
     }
   }
 

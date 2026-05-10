@@ -1817,6 +1817,40 @@ export default StyleSheet.create({
     paddingBottom: Math.round(clamp(vs(24), 18, 30)),
     backgroundColor: COLORS.lightSurface,
   },
+  overviewGoalBanner: {
+    borderWidth: 1,
+    borderRadius: Math.round(clamp(ms(14), 12, 18)),
+    paddingVertical: Math.round(clamp(vs(10), 8, 14)),
+    paddingHorizontal: Math.round(clamp(ms(12), 10, 16)),
+    marginBottom: Math.round(clamp(vs(12), 10, 16)),
+  },
+  overviewGoalBannerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  overviewGoalBannerTextBlock: {
+    flex: 1,
+    paddingRight: Math.round(clamp(ms(8), 6, 10)),
+  },
+  overviewGoalConfetti: {
+    fontSize: Math.round(clamp(ms(32), 28, 36)),
+    fontWeight: "900",
+  },
+  overviewGoalConfettiContainer: {
+    width: Math.round(clamp(ms(44), 38, 50)),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  overviewGoalBannerTitle: {
+    fontSize: Math.round(clamp(ms(15), 13, 17)),
+    fontWeight: "900",
+    marginBottom: 4,
+  },
+  overviewGoalBannerText: {
+    fontSize: Math.round(clamp(ms(12), 11, 14)),
+    fontWeight: "600",
+  },
   overviewHeader: {
     alignItems: "center",
     justifyContent: "center",
@@ -2088,6 +2122,12 @@ export default StyleSheet.create({
     padding: Math.round(clamp(ms(12), 10, 14)),
     marginBottom: Math.round(clamp(vs(8), 6, 10)),
   },
+  overviewChartRowCardSuccess: {
+    borderColor: "#d4af37",
+  },
+  overviewChartRowCardOver: {
+    borderColor: "#ef4444",
+  },
   overviewChartRowCardHighlight: {
     borderColor: COLORS.buttonColor,
     backgroundColor: "rgba(97, 138, 51, 0.08)",
@@ -2299,5 +2339,74 @@ export default StyleSheet.create({
   overviewMissingProfileButtonText: {
     color: COLORS.white,
     fontWeight: "700",
+  },
+
+  // _______CustomAlert_______
+  alertModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  alertModalContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: Math.round(clamp(ms(16), 12, 20)),
+    paddingHorizontal: Math.round(clamp(ms(20), 16, 24)),
+    paddingVertical: Math.round(clamp(vs(20), 16, 26)),
+    width: "80%",
+    maxWidth: 320,
+    shadowColor: COLORS.black,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 8,
+  },
+  alertModalTitle: {
+    fontSize: Math.round(clamp(ms(18), 16, 20)),
+    fontWeight: "800",
+    color: "#111827",
+    marginBottom: Math.round(clamp(vs(8), 6, 10)),
+    textAlign: "center",
+  },
+  alertModalMessage: {
+    fontSize: Math.round(clamp(ms(14), 12, 16)),
+    fontWeight: "600",
+    color: "#374151",
+    textAlign: "center",
+    lineHeight: Math.round(clamp(ms(20), 18, 24)),
+  },
+  alertModalButtonContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: Math.round(clamp(vs(16), 12, 20)),
+    gap: Math.round(clamp(ms(8), 6, 10)),
+  },
+  alertModalButton: {
+    flex: 1,
+    backgroundColor: COLORS.buttonColor,
+    paddingVertical: Math.round(clamp(vs(10), 8, 12)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  alertModalButtonSecondary: {
+    flex: 1,
+    backgroundColor: "#e5e7eb",
+    paddingVertical: Math.round(clamp(vs(10), 8, 12)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  alertModalButtonText: {
+    color: COLORS.white,
+    fontSize: Math.round(clamp(ms(14), 12, 16)),
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  alertModalButtonTextSecondary: {
+    color: "#111827",
+    fontSize: Math.round(clamp(ms(14), 12, 16)),
+    fontWeight: "700",
+    textAlign: "center",
   },
 });

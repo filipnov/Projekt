@@ -6,7 +6,6 @@ import {
   Image,
   TextInput,
   Pressable,
-  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import logo from "./assets/logo_name.png";
@@ -14,11 +13,13 @@ import arrow from "./assets/left_arrow.png";
 import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
+import { useAlert } from "./AlertContext";
 
 export default function PasswordForgetScreen() {
   const SERVER_URL = "https://app.bitewise.it.com";
   const navigation = useNavigation();
   const { colors } = useAppTheme();
+  const { showAlert } = useAlert();
 
   const [email, setEmail] = useState("");
 
@@ -32,12 +33,12 @@ export default function PasswordForgetScreen() {
 
       const data = await res.json();
       if (data.ok) {
-        Alert.alert("Skontroluj si e-mail!");
+        showAlert("Skontroluj si e-mail!");
       } else {
-        Alert.alert("Error", data.error);
+        showAlert("Error", data.error);
       }
     } catch (err) {
-      Alert.alert("Error", "Something went wrong");
+      showAlert("Error", "Something went wrong");
       console.error(err);
     }
   };

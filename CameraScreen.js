@@ -8,7 +8,6 @@ import {
   Pressable,
   Image,
   TextInput,
-  Alert,
   ScrollView,
   Modal,
   ActivityIndicator,
@@ -24,6 +23,7 @@ import KeyboardWrapper from "./KeyboardWrapper";
 import { scheduleExpirationNotificationForProduct } from "./notifications";
 import { updateTotalsForDate } from "./dailyTotalsStorage";
 import { useAppTheme } from "./ThemeContext";
+import { useAlert } from "./AlertContext";
 
 const SERVER_URL = "https://app.bitewise.it.com";
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
@@ -40,6 +40,7 @@ export default function CameraScreen() {
   };
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();
+  const { showAlert } = useAlert();
   const [permission, requestPermission] = useCameraPermissions();
   const [showContent, setShowContent] = useState(false);
   const [lookupMode, setLookupMode] = useState("search");
@@ -747,7 +748,7 @@ export default function CameraScreen() {
       setSelectedExpirationDate(new Date());
       clearSearchState();
     } catch (err) {
-      Alert.alert("Chyba", "Nepodarilo sa uložiť produkt.");
+      showAlert("Chyba", "Nepodarilo sa uložiť produkt.");
     }
   };
 
@@ -802,7 +803,7 @@ export default function CameraScreen() {
       setSelectedExpirationDate(new Date());
       clearSearchState();
     } catch (err) {
-      Alert.alert("Chyba", "Nepodarilo sa pridať produkt.");
+      showAlert("Chyba", "Nepodarilo sa pridať produkt.");
     }
   };
 
@@ -940,7 +941,7 @@ export default function CameraScreen() {
                     const weight = Number(quantityInput);
 
                     if (isNaN(weight) || weight <= 0) {
-                      Alert.alert(
+                      showAlert(
                         "Chyba",
                         "Zadajte platnú hmotnosť (číslo väčšie ako 0)!",
                       );

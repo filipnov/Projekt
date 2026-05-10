@@ -15,6 +15,7 @@ import ProfileCompletition from './ProfileCompletition';
 import CameraScreen from './CameraScreen';
 import WelcomeScreen from "./WelcomeScreen";
 import { AppThemeProvider, useAppTheme } from "./ThemeContext";
+import { AlertProvider } from "./AlertContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -79,7 +80,9 @@ function AppNavigator() {
 export default function App() {
   return (
     <AppThemeProvider>
-      <AppNavigator />
+      <AlertProvider>
+        <AppNavigator />
+      </AlertProvider>
     </AppThemeProvider>
   );
 }

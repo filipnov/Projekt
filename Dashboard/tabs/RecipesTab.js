@@ -506,6 +506,39 @@ export default function RecipesTab() {
   const [maxCookingTime, setMaxCookingTime] = useState(60);
   const [showUnitInfo, setShowUnitInfo] = useState(false);
 
+  const generateModalStyles = {
+    overlay: { backgroundColor: colors.overlay },
+    container: { backgroundColor: colors.surface, borderColor: colors.border },
+    text: { color: colors.text },
+    textSoft: { color: colors.textSoft },
+    mutedText: { color: colors.mutedText },
+    preferenceBox: {
+      backgroundColor: colors.surfaceAlt,
+      borderColor: colors.border,
+    },
+    preferenceChip: {
+      backgroundColor: colors.surfaceAlt,
+      borderColor: colors.border,
+    },
+    availableChip: {
+      backgroundColor: colors.primarySoft,
+      borderColor: colors.border,
+    },
+    additionalButton: {
+      backgroundColor: colors.surfaceAlt,
+      borderColor: colors.border,
+    },
+    pantryRow: {
+      backgroundColor: colors.surfaceAlt,
+      borderColor: colors.border,
+    },
+    cancelButton: {
+      backgroundColor: colors.surfaceAlt,
+      borderColor: colors.border,
+    },
+    cancelButtonText: { color: colors.text },
+  };
+
   //Obsahuje preferencie ktoré AI dostane ako dostupné na vytvorenie receptu.
   const availablePreferences = ALL_PREFERENCES.filter( //porovnáme každu položku
     ({ id }) => !selectedPreferences.some((selected) => selected.id === id),//necháme len preferencie ktoré nie su vybrané
@@ -758,19 +791,36 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
         animationType="fade"
         onRequestClose={() => setGenerateModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, generateModalStyles.overlay]}>
           {/* Hlavný container dostane flex:1 a maxHeight pre správne scrollovanie */}
-          <View style={[styles.modalContainer, styles.generateModalContainer]}>
+          <View
+            style={[
+              styles.modalContainer,
+              styles.generateModalContainer,
+              generateModalStyles.container,
+            ]}
+          >
             <ScrollView
               contentContainerStyle={styles.scrollPaddingBottom}
               showsVerticalScrollIndicator={true}
             >
-              <Text style={styles.generateTitle}>Generovanie receptu</Text>
+              <Text style={[styles.generateTitle, generateModalStyles.text]}>
+                Generovanie receptu
+              </Text>
 
               {/* Vybrané preferencie */}
-              <View style={styles.selectedPreferencesBox}>
+              <View
+                style={[
+                  styles.selectedPreferencesBox,
+                  generateModalStyles.preferenceBox,
+                ]}
+              >
                 <View style={styles.preferencesHeader}>
-                  <Text style={styles.preferencesTitle}>Preferencie</Text>
+                  <Text
+                    style={[styles.preferencesTitle, generateModalStyles.text]}
+                  >
+                    Preferencie
+                  </Text>
 
                   <Pressable
                     onPress={() => setShowPreferenceInfo(true)}
@@ -781,14 +831,30 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                 </View>
 
                 {selectedPreferences.length === 0 ? (
-                  <Text style={styles.emptyPreferencesText}>
+                  <Text
+                    style={[
+                      styles.emptyPreferencesText,
+                      generateModalStyles.mutedText,
+                    ]}
+                  >
                     Vybrané preferencie sa zobrazia tu…
                   </Text>
                 ) : (
                   <View style={styles.preferencesWrap}>
                     {selectedPreferences.map((pref) => (
-                      <View key={pref.id} style={styles.selectedPreferenceChip}>
-                        <Text style={styles.selectedPreferenceText}>
+                      <View
+                        key={pref.id}
+                        style={[
+                          styles.selectedPreferenceChip,
+                          generateModalStyles.preferenceChip,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.selectedPreferenceText,
+                            generateModalStyles.text,
+                          ]}
+                        >
                           {pref.label}
                         </Text>
 
@@ -799,7 +865,14 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                             )
                           }
                         >
-                          <Text style={styles.removePreferenceText}>✕</Text>
+                          <Text
+                            style={[
+                              styles.removePreferenceText,
+                              generateModalStyles.mutedText,
+                            ]}
+                          >
+                            ✕
+                          </Text>
                         </Pressable>
                       </View>
                     ))}
@@ -815,9 +888,12 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                     onPress={() =>
                       setSelectedPreferences((prev) => [...prev, pref])
                     }
-                    style={styles.availablePreferenceChip}
+                    style={[
+                      styles.availablePreferenceChip,
+                      generateModalStyles.availableChip,
+                    ]}
                   >
-                    <Text>{pref.label}</Text>
+                    <Text style={generateModalStyles.text}>{pref.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -825,9 +901,17 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
               {/* Ďalšie preferencie */}
               <Pressable
                 onPress={() => setShowAdditionalPreferences((prev) => !prev)}
-                style={styles.additionalPreferencesButton}
+                style={[
+                  styles.additionalPreferencesButton,
+                  generateModalStyles.additionalButton,
+                ]}
               >
-                <Text style={styles.additionalPreferencesButtonText}>
+                <Text
+                  style={[
+                    styles.additionalPreferencesButtonText,
+                    generateModalStyles.text,
+                  ]}
+                >
                   {showAdditionalPreferences
                     ? "Skryť ďalšie preferencie"
                     : "Ďalšie preferencie"}
@@ -840,7 +924,12 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                     key={section.category}
                     style={styles.additionalPreferencesSection}
                   >
-                    <Text style={styles.additionalPreferencesCategory}>
+                    <Text
+                      style={[
+                        styles.additionalPreferencesCategory,
+                        generateModalStyles.textSoft,
+                      ]}
+                    >
                       {section.category}
                     </Text>
 
@@ -858,9 +947,14 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                             onPress={() =>
                               setSelectedPreferences((prev) => [...prev, pref])
                             }
-                            style={styles.availablePreferenceChip}
+                            style={[
+                              styles.availablePreferenceChip,
+                              generateModalStyles.availableChip,
+                            ]}
                           >
-                            <Text>{pref.label}</Text>
+                            <Text style={generateModalStyles.text}>
+                              {pref.label}
+                            </Text>
                           </Pressable>
                         ))}
                     </View>
@@ -879,7 +973,9 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                       value={useFitnessGoal}
                       onValueChange={setUseFitnessGoal}
                     />
-                    <Text style={styles.switchLabel}>
+                    <Text
+                      style={[styles.switchLabel, generateModalStyles.textSoft]}
+                    >
                       Generovať recepty podľa fitness cieľa
                     </Text>
                   </View>
@@ -898,7 +994,9 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                         if (!value) setSelectedPantryItems([]);
                       }}
                     />
-                    <Text style={styles.switchLabel}>   
+                    <Text
+                      style={[styles.switchLabel, generateModalStyles.textSoft]}
+                    >
                       Použiť produkty zo špajze
                     </Text>
                   </View>
@@ -907,7 +1005,13 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                   {usePantryItems && pantryItems.length > 0 && (
                     <View style={styles.pantryListContainer}>
                       {pantryItems.map((item) => (
-                        <View key={item.productId} style={styles.pantryItemRow}>
+                        <View
+                          key={item.productId}
+                          style={[
+                            styles.pantryItemRow,
+                            generateModalStyles.pantryRow,
+                          ]}
+                        >
                           <Switch
                             style={styles.pantrySwitch}
                             trackColor={{ false: "#ccc", true: "#4ade80" }}
@@ -927,7 +1031,14 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                               }
                             }}
                           />
-                          <Text style={styles.pantryItemText}>{item.name}</Text>
+                          <Text
+                            style={[
+                              styles.pantryItemText,
+                              generateModalStyles.text,
+                            ]}
+                          >
+                            {item.name}
+                          </Text>
                         </View>
                       ))}
 
@@ -958,7 +1069,12 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                             }
                           }}
                         />
-                        <Text style={styles.selectAllText}>
+                        <Text
+                          style={[
+                            styles.selectAllText,
+                            generateModalStyles.textSoft,
+                          ]}
+                        >
                           Vybrať všetky produkty
                         </Text>
                       </View>
@@ -969,7 +1085,9 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
 
               {/* Čas receptu */}
               <View style={styles.cookingTimeContainer}>
-                <Text style={styles.cookingTimeLabel}>
+                <Text
+                  style={[styles.cookingTimeLabel, generateModalStyles.text]}
+                >
                   Maximálny čas varenia: {maxCookingTime} min
                 </Text>
 
@@ -996,7 +1114,7 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
               </Pressable>
 
               {/* INFO TEXT  */}
-              <Text style={styles.infoText}>
+              <Text style={[styles.infoText, generateModalStyles.mutedText]}>
                 ⚠️ Pri alergiách odporúčame vždy kontrolovať presné zloženie
                 potravín!
               </Text>
@@ -1009,9 +1127,16 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                     setGeneratedRecipeModal(null);
                     resetState();
                   }}
-                  style={styles.cancelButton}
+                  style={[styles.cancelButton, generateModalStyles.cancelButton]}
                 >
-                  <Text style={styles.cancelButtonText}>Zrušiť</Text>
+                  <Text
+                    style={[
+                      styles.cancelButtonText,
+                      generateModalStyles.cancelButtonText,
+                    ]}
+                  >
+                    Zrušiť
+                  </Text>
                 </Pressable>
 
                 <Pressable
