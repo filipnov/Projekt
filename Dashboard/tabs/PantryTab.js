@@ -459,19 +459,80 @@ export default function PantryTab() {
 
     return (
       // Celý box je klikateľný – otvorí modál.
-      <Pressable onPress={() => openWindow(group)} style={styles.pantryBox}>
+      <Pressable
+        onPress={() => openWindow(group)}
+        style={({ pressed }) => [
+          {
+            flex: 1,
+            minWidth: "45%",
+            marginHorizontal: 8,
+            marginVertical: 10,
+            borderRadius: 16,
+            overflow: "hidden",
+            borderWidth: 2,
+            borderColor: colors.border,
+            elevation: pressed ? 3 : 6,
+            shadowColor: colors.shadow,
+            shadowOffset: { width: 0, height: 3 },
+            shadowOpacity: pressed ? 0.1 : 0.15,
+            shadowRadius: pressed ? 4 : 6,
+            backgroundColor: colors.surface,
+          },
+        ]}
+      >
         <ImageBackground
           source={{ uri: boxImage }}
-          style={styles.pantryImageBackground}
+          style={{
+            width: "100%",
+            height: 150,
+            justifyContent: "flex-end",
+          }}
+          imageStyle={{ borderRadius: 14 }}
         >
-          {/* Názov položky */}
-          <Text style={styles.pantryMealBoxText}>{boxName}</Text>
-          {hasMoreThanOne && (
-            <View style={styles.pantryCountBadge}>
-              {/* Zobrazenie počtu kusov v skupine */}
-              <Text style={styles.pantryCountBadgeText}>{count} ks</Text>
-            </View>
-          )}
+          {/* Tmavý gradient pozadí pre lepšiu čitateľnosť textu */}
+          <View
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              padding: 12,
+              borderBottomLeftRadius: 14,
+              borderBottomRightRadius: 14,
+            }}
+          >
+            {/* Názov položky */}
+            <Text
+              style={{
+                color: "white",
+                fontSize: 15,
+                fontWeight: "700",
+                marginBottom: 6,
+              }}
+              numberOfLines={2}
+            >
+              {boxName}
+            </Text>
+            {hasMoreThanOne && (
+              <View
+                style={{
+                  backgroundColor: colors.primary,
+                  paddingVertical: 5,
+                  paddingHorizontal: 12,
+                  borderRadius: 20,
+                  alignSelf: "flex-start",
+                }}
+              >
+                {/* Zobrazenie počtu kusov v skupine */}
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 12,
+                    fontWeight: "700",
+                  }}
+                >
+                  {count} ks
+                </Text>
+              </View>
+            )}
+          </View>
         </ImageBackground>
       </Pressable>
     );
@@ -582,118 +643,255 @@ export default function PantryTab() {
       <View style={[styles.pantryOverlay, { backgroundColor: colors.overlay }]}>
         {/* Samotné okno modálu */}
         <View
-          style={[
-            styles.pantryWindow,
-            {
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 10,
+            width: "100%"
+          }}
+        >
+          <ScrollView
+            style={{
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              borderWidth: 1,
-            },
-          ]}
-        >
-          {loadingWindow ? (
-            // Loading stav.
-            <ActivityIndicator size="large" />
-          ) : !product ? (
-            // Keď produkt neexistuje (napr. vymazaný).
-            <>
-              <Text style={[styles.pantryTitle, { color: colors.text }]}>
-                Product not found
-              </Text>
-              <Pressable onPress={close} style={styles.pantryCloseButton}>
-                <Text style={styles.pantryCloseButtonText}>Close</Text>
-              </Pressable>
-            </>
-          ) : (
-            <>
-              {/* Názov produktu */}
-              <Text style={[styles.pantryWindowTitle, { color: colors.text }]}>
-                {product.name}
-              </Text>
-              <Image
-                source={{ uri: product.image }}
-                style={styles.pantryModalImage}
-                resizeMode="cover"
-              />
-
-              {expiration && (
-                // Blok exspirácie sa zobrazí iba ak je povolený.
-                <View
-                  style={[
-                    styles.pantryInfoRowBase,
-                    styles.pantryInfoRowExpiration,
-                  ]}
+              borderWidth: 2,
+              borderRadius: 20,
+              padding: 18,
+              width: "95%",
+              maxWidth: 560,
+              elevation: 8,
+              shadowColor: colors.shadow,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+            }}
+            contentContainerStyle={{
+              alignItems: "center",
+            }}
+          >
+            {loadingWindow ? (
+              // Loading stav.
+              <ActivityIndicator size="large" color={colors.primary} />
+            ) : !product ? (
+              // Keď produkt neexistuje (napr. vymazaný).
+              <>
+                <Text style={[{ color: colors.text, fontSize: 18, fontWeight: "700" }]}>
+                  Produkt nenájdený
+                </Text>
+                <Pressable
+                  onPress={close}
+                  style={{
+                    marginTop: 16,
+                    backgroundColor: colors.primary,
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderRadius: 10,
+                  }}
                 >
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Exspirácia:</Text>
-                  <Text style={{ color: colors.text }}>{expirationLabel ?? "—"}</Text>
+                  <Text style={{ color: "white", fontWeight: "700" }}>Zatvoriť</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                {/* Názov produktu */}
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 20,
+                    fontWeight: "700",
+                    textAlign: "center",
+                    marginBottom: 12,
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  {product.name}
+                </Text>
+
+                {/* Obrázok produktu */}
+                <View
+                  style={{
+                    width: 120,
+                    height: 120,
+                    marginBottom: 14,
+                    borderRadius: 16,
+                    backgroundColor: colors.surfaceAlt,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    overflow: "hidden",
+                    borderWidth: 2,
+                    borderColor: colors.border,
+                  }}
+                >
+                  <Image
+                    source={{ uri: product.image }}
+                    style={{ width: 115, height: 115 }}
+                    resizeMode="contain"
+                  />
                 </View>
-              )}
 
-              <View
-                style={[styles.pantryInfoRowBase, styles.pantryInfoRowCount]}
-              >
-                {/* Počet kusov v špajzi */}
-                <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Počet v špajzi:</Text>
-                <Text style={{ color: colors.text }}>{count ?? 1}</Text>
-              </View>
+                {/* Info riadky - Exspirácia a Počet */}
+                <View style={{ width: "100%", gap: 10, marginBottom: 12 }}>
+                  {expiration && (
+                    <View
+                      style={{
+                        backgroundColor: colors.surfaceAlt,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 12,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text style={{ color: colors.mutedText, fontSize: 14, fontWeight: "500" }}>
+                        📅 Exspirácia
+                      </Text>
+                      <Text style={{ color: colors.text, fontSize: 14, fontWeight: "700" }}>
+                        {expirationLabel ?? "—"}
+                      </Text>
+                    </View>
+                  )}
 
-              {/* Karta s výživovými hodnotami */}
-              <View style={[styles.pantryNutritionCard, { backgroundColor: colors.primarySoft }]}>
-                <View style={styles.pantryNutritionRow}>
-                  <Text style={[styles.pantryNutritionHeaderText, { color: colors.text }]}>
+                  <View
+                    style={{
+                      backgroundColor: colors.surfaceAlt,
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text style={{ color: colors.mutedText, fontSize: 14, fontWeight: "500" }}>
+                      📦 Počet v špajzi
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.primary,
+                        fontSize: 16,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {count ?? 1} ks
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Nutričná tabuľka */}
+                <View
+                  style={{
+                    width: "100%",
+                    backgroundColor: colors.surfaceAlt,
+                    borderRadius: 14,
+                    padding: 12,
+                    marginBottom: 14,
+                    borderWidth: 1.5,
+                    borderColor: colors.primarySoft,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: colors.primary,
+                      fontWeight: "700",
+                      textAlign: "center",
+                      fontSize: 14,
+                      marginBottom: 12,
+                    }}
+                  >
                     {isPer100g ? "Hodnoty na 100g" : "Hodnoty na celý produkt"}
                   </Text>
-                </View>
-                <View
-                  style={[
-                    styles.pantryNutritionValueRowBase,
-                    styles.pantryNutritionValueRowGap3,
-                  ]}
-                >
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Kalórie: {""}</Text>
-                  <Text style={{ color: colors.text }}>{caloriesValue} kcal</Text>
-                </View>
-                <View
-                  style={[
-                    styles.pantryNutritionValueRowBase,
-                    styles.pantryNutritionValueRowGap1,
-                  ]}
-                >
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Bielkoviny: </Text>
-                  <Text style={{ color: colors.text }}>{proteinsValue} g</Text>
-                </View>
-                <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Sacharidy:</Text>
-                  <Text style={{ color: colors.text }}>{carbsValue} g</Text>
-                </View>
-                <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Tuky:</Text>
-                  <Text style={{ color: colors.text }}>{fatValue} g</Text>
-                </View>
-                <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Vlákniny:</Text>
-                  <Text style={{ color: colors.text }}>{fiberValue} g</Text>
-                </View>
-                <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Cukry:</Text>
-                  <Text style={{ color: colors.text }}>{sugarValue} g</Text>
-                </View>
-                <View style={styles.pantryNutritionValueRowBase}>
-                  <Text style={[styles.pantryNutritionLabel, { color: colors.text }]}>Soľ:</Text>
-                  <Text style={{ color: colors.text }}>{saltValue} g</Text>
-                </View>
-              </View>
-              {/* Akcia: zjesť (odstrániť) */}
-              <Pressable onPress={handleEatPress} style={styles.pantryEatenBtn}>
-                <Text style={styles.pantryCloseButtonText}>Zjedené</Text>
-              </Pressable>
 
-              {/* Zavrieť modál bez akcie */}
-              <Pressable onPress={close} style={styles.pantryCloseButton}>
-                <Text style={styles.pantryCloseButtonText}>Zatvoriť</Text>
-              </Pressable>
-            </>
-          )}
+                  {[
+                    { label: "Kalórie", value: caloriesValue, unit: "kcal" },
+                    { label: "Bielkoviny", value: proteinsValue, unit: "g" },
+                    { label: "Sacharidy", value: carbsValue, unit: "g" },
+                    { label: "Tuky", value: fatValue, unit: "g" },
+                    { label: "Vláknina", value: fiberValue, unit: "g" },
+                    { label: "Cukry", value: sugarValue, unit: "g" },
+                    { label: "Soľ", value: saltValue, unit: "g" },
+                  ].map((row, index) => (
+                    <View
+                      key={row.label}
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        paddingVertical: 8,
+                        borderBottomWidth: index < 6 ? 1 : 0,
+                        borderBottomColor: colors.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: colors.mutedText,
+                          fontSize: 13,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {row.label}
+                      </Text>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text
+                          style={{
+                            color: colors.text,
+                            fontSize: 14,
+                            fontWeight: "700",
+                          }}
+                        >
+                          {row.value ?? "N/A"}
+                          {" "}
+                          <Text style={{ fontSize: 12, fontWeight: "500" }}>
+                            {row.unit}
+                          </Text>
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Akčné tlačidlá */}
+                <View style={{ width: "100%", gap: 10 }}>
+                  <Pressable
+                    onPress={handleEatPress}
+                    style={({ pressed }) => [
+                      {
+                        backgroundColor: pressed ? "hsla(129, 56%, 38%, 1)" : colors.primary,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        borderRadius: 12,
+                        alignItems: "center",
+                        elevation: pressed ? 2 : 4,
+                      },
+                    ]}
+                  >
+                    <Text style={{ color: "white", fontWeight: "700", fontSize: 16 }}>
+                      🍽️ Zjedené
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={close}
+                    style={({ pressed }) => [
+                      {
+                        backgroundColor: pressed ? "#8b8b8b" : "#9e9e9e",
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                        borderRadius: 12,
+                        alignItems: "center",
+                        elevation: pressed ? 2 : 4,
+                      },
+                    ]}
+                  >
+                    <Text style={{ color: "white", fontWeight: "700", fontSize: 16 }}>
+                      Zatvoriť
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+          </ScrollView>
         </View>
       </View>
     );
@@ -745,7 +943,7 @@ export default function PantryTab() {
             Nemáš naskenované položky.
           </Text>
         )}
-        <View style={styles.pantryRow}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-evenly", width: "100%", paddingHorizontal: 0 }}>
           {groupedMealBoxes.map((group) => (
             <MealBoxItem key={group.key} group={group} />
           ))}

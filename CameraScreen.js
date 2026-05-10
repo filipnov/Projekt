@@ -709,11 +709,83 @@ export default function CameraScreen() {
     }
 
     return (
-      <CameraView
-        style={{ flex: 1 }}
-        facing="back"
-        onBarcodeScanned={handleBarCodeScanned}
-      />
+      <View style={{ flex: 1 }}>
+        <CameraView
+          style={{ flex: 1 }}
+          facing="back"
+          onBarcodeScanned={handleBarCodeScanned}
+        />
+        {/* QR Код индикатор - šedé zaoblené rohy */}
+        <View
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            width: 250,
+            height: 250,
+            marginLeft: -125,
+            marginTop: -125,
+            pointerEvents: "none",
+          }}
+        >
+          {/* Top-left roh */}
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: 50,
+              height: 50,
+              borderTopWidth: 6,
+              borderLeftWidth: 6,
+              borderColor: "#999999",
+              borderTopLeftRadius: 15,
+            }}
+          />
+          {/* Top-right roh */}
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              width: 50,
+              height: 50,
+              borderTopWidth: 6,
+              borderRightWidth: 6,
+              borderColor: "#999999",
+              borderTopRightRadius: 15,
+            }}
+          />
+          {/* Bottom-left roh */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              width: 50,
+              height: 50,
+              borderBottomWidth: 6,
+              borderLeftWidth: 6,
+              borderColor: "#999999",
+              borderBottomLeftRadius: 15,
+            }}
+          />
+          {/* Bottom-right roh */}
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              width: 50,
+              height: 50,
+              borderBottomWidth: 6,
+              borderRightWidth: 6,
+              borderColor: "#999999",
+              borderBottomRightRadius: 15,
+            }}
+          />
+        </View>
+      </View>
     );
   };
 
@@ -848,7 +920,7 @@ export default function CameraScreen() {
         <Image source={arrow} style={styles.screenBackButtonImage} />
       </Pressable>
 
-      <View style={{ position: "absolute", bottom: 20, alignSelf: "center" }}>
+      <View style={{ position: "absolute", bottom: 20, alignSelf: "center", width: "100%" }}>
         {lookupMode === "scan" && renderContent()}
 
         {!productData && lookupMode === "scan" && (
@@ -873,13 +945,19 @@ export default function CameraScreen() {
           <ScrollView
             style={{
               // maxHeight: 450,
-              marginBottom: 100,
+              marginBottom: 40,
               backgroundColor: colors.surface,
               borderColor: colors.border,
-              borderWidth: 1,
-              borderRadius: 10,
-              padding: 10,
-              width: 300,
+              borderWidth: 2,
+              borderRadius: 20,
+              padding: 16,
+              width: 320,
+              elevation: 8,
+              shadowColor: colors.shadow,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              alignSelf: "center",
             }}
             contentContainerStyle={{
               alignItems: "center",
@@ -905,19 +983,37 @@ export default function CameraScreen() {
             <Text
               style={{
                 color: colors.text,
-                fontSize: 18,
-                fontWeight: "bold",
+                fontSize: 20,
+                fontWeight: "700",
                 textAlign: "center",
+                marginBottom: 12,
+                letterSpacing: 0.3,
               }}
             >
               {productData.name}
             </Text>
 
             {productData.image && (
-              <Image
-                source={{ uri: productData.image }}
-                style={{ width: 100, height: 100, marginTop: 10 }}
-              />
+              <View
+                style={{
+                  width: 120,
+                  height: 120,
+                  marginBottom: 14,
+                  borderRadius: 16,
+                  backgroundColor: colors.surfaceAlt,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  overflow: "hidden",
+                  borderWidth: 2,
+                  borderColor: colors.border,
+                }}
+              >
+                <Image
+                  source={{ uri: productData.image }}
+                  style={{ width: 115, height: 115 }}
+                  resizeMode="contain"
+                />
+              </View>
             )}
 
             {awaitingQuantity ? (
@@ -959,14 +1055,43 @@ export default function CameraScreen() {
               </KeyboardWrapper>
             ) : (
               !awaitingExpirationDate && (
-                <Text style={{ color: colors.text }}>
-                  Hmotnosť: {productData.quantity} g
-                </Text>
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceAlt,
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 10,
+                    marginBottom: 12,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text style={{ color: colors.mutedText, fontSize: 14 }}>
+                    Hmotnosť
+                  </Text>
+                  <Text
+                    style={{
+                      color: colors.primary,
+                      fontSize: 18,
+                      fontWeight: "700",
+                      marginTop: 4,
+                    }}
+                  >
+                    {productData.quantity} g
+                  </Text>
+                </View>
               )
             )}
 
             {!awaitingQuantity && !awaitingExpirationDate && (
-              <>
+              <View
+                style={{
+                  width: "100%",
+                  backgroundColor: colors.surfaceAlt,
+                  borderRadius: 14,
+                  padding: 12,
+                  marginBottom: 14,
+                }}
+              >
                 {[
                   {
                     label: "Kalórie",
@@ -1010,123 +1135,207 @@ export default function CameraScreen() {
                     total: productData.totalFiber,
                     unit: "g",
                   },
-                ].map((row) => (
-                  <Text key={row.label} style={{ color: colors.text }}>
-                    {showNutriValues && isPer100g
-                      ? `${row.label} (100g): ${row.per100 ?? "N/A"} ${row.unit}`
-                      : `${row.label}: ${row.total ?? "N/A"} ${row.unit}`}
-                  </Text>
+                ].map((row, index) => (
+                  <View
+                    key={row.label}
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      paddingVertical: 8,
+                      borderBottomWidth: index < 6 ? 1 : 0,
+                      borderBottomColor: colors.border,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: colors.mutedText,
+                        fontSize: 13,
+                        fontWeight: "500",
+                      }}
+                    >
+                      {row.label}
+                    </Text>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text
+                        style={{
+                          color: colors.text,
+                          fontSize: 14,
+                          fontWeight: "700",
+                        }}
+                      >
+                        {showNutriValues && isPer100g
+                          ? `${row.per100 ?? "N/A"}`
+                          : `${row.total ?? "N/A"}`}
+                        {" "}
+                        <Text style={{ fontSize: 12, fontWeight: "500" }}>
+                          {row.unit}
+                        </Text>
+                      </Text>
+                      {showNutriValues && isPer100g && (
+                        <Text
+                          style={{
+                            color: colors.subtleText,
+                            fontSize: 11,
+                            marginTop: 2,
+                          }}
+                        >
+                          (na 100g)
+                        </Text>
+                      )}
+                    </View>
+                  </View>
                 ))}
-              </>
+              </View>
             )}
 
             {!awaitingQuantity && !awaitingExpirationDate && (
-              <Pressable
-                style={styles.primaryActionButton}
-                onPress={() => {
-                  if (expiration) {
-                    setSelectedExpirationDate(new Date());
-                    setAwaitingExpirationDate(true);
-                    // Auto-open date picker for each product (Android + iOS)
-                    setShowDatePicker(true);
-                  } else {
-                    saveToDatabase();
-                  }
-                }}
-              >
-                <Text style={styles.primaryActionButtonText}>Špajza</Text>
-              </Pressable>
-            )}
+              <View style={{ width: "100%", gap: 10 }}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.primaryActionButton,
+                    {
+                      backgroundColor: pressed
+                        ? "hsla(129, 56%, 38%, 1)"
+                        : colors.primary,
+                      elevation: pressed ? 2 : 4,
+                    },
+                  ]}
+                  onPress={() => {
+                    if (expiration) {
+                      setSelectedExpirationDate(new Date());
+                      setAwaitingExpirationDate(true);
+                      // Auto-open date picker for each product (Android + iOS)
+                      setShowDatePicker(true);
+                    } else {
+                      saveToDatabase();
+                    }
+                  }}
+                >
+                  <Text style={styles.primaryActionButtonText}>📦 Špajza</Text>
+                </Pressable>
 
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <Pressable
-                style={[
-                  styles.primaryActionButton,
-                  { backgroundColor: "#2196F3" },
-                ]}
-                onPress={() => {
-                  addDirectlyToEaten();
-                }}
-              >
-                <Text style={styles.primaryActionButtonText}>Zjedené</Text>
-              </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.primaryActionButton,
+                    {
+                      backgroundColor: pressed
+                        ? "hsla(208, 100%, 55%, 0.85)"
+                        : "#2196F3",
+                      elevation: pressed ? 2 : 4,
+                    },
+                  ]}
+                  onPress={() => {
+                    addDirectlyToEaten();
+                  }}
+                >
+                  <Text style={styles.primaryActionButtonText}>🍽️ Zjedené</Text>
+                </Pressable>
+              </View>
             )}
 
             {awaitingExpirationDate && expiration && (
               <View
                 style={{
                   width: "100%",
-                  marginTop: 12,
-                  paddingTop: 10,
-                  // borderTopWidth: 1,
-                  // borderTopColor: "#eee",
+                  marginTop: 8,
+                  backgroundColor: colors.primarySoft,
+                  borderRadius: 16,
+                  padding: 14,
+                  borderWidth: 1.5,
+                  borderColor: colors.primary,
                 }}
               >
-                <View
+                <Text
                   style={{
-                    backgroundColor: colors.surfaceAlt,
-                    borderColor: colors.border,
-                    borderRadius: 15,
-                    borderWidth: 1,
-                    paddingTop: 10,
+                    color: colors.primary,
+                    fontWeight: "700",
+                    textAlign: "center",
+                    fontSize: 16,
+                    marginBottom: 12,
                   }}
                 >
-                  <Text
+                  📅 Dátum spotreby
+                </Text>
+
+                {selectedExpirationDate && (
+                  <View
                     style={{
-                      color: colors.text,
-                      fontWeight: "bold",
-                      textAlign: "center",
-                      fontSize: 17,
+                      backgroundColor: colors.surface,
+                      borderRadius: 12,
+                      padding: 12,
+                      marginBottom: 12,
+                      alignItems: "center",
+                      borderWidth: 2,
+                      borderColor: colors.primary,
                     }}
                   >
-                    Vyberte dátum spotreby
-                  </Text>
-
-                  {/*<Text style={{ textAlign: "center", marginTop: 6 }}>
-                  {selectedExpirationDate
-                    ? selectedExpirationDate.toLocaleDateString("sk-SK")
-                    : "—"}
-                  </Text>*/}
-
-                  {Platform.OS === "android" && (
-                    <Pressable
-                      style={[styles.primaryActionButton, { marginTop: 10 }]}
-                      onPress={() => setShowDatePicker(true)}
-                    >
-                      <Text style={styles.primaryActionButtonText}>
-                        Vybrať dátum
-                      </Text>
-                    </Pressable>
-                  )}
-
-                  {showDatePicker && (
-                    <DateTimePicker
-                      value={selectedExpirationDate || new Date()}
-                      mode="date"
-                      display={Platform.OS === "ios" ? "inline" : "default"}
-                      minimumDate={new Date()}
-                      onChange={(event, date) => {
-                        if (Platform.OS === "android") {
-                          setShowDatePicker(false);
-                        }
-                        if (event?.type === "dismissed") return;
-                        if (date) setSelectedExpirationDate(date);
+                    <Text style={{ color: colors.mutedText, fontSize: 12 }}>
+                      Vybrané:
+                    </Text>
+                    <Text
+                      style={{
+                        color: colors.primary,
+                        fontSize: 18,
+                        fontWeight: "700",
+                        marginTop: 4,
                       }}
-                    />
-                  )}
-                </View>
+                    >
+                      {selectedExpirationDate.toLocaleDateString("sk-SK")}
+                    </Text>
+                  </View>
+                )}
+
+                {Platform.OS === "android" && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.primaryActionButton,
+                      {
+                        marginBottom: 10,
+                        backgroundColor: pressed
+                          ? "hsla(129, 56%, 38%, 1)"
+                          : colors.primary,
+                      },
+                    ]}
+                    onPress={() => setShowDatePicker(true)}
+                  >
+                    <Text style={styles.primaryActionButtonText}>
+                      Vybrať dátum
+                    </Text>
+                  </Pressable>
+                )}
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={selectedExpirationDate || new Date()}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    minimumDate={new Date()}
+                    onChange={(event, date) => {
+                      if (Platform.OS === "android") {
+                        setShowDatePicker(false);
+                      }
+                      if (event?.type === "dismissed") return;
+                      if (date) setSelectedExpirationDate(date);
+                    }}
+                  />
+                )}
+
                 <View
                   style={{
                     flexDirection: "row",
                     justifyContent: "space-between",
                     gap: 10,
-                    marginTop: 10,
+                    marginTop: 12,
                   }}
                 >
                   <Pressable
-                    style={[
+                    style={({ pressed }) => [
                       styles.primaryActionButton,
-                      { flex: 1, backgroundColor: "#9e9e9e" },
+                      {
+                        flex: 1,
+                        backgroundColor: pressed ? "#8b8b8b" : "#9e9e9e",
+                      },
                     ]}
                     onPress={() => {
                       setShowExpInput(false);
@@ -1139,7 +1348,15 @@ export default function CameraScreen() {
                   </Pressable>
 
                   <Pressable
-                    style={[styles.primaryActionButton, { flex: 1 }]}
+                    style={({ pressed }) => [
+                      styles.primaryActionButton,
+                      {
+                        flex: 1,
+                        backgroundColor: pressed
+                          ? "hsla(129, 56%, 38%, 1)"
+                          : colors.primary,
+                      },
+                    ]}
                     onPress={async () => {
                       await saveToDatabase();
                       setShowExpInput(false);

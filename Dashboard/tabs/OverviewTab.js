@@ -1154,7 +1154,7 @@ export default function OverviewTab({ navigation }) {
                 ]}
               >
                 {isDailyGoalOver
-                  ? "Pozor, dosť si prekročil cieľ"
+                  ? "Pozor, značne si prekročil cieľ"
                   : "Denný cieľ splnený"}
               </Text>
               <Text style={[styles.overviewGoalBannerText, themed.textSoft]}>
