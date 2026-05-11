@@ -21,6 +21,7 @@ import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
 import { ensurePasswordHash } from "./passwordUtils";
 import { loadTotalsForDate, saveTotalsForDate } from "./dailyTotalsStorage";
+import { API_BASE_URL } from "./apiConfig";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
@@ -57,7 +58,7 @@ function requestGoogleConsent(showAlert) {
 
 export default function HomeScreen({ setIsLoggedIn }) {
   // URL backendu
-  const SERVER_URL = "https://app.bitewise.it.com";
+  const SERVER_URL = API_BASE_URL;
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();

@@ -24,8 +24,9 @@ import { scheduleExpirationNotificationForProduct } from "./notifications";
 import { updateTotalsForDate } from "./dailyTotalsStorage";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
+import { API_BASE_URL } from "./apiConfig";
 
-const SERVER_URL = "https://app.bitewise.it.com";
+const SERVER_URL = API_BASE_URL;
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
 const OFF_SEARCH_FIELDS =

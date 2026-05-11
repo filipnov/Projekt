@@ -11,10 +11,11 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
+import { API_BASE_URL } from "./apiConfig";
 
 export default function ResetPasswordScreen() {
   // URL backendu
-  const SERVER_URL = "https://app.bitewise.it.com";
+  const SERVER_URL = API_BASE_URL;
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
   const { colors } = useAppTheme();

@@ -19,9 +19,10 @@ import {
 import styles from "../../styles";
 import plus from "../../assets/plus.png";
 import { useAppTheme } from "../../ThemeContext";
+import { API_BASE_URL } from "../../apiConfig";
 
 // URL backendu (z tohto servera načítavame dáta)
-const SERVER_URL = "https://app.bitewise.it.com";
+const SERVER_URL = API_BASE_URL;
 
 // Základná štruktúra denných súhrnov
 // (používa sa ako bezpečný „štart“ keď ešte nemáme dáta)

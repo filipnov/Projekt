@@ -14,8 +14,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import styles from "../../styles";
 import { useAppTheme } from "../../ThemeContext";
+import { API_BASE_URL } from "../../apiConfig";
 
-const SERVER_URL = "https://app.bitewise.it.com";
+const SERVER_URL = API_BASE_URL;
 
 //Získanie dnešného dátumu
 const getTodayKey = (date = new Date()) => {

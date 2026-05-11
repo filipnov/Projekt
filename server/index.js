@@ -32,12 +32,13 @@ app.use(express.json()); // parsovanie JSON v requestoch (body -> objekt)
 const PORT = process.env.PORT || 3000; // port, kde server počúva
 const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017"; // MongoDB URL
 const client = new MongoClient(MONGO_URI); // MongoDB klient
+const FRONTEND_URL = String(process.env.FRONTEND_URL || "").replace(/\/+$/, "");
 const OPEN_FOOD_FACTS_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
 const OPEN_FOOD_FACTS_SEARCH_FIELDS =
   "code,product_name,brands,quantity,product_quantity,image_url,nutriments";
 const OPEN_FOOD_FACTS_USER_AGENT =
   process.env.OPEN_FOOD_FACTS_USER_AGENT ||
-  "Bitewise/1.0 (https://app.bitewise.it.com)";
+  (FRONTEND_URL ? `Bitewise/1.0 (${FRONTEND_URL})` : "Bitewise/1.0");
 const FOOD_FACTS_SEARCH_CACHE_MS = 10 * 60 * 1000;
 const foodFactsSearchCache = new Map();
 const GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo";
@@ -455,7 +456,12 @@ async function start() {
       });
 
       // Reset link (otvorí appku s tokenom)
-      const resetLink = `https://app.bitewise.it.com/reset-password?token=${token}`;
+      if (!FRONTEND_URL) {
+        return res
+          .status(500)
+          .json({ error: "FRONTEND_URL is not configured" });
+      }
+      const resetLink = `${FRONTEND_URL}/reset-password?token=${token}`;
 
       // Odoslanie e‑mailu
       await transporter.sendMail({

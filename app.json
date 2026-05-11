@@ -33,7 +33,6 @@
           "data": [
             {
               "scheme": "https",
-              "host": "app.bitewise.it.com",
               "pathPrefix": "/reset-password"
             }
           ]

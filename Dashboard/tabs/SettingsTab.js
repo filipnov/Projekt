@@ -14,6 +14,7 @@ import styles from "../../styles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { THEME_OPTIONS, useAppTheme } from "../../ThemeContext";
 import { useAlert } from "../../AlertContext";
+import { API_BASE_URL } from "../../apiConfig";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -23,7 +24,7 @@ export default function SettingsTab({
   navigation,
   setNick,
 }) {
-  const SERVER = "https://app.bitewise.it.com";
+  const SERVER = API_BASE_URL;
   const { colors, isDark, resolvedTheme, setThemePreference, themePreference } = useAppTheme();
   const { showAlert } = useAlert();
 

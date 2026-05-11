@@ -16,6 +16,7 @@ import CameraScreen from './CameraScreen';
 import WelcomeScreen from "./WelcomeScreen";
 import { AppThemeProvider, useAppTheme } from "./ThemeContext";
 import { AlertProvider } from "./AlertContext";
+import { APP_BASE_URL } from "./apiConfig";
 
 const Stack = createNativeStackNavigator();
 
@@ -38,7 +39,7 @@ function AppNavigator() {
 
   // ---- Deeplink konfigurácia ----
   const linking = {
-    prefixes: ["https://app.bitewise.it.com"],
+    prefixes: APP_BASE_URL ? [APP_BASE_URL] : [],
     config: {
       screens: {
         ResetPass: "reset-password",
