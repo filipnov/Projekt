@@ -15,8 +15,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "mongodb": "^6.20.0",
-    "openai": "^6.16.0",
-    "type": "module"
+    "openai": "^6.16.0"
   }
   
 }
