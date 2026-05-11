@@ -41,6 +41,9 @@ function AppNavigator() {
     /\/+$/,
     "",
   );
+  if (__DEV__) {
+    console.log("EXPO_PUBLIC_API_URL:", APP_BASE_URL || "(empty)");
+  }
   const linking = {
     prefixes: APP_BASE_URL ? [APP_BASE_URL] : [],
     config: {
