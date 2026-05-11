@@ -11,11 +11,13 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
-import { API_BASE_URL } from "./apiConfig";
 
 export default function ResetPasswordScreen() {
   // URL backendu
-  const SERVER_URL = API_BASE_URL;
+  const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+    /\/+$/,
+    "",
+  );
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
   const { colors } = useAppTheme();

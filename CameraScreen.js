@@ -24,9 +24,11 @@ import { scheduleExpirationNotificationForProduct } from "./notifications";
 import { updateTotalsForDate } from "./dailyTotalsStorage";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
-import { API_BASE_URL } from "./apiConfig";
 
-const SERVER_URL = API_BASE_URL;
+const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+  /\/+$/,
+  "",
+);
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
 const OFF_SEARCH_FIELDS =

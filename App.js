@@ -16,7 +16,6 @@ import CameraScreen from './CameraScreen';
 import WelcomeScreen from "./WelcomeScreen";
 import { AppThemeProvider, useAppTheme } from "./ThemeContext";
 import { AlertProvider } from "./AlertContext";
-import { APP_BASE_URL } from "./apiConfig";
 
 const Stack = createNativeStackNavigator();
 
@@ -38,6 +37,10 @@ function AppNavigator() {
   };
 
   // ---- Deeplink konfigurácia ----
+  const APP_BASE_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+    /\/+$/,
+    "",
+  );
   const linking = {
     prefixes: APP_BASE_URL ? [APP_BASE_URL] : [],
     config: {

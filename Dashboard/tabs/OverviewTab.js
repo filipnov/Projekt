@@ -19,10 +19,12 @@ import {
 import styles from "../../styles";
 import plus from "../../assets/plus.png";
 import { useAppTheme } from "../../ThemeContext";
-import { API_BASE_URL } from "../../apiConfig";
 
 // URL backendu (z tohto servera načítavame dáta)
-const SERVER_URL = API_BASE_URL;
+const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+  /\/+$/,
+  "",
+);
 
 // Základná štruktúra denných súhrnov
 // (používa sa ako bezpečný „štart“ keď ešte nemáme dáta)

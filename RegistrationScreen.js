@@ -22,7 +22,6 @@ import KeyboardWrapper from "./KeyboardWrapper";
 import { hashPassword } from "./passwordUtils";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
-import { API_BASE_URL } from "./apiConfig";
 
 export default function RegistrationScreen() {
   // Navigácia medzi obrazovkami
@@ -43,7 +42,10 @@ export default function RegistrationScreen() {
   const [gdprConsent, setGdprConsent] = useState(false);
 
   // Základné URL backendu
-  const SERVER = API_BASE_URL;
+  const SERVER = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+    /\/+$/,
+    "",
+  );
 
   // Koncový bod registrácie
   const REGISTER_URL = `${SERVER}/api/register`;

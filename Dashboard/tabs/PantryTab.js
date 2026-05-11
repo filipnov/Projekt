@@ -21,10 +21,12 @@ import styles from "../../styles";
 import { removeExpirationNotificationForProduct } from "../../notifications";
 import { updateTotalsForDate } from "../../dailyTotalsStorage";
 import { useAppTheme } from "../../ThemeContext";
-import { API_BASE_URL } from "../../apiConfig";
 
 // Základná URL servera – všetky API volania idú cez tento hostname.
-const SERVER_URL = API_BASE_URL;
+const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+  /\/+$/,
+  "",
+);
 
 // Základná štruktúra denných súhrnov
 // (používa sa ako bezpečný „štart“ keď ešte nemáme dáta)

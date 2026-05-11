@@ -1,10 +1,6 @@
 const baseConfig = require("./app.json");
 
-const appUrl =
-  process.env.EXPO_PUBLIC_APP_URL ||
-  process.env.EXPO_PUBLIC_BASE_URL ||
-  process.env.EXPO_PUBLIC_API_URL ||
-  "";
+const appUrl = process.env.EXPO_PUBLIC_API_URL || "";
 
 let appHost = "";
 try {

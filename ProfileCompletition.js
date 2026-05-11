@@ -18,9 +18,11 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
-import { API_BASE_URL } from "./apiConfig";
 
-const SERVER = API_BASE_URL;
+const SERVER = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+  /\/+$/,
+  "",
+);
 const UPDATE_URL = `${SERVER}/api/updateProfile`;
 const SCREEN_WIDTH = Dimensions.get("window").width;
 

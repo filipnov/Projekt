@@ -14,9 +14,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import styles from "../../styles";
 import { useAppTheme } from "../../ThemeContext";
-import { API_BASE_URL } from "../../apiConfig";
 
-const SERVER_URL = API_BASE_URL;
+const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
+  /\/+$/,
+  "",
+);
 
 //Získanie dnešného dátumu
 const getTodayKey = (date = new Date()) => {
