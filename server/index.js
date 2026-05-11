@@ -27,12 +27,23 @@ console.log("FRONTEND_URL:", process.env.FRONTEND_URL); // kontrola FE URL
 const app = express(); // vytvorenie Express aplikácie
 app.use(cors()); // povolí volania z mobilného klienta
 app.use(express.json()); // parsovanie JSON v requestoch (body -> objekt)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const durationMs = Date.now() - start;
+    console.log(
+      `${req.method} ${req.originalUrl} -> ${res.statusCode} (${durationMs}ms)`,
+    );
+  });
+  next();
+});
 
 // Konfigurácia servera a MongoDB klienta
 const PORT = process.env.PORT || 3000; // port, kde server počúva
 const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017"; // MongoDB URL
 const client = new MongoClient(MONGO_URI); // MongoDB klient
 const FRONTEND_URL = String(process.env.FRONTEND_URL || "").replace(/\/+$/, "");
+const WEB_ROOT = path.join(path.resolve(), "Web");
 const OPEN_FOOD_FACTS_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
 const OPEN_FOOD_FACTS_SEARCH_FIELDS =
   "code,product_name,brands,quantity,product_quantity,image_url,nutriments";
@@ -113,6 +124,9 @@ app.use(
   "/.well-known", // URL prefix pre assetlinks
   express.static(path.join(path.resolve(), ".well-known")) // statické súbory
 );
+// Servovanie webu (landing stránka)
+app.use(express.static(WEB_ROOT));
+app.get("/", (req, res) => res.sendFile(path.join(WEB_ROOT, "index.html")));
 
 // ------------------- GPT CONFIG -------------------
 // OpenAI klient + jednoduchý limit requestov
@@ -133,6 +147,18 @@ async function start() {
 
   // Unikátny index pre email (bez duplicitných účtov)
   await users.createIndex({ email: 1 }, { unique: true }); // index pre email
+
+  // ------------------- HEALTH CHECK -------------------
+  // Rýchla kontrola dostupnosti DB
+  app.get("/health", async (req, res) => {
+    try {
+      await client.db("admin").command({ ping: 1 });
+      return res.json({ ok: true, db: "ok" });
+    } catch (err) {
+      console.error("Health check DB error:", err);
+      return res.status(500).json({ ok: false, db: "error" });
+    }
+  });
 
   // ------------------- REGISTER -------------------
   // Vytvorí nového používateľa:
@@ -1404,7 +1430,7 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
   // ------------------- START SERVER -------------------
   // Spustenie HTTP servera
   app.listen(PORT, () => // server začne počúvať
-    console.log(`🚀 Server running on http://localhost:${PORT}`),
+    console.log(`🚀 Server listening on port ${PORT}`),
   );
 }
 
