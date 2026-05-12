@@ -460,7 +460,7 @@ export default function HomeScreen({ setIsLoggedIn }) {
       </Modal>
       <View style={styles.loginHero}>
         <Image style={styles.loginLogo} source={logo} resizeMode="contain" />
-        <Text style={[styles.loginHeroTitle, { color: colors.text }]}>Vitaj ty kokot späť</Text>
+        <Text style={[styles.loginHeroTitle, { color: colors.text }]}>Vitaj späť</Text>
         <Text style={[styles.loginHeroSubtitle, { color: colors.mutedText }]}>
           Prihlás sa do svojho účtu Bitewise.
         </Text>
