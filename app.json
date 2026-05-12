@@ -53,6 +53,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-updates",
       "@react-native-community/datetimepicker",
       [
         "@react-native-google-signin/google-signin",
@@ -71,7 +72,10 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/aa53fb3b-02b6-49aa-80a5-f6615c6b3df0"
+      "url": "https://u.expo.dev/aa53fb3b-02b6-49aa-80a5-f6615c6b3df0",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
     }
   }
 }
