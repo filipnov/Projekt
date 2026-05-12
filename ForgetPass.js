@@ -14,12 +14,9 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
+import { SERVER_URL } from "./config/serverConfig";
 
 export default function PasswordForgetScreen() {
-  const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-    /\/+$/,
-    "",
-  );
   const navigation = useNavigation();
   const { colors } = useAppTheme();
   const { showAlert } = useAlert();

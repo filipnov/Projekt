@@ -1,6 +1,7 @@
 const baseConfig = require("./app.json");
+const { APP_BASE_URL } = require("./config/serverConfig");
 
-const appUrl = process.env.EXPO_PUBLIC_API_URL || "";
+const appUrl = APP_BASE_URL || "";
 
 let appHost = "";
 try {

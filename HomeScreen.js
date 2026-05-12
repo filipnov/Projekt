@@ -22,6 +22,7 @@ import { useAlert } from "./AlertContext";
 import { ensurePasswordHash } from "./passwordUtils";
 import { loadTotalsForDate, saveTotalsForDate } from "./dailyTotalsStorage";
 import { normalizeProductQuantity } from "./productQuantity";
+import { SERVER_URL } from "./config/serverConfig";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
@@ -57,11 +58,6 @@ function requestGoogleConsent(showAlert) {
 }
 
 export default function HomeScreen({ setIsLoggedIn }) {
-  // URL backendu
-  const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-    /\/+$/,
-    "",
-  );
   // Navigácia medzi obrazovkami
   const navigation = useNavigation();
   const { colors, isDark } = useAppTheme();

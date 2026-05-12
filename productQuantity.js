@@ -74,6 +74,7 @@ export const withProductQuantity = (product, remainingQuantity, originalQuantity
     originalQuantity !== undefined
       ? Math.max(remaining, toFiniteNumber(originalQuantity, remaining))
       : Math.max(remaining, getOriginalProductQuantity(product));
+  const isOpened = original > 0 && remaining > 0 && remaining < original;
 
   if (remaining <= 0) {
     return {
@@ -81,6 +82,7 @@ export const withProductQuantity = (product, remainingQuantity, originalQuantity
       quantity: 0,
       originalQuantity: original,
       remainingQuantity: 0,
+      isOpened: false,
     };
   }
 
@@ -89,6 +91,7 @@ export const withProductQuantity = (product, remainingQuantity, originalQuantity
     quantity: remaining,
     originalQuantity: original,
     remainingQuantity: remaining,
+    isOpened,
     ...calculateNutritionForGrams(product, remaining),
   };
 };

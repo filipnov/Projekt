@@ -30,11 +30,8 @@ import {
   normalizeProductQuantity,
   withProductQuantity,
 } from "./productQuantity";
+import { SERVER_URL } from "./config/serverConfig";
 
-const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-  /\/+$/,
-  "",
-);
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
 const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
 const OFF_SEARCH_FIELDS =
@@ -404,6 +401,16 @@ export default function CameraScreen() {
     setShowDatePicker(false);
     setAwaitingExpirationDate(false);
     setSelectedExpirationDate(new Date());
+  }
+
+  function returnToProductResults() {
+    if (lookupMode === "search") {
+      returnToSearchResults();
+      return;
+    }
+
+    resetLookupState();
+    setScanned(false);
   }
 
   function clearSearchState() {
@@ -830,6 +837,8 @@ export default function CameraScreen() {
         productToSave.remainingQuantity || productToSave.quantity,
       );
 
+      showAlert("Hotovo", "Produkt bol úspešne pridaný do špajze.");
+
       setProductData(null);
       setScanned(false); // 🔁 znovu povolí skenovanie
       setAwaitingExpirationDate(false);
@@ -844,12 +853,14 @@ export default function CameraScreen() {
     }
   };
 
-  const addDirectlyToEaten = async () => {
+  const addDirectlyToEaten = async (overrideGrams = null) => {
     if (!productData) return;
 
     try {
       const availableGrams = getProductQuantity(productData);
-      const requestedGrams = Number(eatenQuantityInput);
+      const requestedGrams = Number(
+        overrideGrams !== null ? overrideGrams : eatenQuantityInput,
+      );
 
       if (!Number.isFinite(requestedGrams) || requestedGrams <= 0) {
         showAlert("Chyba", "Zadaj koľko gramov si zjedol/la.");
@@ -914,6 +925,8 @@ export default function CameraScreen() {
         });
       }
 
+      showAlert("Hotovo", "Produkt bol úspešne zjedený.");
+
       if (remainingProduct) {
         if (expiration) {
           setPendingPantryProduct(remainingProduct);
@@ -940,6 +953,19 @@ export default function CameraScreen() {
       showAlert("Chyba", "Nepodarilo sa pridať produkt.");
     }
   };
+
+  const maxEatenAmount = productData ? Math.round(getProductQuantity(productData)) : 0;
+  const parsedEatenAmount = Number(eatenQuantityInput);
+  const isEatenAmountValid =
+    Number.isFinite(parsedEatenAmount) &&
+    parsedEatenAmount > 0 &&
+    parsedEatenAmount <= maxEatenAmount;
+  const showEatenAmountError =
+    awaitingEatenQuantity && eatenQuantityInput.length > 0 && !isEatenAmountValid;
+  const eatenAmountError =
+    parsedEatenAmount > maxEatenAmount
+      ? `Maximum je ${maxEatenAmount} g.`
+      : "Zadaj platnú gramáž.";
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.dashboardBackground }}>
@@ -1013,27 +1039,25 @@ export default function CameraScreen() {
         )}
 
         {productData && (
-          <ScrollView
+          <View
             style={{
-              maxHeight: "100%",
               marginBottom: 0,
               backgroundColor: colors.surface,
               borderColor: colors.border,
               borderWidth: 2,
               borderRadius: 20,
-              padding: awaitingEatenQuantity ? 14 : 16,
-              width: 320,
-              flexGrow: 0,
+              padding: awaitingEatenQuantity ? 16 : 14,
+              width: "92%",
+              maxWidth: 360,
+              minHeight: awaitingEatenQuantity ? 260 : undefined,
               elevation: 8,
               shadowColor: colors.shadow,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.15,
               shadowRadius: 8,
               alignSelf: "center",
-            }}
-            contentContainerStyle={{
               alignItems: "center",
-              paddingBottom: 10,
+              gap: awaitingEatenQuantity ? 12 : 8,
             }}
           >
             {lookupMode === "search" && searchResults.length > 0 && (
@@ -1045,10 +1069,27 @@ export default function CameraScreen() {
                     borderColor: colors.primary,
                   },
                 ]}
-                onPress={returnToSearchResults}
+                onPress={returnToProductResults}
               >
                 <Text style={styles.backToSearchResultsButtonText}>
                   Späť na výsledky
+                </Text>
+              </Pressable>
+            )}
+
+            {lookupMode === "scan" && (
+              <Pressable
+                style={[
+                  styles.backToSearchResultsButton,
+                  {
+                    backgroundColor: colors.surfaceAlt,
+                    borderColor: colors.primary,
+                  },
+                ]}
+                onPress={returnToProductResults}
+              >
+                <Text style={styles.backToSearchResultsButtonText}>
+                  Späť na skenovanie
                 </Text>
               </Pressable>
             )}
@@ -1058,10 +1099,10 @@ export default function CameraScreen() {
                 <Text
                   style={{
                     color: colors.text,
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: "700",
                     textAlign: "center",
-                    marginBottom: 12,
+                    marginBottom: 8,
                     letterSpacing: 0.3,
                   }}
                 >
@@ -1071,10 +1112,10 @@ export default function CameraScreen() {
                 {productData.image && (
                   <View
                     style={{
-                      width: 120,
-                      height: 120,
-                      marginBottom: 14,
-                      borderRadius: 16,
+                      width: 96,
+                      height: 96,
+                      marginBottom: 8,
+                      borderRadius: 14,
                       backgroundColor: colors.surfaceAlt,
                       justifyContent: "center",
                       alignItems: "center",
@@ -1085,7 +1126,7 @@ export default function CameraScreen() {
                   >
                     <Image
                       source={{ uri: productData.image }}
-                      style={{ width: 115, height: 115 }}
+                      style={{ width: 92, height: 92 }}
                       resizeMode="contain"
                     />
                   </View>
@@ -1094,7 +1135,11 @@ export default function CameraScreen() {
             )}
 
             {awaitingQuantity ? (
-              <KeyboardWrapper scroll={false} style={{ marginTop: 10 }}>
+              <KeyboardWrapper
+                scroll={false}
+                style={{ marginTop: 10, flex: 0, width: "100%" }}
+                contentContainerStyle={{ width: "100%" }}
+              >
                 <Text style={{ color: colors.text }}>
                   Zadajte hmotnosť produktu (g) :
                 </Text>
@@ -1136,22 +1181,22 @@ export default function CameraScreen() {
                 <View
                   style={{
                     backgroundColor: colors.surfaceAlt,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    paddingHorizontal: 10,
                     borderRadius: 10,
-                    marginBottom: 12,
+                    marginBottom: 8,
                     alignItems: "center",
                   }}
                 >
-                  <Text style={{ color: colors.mutedText, fontSize: 14 }}>
+                  <Text style={{ color: colors.mutedText, fontSize: 12 }}>
                     Hmotnosť
                   </Text>
                   <Text
                     style={{
                       color: colors.primary,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: "700",
-                      marginTop: 4,
+                      marginTop: 2,
                     }}
                   >
                     {productData.quantity} g
@@ -1160,28 +1205,35 @@ export default function CameraScreen() {
               )
             )}
 
-            {!awaitingQuantity && !awaitingExpirationDate && (
+            {!awaitingQuantity && !awaitingExpirationDate && !awaitingEatenQuantity && (
               <View
                 style={{
                   width: "100%",
                   backgroundColor: colors.surfaceAlt,
-                  borderRadius: 14,
-                  padding: 12,
-                  marginBottom: 14,
+                  borderRadius: 16,
+                  padding: 14,
+                  marginBottom: 16,
+                  borderWidth: 1.5,
+                  borderColor: colors.primarySoft,
                 }}
               >
+                <Text
+                  style={{
+                    color: colors.primary,
+                    fontWeight: "700",
+                    textAlign: "center",
+                    fontSize: 15,
+                    marginBottom: 12,
+                  }}
+                >
+                  {isPer100g ? "Hodnoty na 100g" : "Hodnoty na celý produkt"}
+                </Text>
                 {[
                   {
                     label: "Kalórie",
                     per100: productData.calories,
                     total: productData.totalCalories,
                     unit: "kcal",
-                  },
-                  {
-                    label: "Tuky",
-                    per100: productData.fat,
-                    total: productData.totalFat,
-                    unit: "g",
                   },
                   {
                     label: "Bielkoviny",
@@ -1196,6 +1248,18 @@ export default function CameraScreen() {
                     unit: "g",
                   },
                   {
+                    label: "Tuky",
+                    per100: productData.fat,
+                    total: productData.totalFat,
+                    unit: "g",
+                  },
+                  {
+                    label: "Vláknina",
+                    per100: productData.fiber,
+                    total: productData.totalFiber,
+                    unit: "g",
+                  },
+                  {
                     label: "Cukry",
                     per100: productData.sugar,
                     total: productData.totalSugar,
@@ -1207,12 +1271,6 @@ export default function CameraScreen() {
                     total: productData.totalSalt,
                     unit: "g",
                   },
-                  {
-                    label: "Vláknina",
-                    per100: productData.fiber,
-                    total: productData.totalFiber,
-                    unit: "g",
-                  },
                 ].map((row, index) => (
                   <View
                     key={row.label}
@@ -1220,7 +1278,7 @@ export default function CameraScreen() {
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      paddingVertical: 8,
+                      paddingVertical: 10,
                       borderBottomWidth: index < 6 ? 1 : 0,
                       borderBottomColor: colors.border,
                     }}
@@ -1228,7 +1286,7 @@ export default function CameraScreen() {
                     <Text
                       style={{
                         color: colors.mutedText,
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: "500",
                       }}
                     >
@@ -1238,29 +1296,18 @@ export default function CameraScreen() {
                       <Text
                         style={{
                           color: colors.text,
-                          fontSize: 14,
+                          fontSize: 15,
                           fontWeight: "700",
                         }}
                       >
                         {showNutriValues && isPer100g
-                          ? `${row.per100 ?? "N/A"}`
-                          : `${row.total ?? "N/A"}`}
+                          ? row.per100 ?? "N/A"
+                          : row.total ?? "N/A"}
                         {" "}
-                        <Text style={{ fontSize: 12, fontWeight: "500" }}>
+                        <Text style={{ fontSize: 13, fontWeight: "500" }}>
                           {row.unit}
                         </Text>
                       </Text>
-                      {showNutriValues && isPer100g && (
-                        <Text
-                          style={{
-                            color: colors.subtleText,
-                            fontSize: 11,
-                            marginTop: 2,
-                          }}
-                        >
-                          (na 100g)
-                        </Text>
-                      )}
                     </View>
                   </View>
                 ))}
@@ -1268,13 +1315,17 @@ export default function CameraScreen() {
             )}
 
             {!awaitingQuantity && !awaitingExpirationDate && awaitingEatenQuantity && (
-              <KeyboardWrapper scroll={false} style={{ width: "100%", marginBottom: 12 }}>
+              <KeyboardWrapper
+                scroll={false}
+                style={{ width: "100%", marginBottom: 12, flex: 0 }}
+                contentContainerStyle={{ width: "100%" }}
+              >
                 <View
                   style={{
                     width: "100%",
                     backgroundColor: colors.surfaceAlt,
                     borderRadius: 14,
-                    padding: 12,
+                    padding: 10,
                     borderWidth: 1,
                     borderColor: colors.border,
                   }}
@@ -1282,7 +1333,7 @@ export default function CameraScreen() {
                   <Text
                     style={{
                       color: colors.mutedText,
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: "800",
                       marginBottom: 8,
                     }}
@@ -1300,61 +1351,151 @@ export default function CameraScreen() {
                     />
                     <Text style={{ color: colors.mutedText, fontWeight: "700" }}>g</Text>
                   </View>
+                  {showEatenAmountError && (
+                    <Text style={{ color: colors.danger, fontSize: 12, marginTop: 6 }}>
+                      {eatenAmountError}
+                    </Text>
+                  )}
                 </View>
               </KeyboardWrapper>
             )}
 
-            {!awaitingQuantity && !awaitingExpirationDate && !awaitingEatenQuantity && (
+            {!awaitingQuantity && !awaitingExpirationDate && awaitingEatenQuantity && (
               <View style={{ width: "100%", gap: 10 }}>
-                {!awaitingEatenQuantity && (
+                <View style={{ flexDirection: "row", gap: 10, width: "100%" }}>
                   <Pressable
                     style={({ pressed }) => [
-                      styles.primaryActionButton,
                       {
+                        flex: 1,
+                        backgroundColor: pressed
+                          ? "hsla(208, 100%, 55%, 0.85)"
+                          : "#2196F3",
+                        elevation: pressed ? 2 : 4,
+                        opacity: !isEatenAmountValid ? 0.6 : 1,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 12,
+                        minHeight: 48,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      },
+                    ]}
+                    disabled={!isEatenAmountValid}
+                    onPress={() => addDirectlyToEaten()}
+                  >
+                    <Text style={[styles.primaryActionButtonText, { fontSize: 16 }]}>
+                      Potvrdiť
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    style={({ pressed }) => [
+                      {
+                        flex: 1,
                         backgroundColor: pressed
                           ? "hsla(129, 56%, 38%, 1)"
                           : colors.primary,
                         elevation: pressed ? 2 : 4,
+                        paddingVertical: 10,
+                        paddingHorizontal: 12,
+                        borderRadius: 12,
+                        minHeight: 48,
+                        alignItems: "center",
+                        justifyContent: "center",
                       },
                     ]}
                     onPress={() => {
-                      setPendingPantryProduct(null);
-                      setAwaitingEatenQuantity(false);
-                      if (expiration) {
-                        setSelectedExpirationDate(new Date());
-                        setAwaitingExpirationDate(true);
-                        setShowDatePicker(true);
-                      } else {
-                        saveToDatabase();
-                      }
+                      if (!Number.isFinite(maxEatenAmount) || maxEatenAmount <= 0) return;
+                      setEatenQuantityInput(String(maxEatenAmount));
+                      addDirectlyToEaten(maxEatenAmount);
                     }}
                   >
-                    <Text style={styles.primaryActionButtonText}>Špajza</Text>
+                    <Text
+                      style={[styles.primaryActionButtonText, { fontSize: 16 }]}
+                      numberOfLines={1}
+                    >
+                      Celý produkt
+                    </Text>
                   </Pressable>
-                )}
+                </View>
 
                 <Pressable
                   style={({ pressed }) => [
-                    styles.primaryActionButton,
                     {
+                      backgroundColor: pressed ? "#8b8b8b" : "#9e9e9e",
+                      elevation: pressed ? 2 : 4,
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      minHeight: 48,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    },
+                  ]}
+                  onPress={() => setAwaitingEatenQuantity(false)}
+                >
+                  <Text style={[styles.primaryActionButtonText, { fontSize: 16 }]}>Zrušiť</Text>
+                </Pressable>
+              </View>
+            )}
+
+            {!awaitingQuantity && !awaitingExpirationDate && !awaitingEatenQuantity && (
+              <View style={{ width: "100%", flexDirection: "row", gap: 10 }}>
+                <Pressable
+                  style={({ pressed }) => [
+                    {
+                      flex: 1,
+                      backgroundColor: pressed
+                        ? "hsla(129, 56%, 38%, 1)"
+                        : colors.primary,
+                      elevation: pressed ? 2 : 4,
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      minHeight: 48,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    },
+                  ]}
+                  onPress={() => {
+                    setPendingPantryProduct(null);
+                    setAwaitingEatenQuantity(false);
+                    if (expiration) {
+                      setSelectedExpirationDate(new Date());
+                      setAwaitingExpirationDate(true);
+                      setShowDatePicker(true);
+                    } else {
+                      saveToDatabase();
+                    }
+                  }}
+                >
+                  <Text style={[styles.primaryActionButtonText, { fontSize: 16 }]}>Špajza</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    {
+                      flex: 1,
                       backgroundColor: pressed
                         ? "hsla(208, 100%, 55%, 0.85)"
                         : "#2196F3",
                       elevation: pressed ? 2 : 4,
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      minHeight: 48,
+                      alignItems: "center",
+                      justifyContent: "center",
                     },
                   ]}
                   onPress={() => {
-                    if (!awaitingEatenQuantity) {
-                      setEatenQuantityInput(
-                        String(Math.round(getProductQuantity(productData))),
-                      );
-                      setAwaitingEatenQuantity(true);
-                      return;
-                    }
-                    addDirectlyToEaten();
+                    setEatenQuantityInput(
+                      String(Math.round(getProductQuantity(productData))),
+                    );
+                    setAwaitingEatenQuantity(true);
                   }}
                 >
-                  <Text style={styles.primaryActionButtonText}>Zjedené</Text>
+                  <Text style={[styles.primaryActionButtonText, { fontSize: 16 }]}>Zjedené</Text>
                 </Pressable>
               </View>
             )}
@@ -1495,7 +1636,7 @@ export default function CameraScreen() {
                 </View>
               </View>
             )}
-          </ScrollView>
+          </View>
         )}
       </View>
     </View>

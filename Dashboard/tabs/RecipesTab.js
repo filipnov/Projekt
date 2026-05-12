@@ -15,11 +15,7 @@ import Slider from "@react-native-community/slider";
 import styles from "../../styles";
 import { useAppTheme } from "../../ThemeContext";
 import { getProductQuantity, normalizeProductQuantity } from "../../productQuantity";
-
-const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-  /\/+$/,
-  "",
-);
+import { SERVER_URL } from "../../config/serverConfig";
 
 //Získanie dnešného dátumu
 const getTodayKey = (date = new Date()) => {

@@ -14,6 +14,7 @@ import styles from "../../styles";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { THEME_OPTIONS, useAppTheme } from "../../ThemeContext";
 import { useAlert } from "../../AlertContext";
+import { SERVER_URL } from "../../config/serverConfig";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -23,10 +24,6 @@ export default function SettingsTab({
   navigation,
   setNick,
 }) {
-  const SERVER = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-    /\/+$/,
-    "",
-  );
   const { colors, isDark, resolvedTheme, setThemePreference, themePreference } = useAppTheme();
   const { showAlert } = useAlert();
 
@@ -95,7 +92,7 @@ export default function SettingsTab({
     }
 
     setNickSaving(true);
-    const resp = await fetch(`${SERVER}/api/updateNick`, {
+    const resp = await fetch(`${SERVER_URL}/api/updateNick`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, nick: trimmedNick }),

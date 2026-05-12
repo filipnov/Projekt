@@ -16,6 +16,7 @@ import CameraScreen from './CameraScreen';
 import WelcomeScreen from "./WelcomeScreen";
 import { AppThemeProvider, useAppTheme } from "./ThemeContext";
 import { AlertProvider } from "./AlertContext";
+import { APP_BASE_URL } from "./config/serverConfig";
 
 const Stack = createNativeStackNavigator();
 
@@ -37,15 +38,12 @@ function AppNavigator() {
   };
 
   // ---- Deeplink konfigurácia ----
-  const APP_BASE_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-    /\/+$/,
-    "",
-  );
+  const appBaseUrl = APP_BASE_URL;
   if (__DEV__) {
-    console.log("EXPO_PUBLIC_API_URL:", APP_BASE_URL || "(empty)");
+    console.log("APP_BASE_URL:", appBaseUrl || "(empty)");
   }
   const linking = {
-    prefixes: APP_BASE_URL ? [APP_BASE_URL] : [],
+    prefixes: appBaseUrl ? [appBaseUrl] : [],
     config: {
       screens: {
         ResetPass: "reset-password",

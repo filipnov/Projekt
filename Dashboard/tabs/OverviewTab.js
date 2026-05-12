@@ -19,13 +19,9 @@ import {
 import styles from "../../styles";
 import plus from "../../assets/plus.png";
 import { useAppTheme } from "../../ThemeContext";
+import { SERVER_URL } from "../../config/serverConfig";
 
 // URL backendu (z tohto servera načítavame dáta)
-const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-  /\/+$/,
-  "",
-);
-
 // Základná štruktúra denných súhrnov
 // (používa sa ako bezpečný „štart“ keď ešte nemáme dáta)
 const DEFAULT_TOTALS = {

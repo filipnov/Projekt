@@ -18,12 +18,9 @@ import styles from "./styles";
 import KeyboardWrapper from "./KeyboardWrapper";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
+import { SERVER_URL } from "./config/serverConfig";
 
-const SERVER = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
-  /\/+$/,
-  "",
-);
-const UPDATE_URL = `${SERVER}/api/updateProfile`;
+const UPDATE_URL = `${SERVER_URL}/api/updateProfile`;
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const ACTIVITY_OPTIONS = [
