@@ -2313,6 +2313,19 @@ export default StyleSheet.create({
   overviewModalConfirmButtonTextDisabled: {
     color: "#f8fafc",
   },
+  overviewModalCloseButton: {
+    marginTop: Math.round(clamp(vs(8), 6, 10)),
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    paddingVertical: Math.round(clamp(vs(10), 8, 12)),
+    borderRadius: Math.round(clamp(ms(10), 8, 12)),
+  },
+  overviewModalCloseButtonText: {
+    color: "#111827",
+    textAlign: "center",
+    fontWeight: "700",
+  },
   overviewMissingProfileContainer: {
     backgroundColor: COLORS.white,
     borderRadius: Math.round(clamp(ms(16), 12, 20)),

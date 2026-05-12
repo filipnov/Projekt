@@ -1360,8 +1360,14 @@ export default function OverviewTab({ navigation }) {
         animationType="slide"
         onRequestClose={closeWaterModal}
       >
-        <View style={[styles.overviewModalOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[styles.overviewModalContent, themed.modalContent]}>
+        <Pressable
+          style={[styles.overviewModalOverlay, { backgroundColor: colors.overlay }]}
+          onPress={closeWaterModal}
+        >
+          <Pressable
+            style={[styles.overviewModalContent, themed.modalContent]}
+            onPress={(event) => event.stopPropagation()}
+          >
             <Text style={[styles.overviewModalTitle, themed.text]}>
               Vyber možnosť
             </Text>
@@ -1450,8 +1456,16 @@ export default function OverviewTab({ navigation }) {
                 Potvrdiť
               </Text>
             </Pressable>
-          </View>
-        </View>
+            <Pressable
+              style={[styles.overviewModalCloseButton, themed.surfaceAlt]}
+              onPress={closeWaterModal}
+            >
+              <Text style={[styles.overviewModalCloseButtonText, themed.text]}>
+                Zavrieť
+              </Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
       </Modal>
 
       <Text style={[styles.overviewSectionTitle, themed.text]}>BMI</Text>
