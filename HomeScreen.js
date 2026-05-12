@@ -21,6 +21,7 @@ import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
 import { ensurePasswordHash } from "./passwordUtils";
 import { loadTotalsForDate, saveTotalsForDate } from "./dailyTotalsStorage";
+import { normalizeProductQuantity } from "./productQuantity";
 // Funkcie pre notifikácie
 import {
   ensureNotificationsSetup,
@@ -109,7 +110,10 @@ export default function HomeScreen({ setIsLoggedIn }) {
       // GET /api/getProducts?email=... -> produkty v špajzi
       const productsRes = await fetch(`${SERVER_URL}/api/getProducts?email=${email}`);
       const productsData = await productsRes.json();
-      await AsyncStorage.setItem("products", JSON.stringify(productsData.products));
+      const normalizedProducts = (productsData.products || []).map((product) =>
+        product?.isCustom ? product : normalizeProductQuantity(product),
+      );
+      await AsyncStorage.setItem("products", JSON.stringify(normalizedProducts));
 
       // 3) RECEPTY
       // GET /api/getRecipes?email=... -> uložené recepty

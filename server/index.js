@@ -576,6 +576,8 @@ async function start() {
       fiber,
       salt,
       sugar,
+      originalQuantity,
+      remainingQuantity,
     } = req.body; // údaje o produkte zo skenera
 
     try {
@@ -595,12 +597,26 @@ async function start() {
       }
 
       // Objekt produktu, ktorý sa uloží do DB
+      const parsedOriginalQuantity = Number(originalQuantity);
+      const parsedRemainingQuantity = Number(remainingQuantity);
+      const safeRemainingQuantity =
+        Number.isFinite(parsedRemainingQuantity) && parsedRemainingQuantity > 0
+          ? parsedRemainingQuantity
+          : null;
+      const safeOriginalQuantity =
+        Number.isFinite(parsedOriginalQuantity) && parsedOriginalQuantity > 0
+          ? parsedOriginalQuantity
+          : safeRemainingQuantity;
+
       const productObj = { // objekt produktu uložený do DB
         productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: product,
         image: image ?? null,
         isCustom: false,
         expirationDate: expirationDateValue,
+        quantity: safeRemainingQuantity,
+        originalQuantity: safeOriginalQuantity,
+        remainingQuantity: safeRemainingQuantity,
         totalCalories: totalCalories ?? null,
         totalProteins: totalProteins ?? null,
         totalCarbs: totalCarbs ?? null,
@@ -666,6 +682,52 @@ async function start() {
     } catch (err) {
       console.error("❌ Remove product error:", err); // log chyby
       res.status(500).json({ error: "Server error" }); // serverová chyba
+    }
+  });
+
+  // UPDATE PRODUCT QUANTITY
+  // Upraví zostatok produktu v špajzi po zjedení iba časti balenia
+  app.post("/api/updateProductQuantity", async (req, res) => {
+    try {
+      const { email, productId, product } = req.body;
+
+      if (!email || !productId || !product) {
+        return res.status(400).json({ error: "Missing email, product ID or product" });
+      }
+
+      const user = await users.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const products = Array.isArray(user.products) ? user.products : [];
+      const index = products.findIndex((item) => item.productId === productId);
+
+      if (index === -1) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      const remainingQuantity = Number(product.remainingQuantity ?? product.quantity);
+      if (!Number.isFinite(remainingQuantity) || remainingQuantity <= 0) {
+        return res.status(400).json({ error: "Invalid remaining quantity" });
+      }
+
+      const nextProducts = [...products];
+      nextProducts[index] = {
+        ...nextProducts[index],
+        ...product,
+        productId,
+        isCustom: false,
+        quantity: remainingQuantity,
+        remainingQuantity,
+      };
+
+      await users.updateOne({ email }, { $set: { products: nextProducts } });
+
+      res.json({ success: true, products: nextProducts, product: nextProducts[index] });
+    } catch (err) {
+      console.error("❌ Update product quantity error:", err);
+      res.status(500).json({ error: "Server error" });
     }
   });
 
@@ -1152,9 +1214,20 @@ async function start() {
       // --- Získaj produkty zo špajze ---
       let pantryText = ""; // text s ingredienciami zo špajze
       if (Array.isArray(pantryItems) && pantryItems.length > 0) {
+        const pantryItemText = pantryItems
+          .map((item) => {
+            if (typeof item === "string") return item;
+            const name = item?.name || "potravina";
+            const grams = Number(item?.availableGrams);
+            return Number.isFinite(grams) && grams > 0
+              ? `${name} (max ${Math.round(grams)} g)`
+              : name;
+          })
+          .join(", ");
   pantryText = `
 Použi tieto ingrediencie zo špajze:
-${pantryItems.join(", ")}
+${pantryItemText}
+Ak je pri ingrediencii uvedené maximum v gramoch, amountGrams v JSON nesmie byť vyššie než toto maximum.
 `;
 }
 
@@ -1192,6 +1265,7 @@ PRAVIDLÁ:
 9. Dodrž všetky používateľské preferencie (sladké, štipľavé, mäsité, vegánske, bezmäsité, atď.).
 10. Ak je zvolená preferencia "Morské plody", použite rôzne druhy morských plodov a neobmedzujte sa len na jeden.
 11. Použi produkty zo špajze, ak sú dostupné a zmysluplné.
+11a. Pri produktoch zo špajze nikdy nepouži viac gramov, než je uvedené ako dostupné maximum.
 12. Zohľadni fitness cieľ používateľa, ak je k dispozícii.
 13. Priraď každému receptu jednu z vymenovaných kategóriu: mäsité, bezmäsité, vegánske, sladké, štipľavé. Žiadna iná kategória nesmie byť použitá
 14. Nutričné hodnoty musia byť realistické a vypočítané z ingrediencií - kalórie, bielkoviny, sacharidy, tuky, vláknina, soľ, cukry.
@@ -1296,11 +1370,38 @@ ${maxCookingTime ? `Celkový čas varenia nesmie byť viac ako ${maxCookingTime}
             hasText(parsedJSON?.estimatedCookingTime) &&
             hasIngredients &&
             hasSteps;
+          const normalizeIngredientName = (value) =>
+            String(value || "")
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .trim();
+          const selectedPantryLimits = Array.isArray(pantryItems)
+            ? pantryItems
+                .filter((item) => item && typeof item === "object")
+                .map((item) => ({
+                  name: normalizeIngredientName(item.name),
+                  availableGrams: Number(item.availableGrams),
+                }))
+                .filter((item) => item.name && Number.isFinite(item.availableGrams))
+            : [];
+          const exceedsPantryLimit =
+            isRecipeShapeValid &&
+            selectedPantryLimits.some((limit) =>
+              parsedJSON.ingredients.some((ingredient) => {
+                const ingredientName = normalizeIngredientName(ingredient?.name);
+                const amountGrams = Number(ingredient?.amountGrams);
+                const namesMatch =
+                  ingredientName.includes(limit.name) ||
+                  limit.name.includes(ingredientName);
+                return namesMatch && amountGrams > limit.availableGrams;
+              }),
+            );
 
-          if (isEmptyObject || !isRecipeShapeValid) {
+          if (isEmptyObject || !isRecipeShapeValid || exceedsPantryLimit) {
             parsedJSON = null;
             console.warn(
-              `⚠️ GPT vrátil prázdny alebo neplatný recept, retry ${attempts}...`,
+              `⚠️ GPT vrátil prázdny, neplatný alebo množstvom nedostupný recept, retry ${attempts}...`,
             );
           }
         } catch (err) {

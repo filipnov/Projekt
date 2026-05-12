@@ -24,6 +24,12 @@ import { scheduleExpirationNotificationForProduct } from "./notifications";
 import { updateTotalsForDate } from "./dailyTotalsStorage";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
+import {
+  buildConsumedProductTotals,
+  getProductQuantity,
+  normalizeProductQuantity,
+  withProductQuantity,
+} from "./productQuantity";
 
 const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
   /\/+$/,
@@ -57,6 +63,9 @@ export default function CameraScreen() {
   const [loadingMoreSearchResults, setLoadingMoreSearchResults] = useState(false);
   const [productData, setProductData] = useState(null);
   const [quantityInput, setQuantityInput] = useState("");
+  const [eatenQuantityInput, setEatenQuantityInput] = useState("");
+  const [pendingPantryProduct, setPendingPantryProduct] = useState(null);
+  const [awaitingEatenQuantity, setAwaitingEatenQuantity] = useState(false);
   const [awaitingQuantity, setAwaitingQuantity] = useState(false);
   const showNutriValues = true;
   const [loading, setLoading] = useState(false);
@@ -109,6 +118,8 @@ export default function CameraScreen() {
     sugar,
     image,
     expirationDate,
+    originalQuantity,
+    remainingQuantity,
   ) {
     try {
       const email = await AsyncStorage.getItem("userEmail");
@@ -134,6 +145,8 @@ export default function CameraScreen() {
           sugar,
           image,
           expirationDate,
+          originalQuantity,
+          remainingQuantity,
         }),
       });
 
@@ -150,22 +163,15 @@ export default function CameraScreen() {
   }
 
   function calculateTotals(product, weight) {
-    return {
-      ...product,
-      quantity: weight,
-      totalCalories: Number(((product.calories / 100) * weight).toFixed(0)),
-      totalFat: Number(((product.fat / 100) * weight).toFixed(1)),
-      totalCarbs: Number(((product.carbs / 100) * weight).toFixed(1)),
-      totalSugar: Number(((product.sugar / 100) * weight).toFixed(1)),
-      totalProteins: Number(((product.proteins / 100) * weight).toFixed(1)),
-      totalSalt: Number(((product.salt / 100) * weight).toFixed(1)),
-      totalFiber: Number(((product.fiber / 100) * weight).toFixed(1)),
-    };
+    return withProductQuantity(product, weight, product.originalQuantity || weight);
   }
 
   function resetLookupState() {
     setAwaitingQuantity(false);
     setQuantityInput("");
+    setEatenQuantityInput("");
+    setPendingPantryProduct(null);
+    setAwaitingEatenQuantity(false);
     setProductData(null);
     setShowExpInput(false);
     setShowDatePicker(false);
@@ -268,11 +274,12 @@ export default function CameraScreen() {
     if (productInfo.quantity && productInfo.quantity > 0) {
       finalProduct = calculateTotals(productInfo, productInfo.quantity);
       setAwaitingQuantity(false);
+      setEatenQuantityInput(String(Math.round(productInfo.quantity)));
     } else {
       setAwaitingQuantity(true);
     }
 
-    setProductData(finalProduct);
+    setProductData(normalizeProductQuantity(finalProduct));
     setSearchError("");
   }
 
@@ -792,35 +799,45 @@ export default function CameraScreen() {
     );
   };
 
-  const saveToDatabase = async () => {
-    if (!productData) return;
+  const saveToDatabase = async (productOverride = null) => {
+    const productToSave = productOverride || pendingPantryProduct || productData;
+    if (!productToSave) return;
+    const expirationDateToSave =
+      awaitingExpirationDate || expiration
+        ? selectedExpirationDate?.toISOString?.()
+        : null;
 
     try {
       await handleAddProduct(
-        productData.name,
-        productData.totalCalories,
-        productData.totalProteins,
-        productData.totalCarbs,
-        productData.totalFat,
-        productData.totalFiber,
-        productData.totalSalt,
-        productData.totalSugar,
-        productData.calories,
-        productData.proteins,
-        productData.carbs,
-        productData.fat,
-        productData.fiber,
-        productData.salt,
-        productData.sugar,
-        productData.image,
-        selectedExpirationDate?.toISOString?.(),
+        productToSave.name,
+        productToSave.totalCalories,
+        productToSave.totalProteins,
+        productToSave.totalCarbs,
+        productToSave.totalFat,
+        productToSave.totalFiber,
+        productToSave.totalSalt,
+        productToSave.totalSugar,
+        productToSave.calories,
+        productToSave.proteins,
+        productToSave.carbs,
+        productToSave.fat,
+        productToSave.fiber,
+        productToSave.salt,
+        productToSave.sugar,
+        productToSave.image,
+        expirationDateToSave,
+        productToSave.originalQuantity || productToSave.quantity,
+        productToSave.remainingQuantity || productToSave.quantity,
       );
 
       setProductData(null);
       setScanned(false); // 🔁 znovu povolí skenovanie
       setAwaitingExpirationDate(false);
+      setAwaitingEatenQuantity(false);
       setShowDatePicker(false);
       setSelectedExpirationDate(new Date());
+      setEatenQuantityInput("");
+      setPendingPantryProduct(null);
       clearSearchState();
     } catch (err) {
       showAlert("Chyba", "Nepodarilo sa uložiť produkt.");
@@ -831,6 +848,32 @@ export default function CameraScreen() {
     if (!productData) return;
 
     try {
+      const availableGrams = getProductQuantity(productData);
+      const requestedGrams = Number(eatenQuantityInput);
+
+      if (!Number.isFinite(requestedGrams) || requestedGrams <= 0) {
+        showAlert("Chyba", "Zadaj koľko gramov si zjedol/la.");
+        return;
+      }
+
+      if (requestedGrams > availableGrams) {
+        showAlert(
+          "Chyba",
+          `Produkt má iba ${Math.round(availableGrams)} g. Zadaj menšie množstvo.`,
+        );
+        return;
+      }
+
+      const consumedTotals = buildConsumedProductTotals(productData, requestedGrams);
+      const remainingGrams = Math.max(0, availableGrams - requestedGrams);
+      const remainingProduct =
+        remainingGrams > 0
+          ? withProductQuantity(
+              productData,
+              remainingGrams,
+              productData.originalQuantity || availableGrams,
+            )
+          : null;
       const email = await AsyncStorage.getItem("userEmail");
       const todayKey = getTodayKey();
       const baseTotals = {
@@ -847,13 +890,13 @@ export default function CameraScreen() {
         todayKey,
         baseTotals,
         (currentTotals) => ({
-          calories: currentTotals.calories + (productData.totalCalories || 0),
-          proteins: currentTotals.proteins + (productData.totalProteins || 0),
-          carbs: currentTotals.carbs + (productData.totalCarbs || 0),
-          fat: currentTotals.fat + (productData.totalFat || 0),
-          fiber: currentTotals.fiber + (productData.totalFiber || 0),
-          sugar: currentTotals.sugar + (productData.totalSugar || 0),
-          salt: currentTotals.salt + (productData.totalSalt || 0),
+          calories: currentTotals.calories + consumedTotals.calories,
+          proteins: currentTotals.proteins + consumedTotals.proteins,
+          carbs: currentTotals.carbs + consumedTotals.carbs,
+          fat: currentTotals.fat + consumedTotals.fat,
+          fiber: currentTotals.fiber + consumedTotals.fiber,
+          sugar: currentTotals.sugar + consumedTotals.sugar,
+          salt: currentTotals.salt + consumedTotals.salt,
           drunkWater: currentTotals.drunkWater,
         }),
         true,
@@ -871,11 +914,27 @@ export default function CameraScreen() {
         });
       }
 
+      if (remainingProduct) {
+        if (expiration) {
+          setPendingPantryProduct(remainingProduct);
+          setProductData(remainingProduct);
+          setSelectedExpirationDate(new Date());
+          setAwaitingExpirationDate(true);
+          setShowDatePicker(true);
+        } else {
+          await saveToDatabase(remainingProduct);
+        }
+        return;
+      }
+
       setProductData(null);
       setScanned(false); // 🔁 znovu skenovať
       setAwaitingExpirationDate(false);
+      setAwaitingEatenQuantity(false);
       setShowDatePicker(false);
       setSelectedExpirationDate(new Date());
+      setEatenQuantityInput("");
+      setPendingPantryProduct(null);
       clearSearchState();
     } catch (err) {
       showAlert("Chyba", "Nepodarilo sa pridať produkt.");
@@ -923,7 +982,16 @@ export default function CameraScreen() {
         <Image source={arrow} style={styles.screenBackButtonImage} />
       </Pressable>
 
-      <View style={{ position: "absolute", bottom: 20, alignSelf: "center", width: "100%" }}>
+      <View
+        style={{
+          position: "absolute",
+          top: productData ? 108 : undefined,
+          bottom: productData ? 78 : 20,
+          alignSelf: "center",
+          width: "100%",
+          justifyContent: productData ? "center" : "flex-end",
+        }}
+      >
         {lookupMode === "scan" && renderContent()}
 
         {!productData && lookupMode === "scan" && (
@@ -947,14 +1015,15 @@ export default function CameraScreen() {
         {productData && (
           <ScrollView
             style={{
-              // maxHeight: 450,
-              marginBottom: 40,
+              maxHeight: "100%",
+              marginBottom: 0,
               backgroundColor: colors.surface,
               borderColor: colors.border,
               borderWidth: 2,
               borderRadius: 20,
-              padding: 16,
+              padding: awaitingEatenQuantity ? 14 : 16,
               width: 320,
+              flexGrow: 0,
               elevation: 8,
               shadowColor: colors.shadow,
               shadowOffset: { width: 0, height: 4 },
@@ -964,6 +1033,7 @@ export default function CameraScreen() {
             }}
             contentContainerStyle={{
               alignItems: "center",
+              paddingBottom: 10,
             }}
           >
             {lookupMode === "search" && searchResults.length > 0 && (
@@ -983,40 +1053,44 @@ export default function CameraScreen() {
               </Pressable>
             )}
 
-            <Text
-              style={{
-                color: colors.text,
-                fontSize: 20,
-                fontWeight: "700",
-                textAlign: "center",
-                marginBottom: 12,
-                letterSpacing: 0.3,
-              }}
-            >
-              {productData.name}
-            </Text>
+            {!awaitingEatenQuantity && !awaitingExpirationDate && (
+              <>
+                <Text
+                  style={{
+                    color: colors.text,
+                    fontSize: 20,
+                    fontWeight: "700",
+                    textAlign: "center",
+                    marginBottom: 12,
+                    letterSpacing: 0.3,
+                  }}
+                >
+                  {productData.name}
+                </Text>
 
-            {productData.image && (
-              <View
-                style={{
-                  width: 120,
-                  height: 120,
-                  marginBottom: 14,
-                  borderRadius: 16,
-                  backgroundColor: colors.surfaceAlt,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  overflow: "hidden",
-                  borderWidth: 2,
-                  borderColor: colors.border,
-                }}
-              >
-                <Image
-                  source={{ uri: productData.image }}
-                  style={{ width: 115, height: 115 }}
-                  resizeMode="contain"
-                />
-              </View>
+                {productData.image && (
+                  <View
+                    style={{
+                      width: 120,
+                      height: 120,
+                      marginBottom: 14,
+                      borderRadius: 16,
+                      backgroundColor: colors.surfaceAlt,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      overflow: "hidden",
+                      borderWidth: 2,
+                      borderColor: colors.border,
+                    }}
+                  >
+                    <Image
+                      source={{ uri: productData.image }}
+                      style={{ width: 115, height: 115 }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                )}
+              </>
             )}
 
             {awaitingQuantity ? (
@@ -1048,6 +1122,7 @@ export default function CameraScreen() {
                     }
 
                     setProductData(calculateTotals(productData, weight));
+                    setEatenQuantityInput(String(Math.round(weight)));
                     setAwaitingQuantity(false);
                   }}
                 >
@@ -1057,7 +1132,7 @@ export default function CameraScreen() {
                 </Pressable>
               </KeyboardWrapper>
             ) : (
-              !awaitingExpirationDate && (
+              !awaitingExpirationDate && !awaitingEatenQuantity && (
                 <View
                   style={{
                     backgroundColor: colors.surfaceAlt,
@@ -1192,31 +1267,71 @@ export default function CameraScreen() {
               </View>
             )}
 
-            {!awaitingQuantity && !awaitingExpirationDate && (
-              <View style={{ width: "100%", gap: 10 }}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.primaryActionButton,
-                    {
-                      backgroundColor: pressed
-                        ? "hsla(129, 56%, 38%, 1)"
-                        : colors.primary,
-                      elevation: pressed ? 2 : 4,
-                    },
-                  ]}
-                  onPress={() => {
-                    if (expiration) {
-                      setSelectedExpirationDate(new Date());
-                      setAwaitingExpirationDate(true);
-                      // Auto-open date picker for each product (Android + iOS)
-                      setShowDatePicker(true);
-                    } else {
-                      saveToDatabase();
-                    }
+            {!awaitingQuantity && !awaitingExpirationDate && awaitingEatenQuantity && (
+              <KeyboardWrapper scroll={false} style={{ width: "100%", marginBottom: 12 }}>
+                <View
+                  style={{
+                    width: "100%",
+                    backgroundColor: colors.surfaceAlt,
+                    borderRadius: 14,
+                    padding: 12,
+                    borderWidth: 1,
+                    borderColor: colors.border,
                   }}
                 >
-                  <Text style={styles.primaryActionButtonText}>📦 Špajza</Text>
-                </Pressable>
+                  <Text
+                    style={{
+                      color: colors.mutedText,
+                      fontSize: 14,
+                      fontWeight: "800",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Koľko z produktu si zjedol/la?
+                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <TextInput
+                      style={[styles.manualAddInput, themedInputStyle, { flex: 1, margin: 0 }]}
+                      value={eatenQuantityInput}
+                      onChangeText={(value) => setEatenQuantityInput(value.replace(/[^0-9]/g, ""))}
+                      placeholder="napr. 174"
+                      placeholderTextColor={colors.placeholder}
+                      keyboardType="numeric"
+                    />
+                    <Text style={{ color: colors.mutedText, fontWeight: "700" }}>g</Text>
+                  </View>
+                </View>
+              </KeyboardWrapper>
+            )}
+
+            {!awaitingQuantity && !awaitingExpirationDate && !awaitingEatenQuantity && (
+              <View style={{ width: "100%", gap: 10 }}>
+                {!awaitingEatenQuantity && (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.primaryActionButton,
+                      {
+                        backgroundColor: pressed
+                          ? "hsla(129, 56%, 38%, 1)"
+                          : colors.primary,
+                        elevation: pressed ? 2 : 4,
+                      },
+                    ]}
+                    onPress={() => {
+                      setPendingPantryProduct(null);
+                      setAwaitingEatenQuantity(false);
+                      if (expiration) {
+                        setSelectedExpirationDate(new Date());
+                        setAwaitingExpirationDate(true);
+                        setShowDatePicker(true);
+                      } else {
+                        saveToDatabase();
+                      }
+                    }}
+                  >
+                    <Text style={styles.primaryActionButtonText}>Špajza</Text>
+                  </Pressable>
+                )}
 
                 <Pressable
                   style={({ pressed }) => [
@@ -1229,15 +1344,22 @@ export default function CameraScreen() {
                     },
                   ]}
                   onPress={() => {
+                    if (!awaitingEatenQuantity) {
+                      setEatenQuantityInput(
+                        String(Math.round(getProductQuantity(productData))),
+                      );
+                      setAwaitingEatenQuantity(true);
+                      return;
+                    }
                     addDirectlyToEaten();
                   }}
                 >
-                  <Text style={styles.primaryActionButtonText}>🍽️ Zjedené</Text>
+                  <Text style={styles.primaryActionButtonText}>Zjedené</Text>
                 </Pressable>
               </View>
             )}
 
-            {awaitingExpirationDate && expiration && (
+            {awaitingExpirationDate && (expiration || pendingPantryProduct) && (
               <View
                 style={{
                   width: "100%",
@@ -1312,7 +1434,7 @@ export default function CameraScreen() {
                   <DateTimePicker
                     value={selectedExpirationDate || new Date()}
                     mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    display={Platform.OS === "ios" ? "compact" : "default"}
                     minimumDate={new Date()}
                     onChange={(event, date) => {
                       if (Platform.OS === "android") {

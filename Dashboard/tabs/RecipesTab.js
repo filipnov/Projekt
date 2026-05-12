@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Slider from "@react-native-community/slider";
 import styles from "../../styles";
 import { useAppTheme } from "../../ThemeContext";
+import { getProductQuantity, normalizeProductQuantity } from "../../productQuantity";
 
 const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
   /\/+$/,
@@ -653,8 +654,13 @@ export default function RecipesTab() {
           .join(", ")
       : "žiadne špecifické preferencie";
 
+    const selectedPantryLabels = selectedPantryItems.map(
+      (item) => `${item.name} (${Math.round(item.availableGrams)} g dostupné)`,
+    );
+
     const pantryText = selectedPantryItems.length
-      ? `Musíš použiť tieto produkty zo špajze: ${selectedPantryItems.join(", ")}.
+      ? `Musíš použiť tieto produkty zo špajze: ${selectedPantryLabels.join(", ")}.
+Nepouži viac gramov, než je pri produkte označené ako dostupné.
 Cieľom je čo najmenej plýtvať jedlom, takže musíš použiť všetky produkty pokiaľ je to možné.
 Pokiaľ nieje možné použiť všetky, použi ich čo najviac!`
       : "";
@@ -766,7 +772,7 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          setPantryItems(data.products || []);
+          setPantryItems((data.products || []).map(normalizeProductQuantity));
           setSelectedPantryItems([]);
         }
       });
@@ -1020,16 +1026,25 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                             trackColor={{ false: "#ccc", true: "#4ade80" }}
                             thumbColor="#fff"
                             ios_backgroundColor="#ccc"
-                            value={selectedPantryItems.includes(item.name)}
+                            value={selectedPantryItems.some(
+                              (selected) => selected.productId === item.productId,
+                            )}
                             onValueChange={(checked) => {
+                              const selectedItem = {
+                                productId: item.productId,
+                                name: item.name,
+                                availableGrams: getProductQuantity(item),
+                              };
                               if (checked) {
                                 setSelectedPantryItems((prev) => [
                                   ...prev,
-                                  item.name,
+                                  selectedItem,
                                 ]);
                               } else {
                                 setSelectedPantryItems((prev) =>
-                                  prev.filter((name) => name !== item.name),
+                                  prev.filter(
+                                    (selected) => selected.productId !== item.productId,
+                                  ),
                                 );
                               }
                             }}
@@ -1040,7 +1055,7 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                               generateModalStyles.text,
                             ]}
                           >
-                            {item.name}
+                            {item.name} ({Math.round(getProductQuantity(item))} g)
                           </Text>
                         </View>
                       ))}
@@ -1064,7 +1079,11 @@ Dodrž všetky pravidlá (JSON formát, ingrediencie, kroky).
                             if (checked) {
                               // vyber všetky produkty
                               setSelectedPantryItems(
-                                pantryItems.map((p) => p.name),
+                                pantryItems.map((p) => ({
+                                  productId: p.productId,
+                                  name: p.name,
+                                  availableGrams: getProductQuantity(p),
+                                })),
                               );
                             } else {
                               // zruš všetky výbery

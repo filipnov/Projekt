@@ -18,9 +18,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 // Centrálne štýly aplikácie.
 import styles from "../../styles";
+import KeyboardWrapper from "../../KeyboardWrapper";
 import { removeExpirationNotificationForProduct } from "../../notifications";
 import { updateTotalsForDate } from "../../dailyTotalsStorage";
 import { useAppTheme } from "../../ThemeContext";
+import {
+  buildConsumedProductTotals,
+  getOriginalProductQuantity,
+  getProductQuantity,
+  normalizeProductQuantity,
+  withProductQuantity,
+} from "../../productQuantity";
 
 // Základná URL servera – všetky API volania idú cez tento hostname.
 const SERVER_URL = String(process.env.EXPO_PUBLIC_API_URL || "").replace(
@@ -226,9 +234,12 @@ export default function PantryTab() {
     // Načítanie z cache 
     const storedMealBox = await AsyncStorage.getItem("products");
     const boxes = storedMealBox ? JSON.parse(storedMealBox) : [];
+    const normalizedBoxes = boxes.map((box) =>
+      box?.isCustom ? box : normalizeProductQuantity(box),
+    );
 
     // Aktualizujeme stav v UI.
-    setMealBoxes(boxes);
+    setMealBoxes(normalizedBoxes);
   }, [email]);
 
   // --- Auto fetch on tab focus ---
@@ -308,7 +319,7 @@ export default function PantryTab() {
           body: JSON.stringify({ email, productId }),
         });
       }
-    } catch {
+    } catch (err) {
       console.error("Error removing product from server:", err);
     }
 
@@ -367,6 +378,69 @@ export default function PantryTab() {
       await removeExpirationNotificationForProduct(box);
     }
 
+  };
+
+  const handleConsumeMealBoxAmount = async (box, grams) => {
+    if (!box) return;
+
+    const availableGrams = getProductQuantity(box);
+    const eatenGrams = Number(grams);
+
+    if (!Number.isFinite(eatenGrams) || eatenGrams <= 0) return;
+    if (eatenGrams >= availableGrams) {
+      await handleRemoveMealBox(box.id, box.productId, box);
+      return;
+    }
+
+    const eatenBox = {
+      ...box,
+      ...buildConsumedProductTotals(box, eatenGrams),
+      totalCalories: buildConsumedProductTotals(box, eatenGrams).calories,
+      totalProteins: buildConsumedProductTotals(box, eatenGrams).proteins,
+      totalCarbs: buildConsumedProductTotals(box, eatenGrams).carbs,
+      totalFat: buildConsumedProductTotals(box, eatenGrams).fat,
+      totalFiber: buildConsumedProductTotals(box, eatenGrams).fiber,
+      totalSugar: buildConsumedProductTotals(box, eatenGrams).sugar,
+      totalSalt: buildConsumedProductTotals(box, eatenGrams).salt,
+    };
+    await addEatenValues(eatenBox);
+
+    const remainingProduct = withProductQuantity(
+      box,
+      availableGrams - eatenGrams,
+      getOriginalProductQuantity(box),
+    );
+
+    if (email && box.productId) {
+      try {
+        const response = await fetch(`${SERVER_URL}/api/updateProductQuantity`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            productId: box.productId,
+            product: remainingProduct,
+          }),
+        });
+        const data = await response.json();
+        if (data.success && Array.isArray(data.products)) {
+          await AsyncStorage.setItem("products", JSON.stringify(data.products));
+          setMealBoxes(data.products);
+          return;
+        }
+      } catch (err) {
+        console.error("Error updating product quantity:", err);
+      }
+    }
+
+    const stored = await AsyncStorage.getItem("products");
+    const allProducts = stored ? JSON.parse(stored) : [];
+    const nextProducts = allProducts.map((item) =>
+      item?.productId === box.productId ? remainingProduct : item,
+    );
+
+    await AsyncStorage.setItem("products", JSON.stringify(nextProducts));
+    setMealBoxes(nextProducts);
   };
 
   const addCustomMealBox = async () => {
@@ -551,6 +625,8 @@ export default function PantryTab() {
     const [isPer100g, setIsPer100g] = useState();
     // Nastavenie, či sa má zobrazovať exspirácia.
     const [expiration, setExpiration] = useState();
+    const [eatAmountInput, setEatAmountInput] = useState("");
+    const [awaitingEatAmount, setAwaitingEatAmount] = useState(false);
 
     useEffect(() => {
       // Preferencia zobrazovania exspirácie uložená v AsyncStorage.
@@ -614,6 +690,10 @@ export default function PantryTab() {
       // Zoberieme prvú inštanciu ako reprezentatívny produkt.
       const nextProduct = instances?.[0] ?? null;
       setProduct(nextProduct);
+      setEatAmountInput(
+        nextProduct ? String(Math.round(getProductQuantity(nextProduct))) : "",
+      );
+      setAwaitingEatAmount(false);
 
       // Už máme dáta, loading vypneme.
       setLoadingWindow(false);
@@ -624,10 +704,18 @@ export default function PantryTab() {
       const instance = instances?.[0];
 
       if (!instance) return;
+      if (!awaitingEatAmount) {
+        setEatAmountInput(String(Math.round(getProductQuantity(instance))));
+        setAwaitingEatAmount(true);
+        return;
+      }
+
+      const amount = Number(eatAmountInput);
+      if (!Number.isFinite(amount) || amount <= 0) return;
 
       // Najprv zavrieme modál, potom odstránime položku.
       close?.();
-      handleRemoveMealBox(instance.id, instance.productId, instance);
+      handleConsumeMealBoxAmount(instance, amount);
     };
 
     // Voľba výživových hodnôt podľa preferencie.
@@ -643,26 +731,32 @@ export default function PantryTab() {
 
     return (
       // Polopriesvitné pozadie modálu.
-      <View style={[styles.pantryOverlay, { backgroundColor: colors.overlay }]}>
+      <KeyboardWrapper
+        scroll={false}
+        safeArea={true}
+        safeAreaEdges={["top", "bottom"]}
+        style={[styles.pantryOverlay, { backgroundColor: colors.overlay }]}
+        contentContainerStyle={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 10,
+          paddingVertical: 8,
+          width: "100%",
+        }}
+      >
         {/* Samotné okno modálu */}
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            paddingHorizontal: 10,
-            width: "100%"
-          }}
-        >
           <ScrollView
             style={{
               backgroundColor: colors.surface,
               borderColor: colors.border,
               borderWidth: 2,
               borderRadius: 20,
-              padding: 18,
+              padding: awaitingEatAmount ? 14 : 18,
               width: "95%",
               maxWidth: 560,
+              maxHeight: "100%",
+              flexGrow: 0,
               elevation: 8,
               shadowColor: colors.shadow,
               shadowOffset: { width: 0, height: 4 },
@@ -671,6 +765,7 @@ export default function PantryTab() {
             }}
             contentContainerStyle={{
               alignItems: "center",
+              paddingBottom: 10,
             }}
           >
             {loadingWindow ? (
@@ -697,6 +792,8 @@ export default function PantryTab() {
               </>
             ) : (
               <>
+                {!awaitingEatAmount && (
+                  <>
                 {/* Názov produktu */}
                 <Text
                   style={{
@@ -855,7 +952,45 @@ export default function PantryTab() {
                 </View>
 
                 {/* Akčné tlačidlá */}
+                  </>
+                )}
+
                 <View style={{ width: "100%", gap: 10 }}>
+                  {awaitingEatAmount && (
+                    <View
+                      style={{
+                        backgroundColor: colors.surfaceAlt,
+                        borderRadius: 12,
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                      }}
+                    >
+                      <Text style={{ color: colors.mutedText, fontWeight: "700", marginBottom: 8 }}>
+                        Koľko gramov chceš zjesť?
+                      </Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <TextInput
+                          value={eatAmountInput}
+                          onChangeText={(value) => setEatAmountInput(value.replace(/[^0-9]/g, ""))}
+                          keyboardType="numeric"
+                          placeholder="napr. 174"
+                          placeholderTextColor={colors.placeholder}
+                          style={[
+                            styles.manualAddInput,
+                            {
+                              flex: 1,
+                              margin: 0,
+                              backgroundColor: colors.inputBackground,
+                              borderColor: colors.inputBorder,
+                              color: colors.text,
+                            },
+                          ]}
+                        />
+                        <Text style={{ color: colors.mutedText, fontWeight: "700" }}>g</Text>
+                      </View>
+                    </View>
+                  )}
                   <Pressable
                     onPress={handleEatPress}
                     style={({ pressed }) => [
@@ -870,10 +1005,10 @@ export default function PantryTab() {
                     ]}
                   >
                     <Text style={{ color: "white", fontWeight: "700", fontSize: 16 }}>
-                      🍽️ Zjedené
+                      Zjedené
                     </Text>
                   </Pressable>
-
+                  {!awaitingEatAmount && (
                   <Pressable
                     onPress={close}
                     style={({ pressed }) => [
@@ -891,12 +1026,12 @@ export default function PantryTab() {
                       Zatvoriť
                     </Text>
                   </Pressable>
+                  )}
                 </View>
               </>
             )}
           </ScrollView>
-        </View>
-      </View>
+      </KeyboardWrapper>
     );
   };
 
@@ -910,7 +1045,13 @@ export default function PantryTab() {
 
   return (
     // Root kontajner celej obrazovky.
-    <View>
+    <KeyboardWrapper
+      scroll={false}
+      safeArea={true}
+      safeAreaEdges={["top", "bottom"]}
+      style={{ backgroundColor: colors.dashboardBackground }}
+      contentContainerStyle={{ flex: 1 }}
+    >
       {/* Modál s detailom produktu */}
       <Modal
         visible={isModalVisible}
@@ -929,8 +1070,10 @@ export default function PantryTab() {
       <ScrollView
         style={[
           styles.pantryMealContainer,
-          { backgroundColor: colors.dashboardBackground },
+          { backgroundColor: colors.dashboardBackground, flex: 1 },
         ]}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Sekcia naskenovaných položiek */}
         <Text style={[styles.pantrySectionTitle, { color: colors.text }]}>
@@ -1015,6 +1158,6 @@ export default function PantryTab() {
           )}
         </View>
       </ScrollView>
-    </View>
+    </KeyboardWrapper>
   );
 }
