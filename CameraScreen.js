@@ -26,6 +26,10 @@ import { updateTotalsForDate } from "./dailyTotalsStorage";
 import { useAppTheme } from "./ThemeContext";
 import { useAlert } from "./AlertContext";
 import {
+  buildProductListKey,
+  getCategoryEmoji,
+} from "./productPresentation";
+import {
   buildConsumedProductTotals,
   getProductQuantity,
   normalizeProductQuantity,
@@ -76,6 +80,10 @@ export default function CameraScreen() {
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [awaitingExpirationDate, setAwaitingExpirationDate] = useState(false);
+  const [searchAttempted, setSearchAttempted] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Hľadám produkt…");
+  const [visibleSearchCount, setVisibleSearchCount] = useState(10);
+  const [showNoMoreSearchResults, setShowNoMoreSearchResults] = useState(false);
   const themedInputStyle = {
     backgroundColor: colors.inputBackground,
     borderColor: colors.inputBorder,
@@ -115,6 +123,9 @@ export default function CameraScreen() {
     salt,
     sugar,
     image,
+    category,
+    source,
+    sourceProductId,
     expirationDate,
     originalQuantity,
     remainingQuantity,
@@ -142,6 +153,9 @@ export default function CameraScreen() {
           salt,
           sugar,
           image,
+          category,
+          source,
+          sourceProductId,
           expirationDate,
           originalQuantity,
           remainingQuantity,
@@ -176,6 +190,7 @@ export default function CameraScreen() {
     setAwaitingExpirationDate(false);
     setSelectedExpirationDate(new Date());
     setSearchError("");
+    setShowNoMoreSearchResults(false);
   }
 
   function showProductNotFound() {
@@ -326,10 +341,13 @@ export default function CameraScreen() {
     }
 
     setLoading(true);
+  setLoadingMessage("Hľadám produkt…");
     resetLookupState();
     setScanned(false);
     setSearchPage(1);
     setHasMoreSearchResults(false);
+  setSearchAttempted(true);
+    setVisibleSearchCount(10);
 
     try {
       const data = await fetchSearchResults(query, 1);
@@ -337,7 +355,7 @@ export default function CameraScreen() {
       const visibleProducts = products.filter((product) => Boolean(product?.name));
 
       setSearchResults(visibleProducts);
-      setHasMoreSearchResults(products.length >= 10);
+      setHasMoreSearchResults(visibleProducts.length > 10);
       setSearchError(visibleProducts.length ? "" : "Nenašli sa žiadne produkty.");
     } catch {
       setSearchResults([]);
@@ -351,6 +369,7 @@ export default function CameraScreen() {
   async function handleGenerateAI() {
     if (!searchQuery || String(searchQuery).trim().length < 1) return;
     setLoading(true);
+    setLoadingMessage("Generujem produkt…");
     try {
       const response = await fetch(`${SERVER_URL}/api/generateProductAI`, {
         method: "POST",
@@ -360,15 +379,25 @@ export default function CameraScreen() {
 
       const data = await response.json();
       if (data && data.success && data.product) {
+        const aiProduct = {
+          ...data.product,
+          source: "ai",
+          category: data.product.category || "",
+          image: data.product.image || null,
+        };
         showAlert(
           "Upozornenie",
           data.warning ||
             "Nutričné hodnoty vygenerované umelou inteligenciou nemusia byť presné. Skontrolujte ich.",
         );
-        setSearchResults([data.product]);
-        setHasMoreSearchResults(false);
+        setSearchResults((currentResults) => [aiProduct, ...currentResults]);
+        setSearchAttempted(true);
+        setSearchError("");
+        setVisibleSearchCount(10);
+        setShowNoMoreSearchResults(false);
+        setHasMoreSearchResults(true);
       } else {
-        setSearchError("AI generovanie zlyhalo. Skúste znova.");
+        setSearchError(data?.error || "AI generovanie zlyhalo. Skúste znova.");
       }
     } catch (err) {
       setSearchError("AI generovanie zlyhalo. Skúste znova.");
@@ -378,23 +407,24 @@ export default function CameraScreen() {
   }
 
   async function loadMoreSearchResults() {
-    const query = searchQuery.trim();
-    if (query.length < 2 || loadingMoreSearchResults) return;
+    if (loadingMoreSearchResults) return;
 
     Keyboard.dismiss();
     setLoadingMoreSearchResults(true);
 
     try {
-      const nextPage = searchPage + 1;
-      const data = await fetchSearchResults(query, nextPage);
-      const products = Array.isArray(data.products) ? data.products : [];
-      const visibleProducts = products.filter((product) => Boolean(product?.name));
-
-      setSearchResults((currentResults) => [...currentResults, ...visibleProducts]);
-      setSearchPage(nextPage);
-      setHasMoreSearchResults(products.length >= 10);
-    } catch {
-      setSearchError("Ďalšie produkty sa nepodarilo načítať.");
+      const nextVisibleCount = visibleSearchCount + 10;
+      if (nextVisibleCount >= searchResults.length) {
+        if (searchResults.length <= visibleSearchCount) {
+          setShowNoMoreSearchResults(true);
+        }
+        setVisibleSearchCount(searchResults.length);
+        setHasMoreSearchResults(false);
+      } else {
+        setVisibleSearchCount(nextVisibleCount);
+        setHasMoreSearchResults(true);
+        setShowNoMoreSearchResults(false);
+      }
     } finally {
       setLoadingMoreSearchResults(false);
     }
@@ -412,6 +442,9 @@ export default function CameraScreen() {
     setScanned(false);
     setSearchError("");
     setNotFound(false);
+    setSearchAttempted(false);
+    setVisibleSearchCount(10);
+    setShowNoMoreSearchResults(false);
   }
 
   function returnToSearchResults() {
@@ -441,6 +474,9 @@ export default function CameraScreen() {
     setSearchPage(1);
     setHasMoreSearchResults(false);
     setLoadingMoreSearchResults(false);
+    setSearchAttempted(false);
+    setVisibleSearchCount(10);
+    setShowNoMoreSearchResults(false);
   }
 
   async function fetchProductData(barcode) {
@@ -554,22 +590,12 @@ export default function CameraScreen() {
     );
   };
 
-  const getCategoryEmoji = (category) => {
-    if (!category) return "🍽️";
-    const c = String(category).toLowerCase();
-    if (c.includes("pastry") || c.includes("pečiv") || c.includes("peciv")) return "🥐";
-    if (c.includes("meat") || c.includes("mäso") || c.includes("maso")) return "🥩";
-    if (c.includes("vegetable") || c.includes("zelenina") || c.includes("vegetables")) return "🥦";
-    if (c.includes("fruit") || c.includes("ovoc") || c.includes("fruits")) return "🍎";
-    return "🍽️";
-  };
-
   const renderSearchResult = (product, index) => {
     const title = product?.name || "Neznámy produkt";
     const brand = product?.brand || null;
     const quantity = product?.quantity;
     const image = product?.image || null;
-    const key = product?.productId || `${title}-${index}`;
+    const key = buildProductListKey(product, index, product?.source || "openfoodfacts");
 
     return (
       <Pressable
@@ -602,7 +628,7 @@ export default function CameraScreen() {
                 { color: colors.mutedText, fontSize: 24 },
               ]}
             >
-              {getCategoryEmoji(product?.category)}
+              {getCategoryEmoji(product)}
             </Text>
           </View>
         )}
@@ -643,6 +669,9 @@ export default function CameraScreen() {
   const renderSearchContent = () => {
     if (lookupMode !== "search" || productData) return null;
 
+    const displayedSearchResults = searchResults.slice(0, visibleSearchCount);
+    const hasHiddenSearchResults = searchResults.length > visibleSearchCount;
+
     return (
       <KeyboardWrapper
         scroll={false}
@@ -680,7 +709,7 @@ export default function CameraScreen() {
               {searchError}
             </Text>
           )}
-          {!loading && !searchResults.length && searchQuery.trim().length >= 2 && (
+          {!loading && searchAttempted && !searchResults.length && searchQuery.trim().length >= 2 && (
             <View style={{ marginTop: 12 }}>
               <Text style={{ color: colors.text, marginBottom: 6 }}>
                 Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
@@ -701,23 +730,48 @@ export default function CameraScreen() {
           )}
         </View>
 
-        {searchResults.length > 0 && (
+        {searchAttempted && (
           <ScrollView
             style={styles.productSearchResults}
             contentContainerStyle={styles.productSearchResultsContent}
             keyboardShouldPersistTaps="handled"
           >
-            {searchResults.map(renderSearchResult)}
-            {hasMoreSearchResults && (
-              <Pressable
-                onPress={loadMoreSearchResults}
-                style={styles.productSearchLoadMoreButton}
-                disabled={loadingMoreSearchResults}
-              >
-                <Text style={styles.productSearchLoadMoreText}>
-                  {loadingMoreSearchResults ? "Načítavam..." : "Zobraziť viac"}
+            {displayedSearchResults.map(renderSearchResult)}
+            <Pressable
+              onPress={loadMoreSearchResults}
+              style={styles.productSearchLoadMoreButton}
+              disabled={loadingMoreSearchResults}
+            >
+              <Text style={styles.productSearchLoadMoreText}>
+                {loadingMoreSearchResults
+                  ? "Načítavam..."
+                  : "Zobraziť ďalšie"}
+              </Text>
+            </Pressable>
+            {showNoMoreSearchResults && !hasHiddenSearchResults && (
+              <Text style={[styles.productSearchError, { color: colors.mutedText, textAlign: "center" }]}>Ďalšie produkty nie sú.</Text>
+            )}
+            {showNoMoreSearchResults && hasHiddenSearchResults && (
+              <Text style={[styles.productSearchError, { color: colors.mutedText, textAlign: "center" }]}>Ďalšie produkty nie sú.</Text>
+            )}
+            {searchAttempted && (
+              <View style={{ marginTop: 12, paddingHorizontal: 4, alignItems: "center" }}>
+                <Text style={{ color: colors.text, marginBottom: 6, textAlign: "center" }}>
+                  Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
                 </Text>
-              </Pressable>
+                <Pressable
+                  onPress={() => Linking.openURL("mailto:support.bitewise@gmail.com")}
+                  style={[styles.primaryActionButton, { marginBottom: 8 }]}
+                >
+                  <Text style={styles.primaryActionButtonText}>Napísať support</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleGenerateAI}
+                  style={[styles.primaryActionButton, { backgroundColor: colors.surfaceAlt, marginTop: 6 }]}
+                >
+                  <Text style={[styles.primaryActionButtonText, { color: colors.text }]}>Vygenerovať informácie o potravine pomocou AI</Text>
+                </Pressable>
+              </View>
             )}
           </ScrollView>
         )}
@@ -882,6 +936,9 @@ export default function CameraScreen() {
         productToSave.salt,
         productToSave.sugar,
         productToSave.image,
+        productToSave.category,
+        productToSave.source,
+        productToSave.sourceProductId || productToSave.productId || productToSave.id,
         expirationDateToSave,
         productToSave.originalQuantity || productToSave.quantity,
         productToSave.remainingQuantity || productToSave.quantity,
@@ -1025,7 +1082,7 @@ export default function CameraScreen() {
           <View style={[styles.generatingModalContainer, themedPanelStyle]}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.generatingModalTitle, { color: colors.text }]}>
-              Hľadám produkt…
+              {loadingMessage}
             </Text>
           </View>
         </View>
@@ -1636,6 +1693,26 @@ export default function CameraScreen() {
                     }}
                   />
                 )}
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.primaryActionButton,
+                    {
+                      marginTop: 8,
+                      marginBottom: 10,
+                      backgroundColor: pressed ? "#757575" : colors.surfaceAlt,
+                    },
+                  ]}
+                  onPress={async () => {
+                    setSelectedExpirationDate(null);
+                    setAwaitingExpirationDate(false);
+                    setShowDatePicker(false);
+                    setShowExpInput(false);
+                    await saveToDatabase();
+                  }}
+                >
+                  <Text style={[styles.primaryActionButtonText, { color: colors.text }]}>Bez expirácie</Text>
+                </Pressable>
 
                 <View
                   style={{

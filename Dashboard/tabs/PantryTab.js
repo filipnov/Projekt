@@ -25,6 +25,11 @@ import { useAppTheme } from "../../ThemeContext";
 import { useAlert } from "../../AlertContext";
 import { SERVER_URL } from "../../config/serverConfig";
 import {
+  buildProductListKey,
+  getCategoryEmoji,
+  getExpirationLabel,
+} from "../../productPresentation";
+import {
   buildConsumedProductTotals,
   getOriginalProductQuantity,
   getProductQuantity,
@@ -296,19 +301,7 @@ export default function PantryTab() {
   };
 
   const formatExpiration = (value) => {
-    // Ak nemáme hodnotu, nič nezobrazíme.
-    if (!value) return null;
-
-    // Normalizujeme na Date.
-    const dateValue = value instanceof Date ? value : new Date(value);
-    // Overíme validitu dátumu.
-    const isInvalid = Number.isNaN(dateValue.getTime());
-
-    // Pri invalidnom dátume nič nezobrazíme.
-    if (isInvalid) return null;
-
-    // Lokalizované SK formátovanie.
-    return dateValue.toLocaleDateString("sk-SK");
+    return getExpirationLabel(value);
   };
 
   const activeGroup = useMemo(() => {
@@ -561,6 +554,7 @@ export default function PantryTab() {
     const box = group.box;
     // URL obrázka.
     const boxImage = box?.image;
+    const boxEmoji = getCategoryEmoji(box);
     // Názov produktu.
     const boxName = box?.name;
     // Počet rovnakých položiek.
@@ -594,113 +588,195 @@ export default function PantryTab() {
           },
         ]}
       >
-        <ImageBackground
-          source={{ uri: boxImage }}
-          style={{
-            width: "100%",
-            height: 150,
-            justifyContent: "flex-end",
-          }}
-          imageStyle={{ borderRadius: 14 }}
-        >
-          {/* Tmavý gradient pozadí pre lepšiu čitateľnosť textu */}
-          <View
+        {boxImage ? (
+          <ImageBackground
+            source={{ uri: boxImage }}
             style={{
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              padding: 12,
-              borderBottomLeftRadius: 14,
-              borderBottomRightRadius: 14,
+              width: "100%",
+              height: 150,
+              justifyContent: "flex-end",
             }}
+            imageStyle={{ borderRadius: 14 }}
           >
-            {/* Názov položky */}
-            <Text
+            <View
               style={{
-                color: "white",
-                fontSize: 15,
-                fontWeight: "700",
-                marginBottom: 6,
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                padding: 12,
+                borderBottomLeftRadius: 14,
+                borderBottomRightRadius: 14,
               }}
-              numberOfLines={2}
             >
-              {boxName}
-            </Text>
-            {!!expirationText && (
               <Text
                 style={{
-                  color: "rgba(255, 255, 255, 0.9)",
-                  fontSize: 12,
+                  color: "white",
+                  fontSize: 15,
+                  fontWeight: "700",
                   marginBottom: 6,
                 }}
+                numberOfLines={2}
               >
-                {expirationText}
+                {boxName}
               </Text>
-            )}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              <View
-                style={{
-                  backgroundColor: colors.surfaceAlt,
-                  paddingVertical: 5,
-                  paddingHorizontal: 12,
-                  borderRadius: 20,
-                  alignSelf: "flex-start",
-                }}
-              >
+              {!!expirationText && (
                 <Text
                   style={{
-                    color: colors.text,
+                    color: "rgba(255, 255, 255, 0.9)",
                     fontSize: 12,
-                    fontWeight: "700",
+                    marginBottom: 6,
                   }}
                 >
-                  {Number.isFinite(totalGrams) ? `${totalGrams} g` : "— g"}
+                  {expirationText}
                 </Text>
+              )}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <View
+                  style={{
+                    backgroundColor: colors.surfaceAlt,
+                    paddingVertical: 5,
+                    paddingHorizontal: 12,
+                    borderRadius: 20,
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: colors.text,
+                      fontSize: 12,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {Number.isFinite(totalGrams) ? `${totalGrams} g` : "— g"}
+                  </Text>
+                </View>
+                {isOpened && (
+                  <View
+                    style={{
+                      backgroundColor: colors.primary,
+                      paddingVertical: 5,
+                      paddingHorizontal: 12,
+                      borderRadius: 20,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 12,
+                        fontWeight: "700",
+                      }}
+                    >
+                      Načaté
+                    </Text>
+                  </View>
+                )}
+                {hasMoreThanOne && (
+                  <View
+                    style={{
+                      backgroundColor: colors.primary,
+                      paddingVertical: 5,
+                      paddingHorizontal: 12,
+                      borderRadius: 20,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 12,
+                        fontWeight: "700",
+                      }}
+                    >
+                      {count} ks
+                    </Text>
+                  </View>
+                )}
               </View>
-              {isOpened && (
+            </View>
+          </ImageBackground>
+        ) : (
+          <View
+            style={{
+              width: "100%",
+              height: 150,
+              justifyContent: "space-between",
+              backgroundColor: colors.surfaceAlt,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 54 }}>{boxEmoji}</Text>
+            </View>
+            <View
+              style={{
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                padding: 12,
+                borderBottomLeftRadius: 14,
+                borderBottomRightRadius: 14,
+              }}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  fontSize: 15,
+                  fontWeight: "700",
+                  marginBottom: 6,
+                }}
+                numberOfLines={2}
+              >
+                {boxName}
+              </Text>
+              <Text style={{ color: "rgba(255, 255, 255, 0.9)", fontSize: 12, marginBottom: 6 }}>
+                {expirationText}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 <View
                   style={{
-                    backgroundColor: colors.primary,
+                    backgroundColor: colors.surfaceAlt,
                     paddingVertical: 5,
                     paddingHorizontal: 12,
                     borderRadius: 20,
                     alignSelf: "flex-start",
                   }}
                 >
-                  <Text
-                    style={{
-                      color: "white",
-                      fontSize: 12,
-                      fontWeight: "700",
-                    }}
-                  >
-                    Načaté
+                  <Text style={{ color: colors.text, fontSize: 12, fontWeight: "700" }}>
+                    {Number.isFinite(totalGrams) ? `${totalGrams} g` : "— g"}
                   </Text>
                 </View>
-              )}
-              {hasMoreThanOne && (
-                <View
-                  style={{
-                    backgroundColor: colors.primary,
-                    paddingVertical: 5,
-                    paddingHorizontal: 12,
-                    borderRadius: 20,
-                    alignSelf: "flex-start",
-                  }}
-                >
-                  {/* Zobrazenie počtu kusov v skupine */}
-                  <Text
+                {isOpened && (
+                  <View
                     style={{
-                      color: "white",
-                      fontSize: 12,
-                      fontWeight: "700",
+                      backgroundColor: colors.primary,
+                      paddingVertical: 5,
+                      paddingHorizontal: 12,
+                      borderRadius: 20,
+                      alignSelf: "flex-start",
                     }}
                   >
-                    {count} ks
-                  </Text>
-                </View>
-              )}
+                    <Text style={{ color: "white", fontSize: 12, fontWeight: "700" }}>Načaté</Text>
+                  </View>
+                )}
+                {hasMoreThanOne && (
+                  <View
+                    style={{
+                      backgroundColor: colors.primary,
+                      paddingVertical: 5,
+                      paddingHorizontal: 12,
+                      borderRadius: 20,
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <Text style={{ color: "white", fontSize: 12, fontWeight: "700" }}>{count} ks</Text>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
-        </ImageBackground>
+        )}
       </Pressable>
     );
   };
@@ -935,26 +1011,45 @@ export default function PantryTab() {
                 </Text>
 
                 {/* Obrázok produktu */}
-                <View
-                  style={{
-                    width: 112,
-                    height: 112,
-                    marginBottom: 10,
-                    borderRadius: 16,
-                    backgroundColor: colors.surfaceAlt,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    overflow: "hidden",
-                    borderWidth: 2,
-                    borderColor: colors.border,
-                  }}
-                >
-                  <Image
-                    source={{ uri: product.image }}
-                    style={{ width: 108, height: 108 }}
-                    resizeMode="contain"
-                  />
-                </View>
+                {product.image ? (
+                  <View
+                    style={{
+                      width: 112,
+                      height: 112,
+                      marginBottom: 10,
+                      borderRadius: 16,
+                      backgroundColor: colors.surfaceAlt,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      overflow: "hidden",
+                      borderWidth: 2,
+                      borderColor: colors.border,
+                    }}
+                  >
+                    <Image
+                      source={{ uri: product.image }}
+                      style={{ width: 108, height: 108 }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ) : (
+                  <View
+                    style={{
+                      width: 112,
+                      height: 112,
+                      marginBottom: 10,
+                      borderRadius: 16,
+                      backgroundColor: colors.surfaceAlt,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      overflow: "hidden",
+                      borderWidth: 2,
+                      borderColor: colors.border,
+                    }}
+                  >
+                    <Text style={{ fontSize: 48 }}>{getCategoryEmoji(product)}</Text>
+                  </View>
+                )}
 
                 {/* Info riadky - Exspirácia a Počet */}
                 <View
@@ -1357,7 +1452,7 @@ export default function PantryTab() {
           >
             {openedMealBoxGroups.map((group, index) => (
               <MealBoxItem
-                key={group.box?.productId ?? `${group.key}-${index}`}
+                key={buildProductListKey(group.box, index, group.box?.source || "database")}
                 group={group}
               />
             ))}
@@ -1379,8 +1474,8 @@ export default function PantryTab() {
           </Text>
         )}
         <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-evenly", width: "100%", paddingHorizontal: 0 }}>
-          {groupedMealBoxes.map((group) => (
-            <MealBoxItem key={group.key} group={group} />
+          {groupedMealBoxes.map((group, index) => (
+            <MealBoxItem key={buildProductListKey(group.box, index, group.box?.source || "database")} group={group} />
           ))}
         </View>
 
@@ -1425,9 +1520,9 @@ export default function PantryTab() {
               Zatiaľ nemáš vlastné položky.
             </Text>
           ) : (
-            customMealBoxes.map((item) => (
+            customMealBoxes.map((item, index) => (
               <View
-                key={item.productId}
+                key={buildProductListKey(item, index, item?.source || "custom")}
                 style={[
                   styles.pantryCustomItemRow,
                   { borderBottomColor: colors.border },

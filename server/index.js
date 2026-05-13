@@ -114,6 +114,221 @@ function levenshtein(a, b) {
   return matrix[B.length][A.length];
 }
 
+function countSharedLetters(input, name) {
+  const inputChars = Array.from(normalizeTextForSearch(input).replace(/\s+/g, ""));
+  const nameChars = Array.from(normalizeTextForSearch(name).replace(/\s+/g, ""));
+  const nameCounts = new Map();
+
+  for (const char of nameChars) {
+    nameCounts.set(char, (nameCounts.get(char) || 0) + 1);
+  }
+
+  let shared = 0;
+  for (const char of inputChars) {
+    const count = nameCounts.get(char) || 0;
+    if (count > 0) {
+      shared += 1;
+      nameCounts.set(char, count - 1);
+    }
+  }
+
+  return shared;
+}
+
+function countOrderedLetters(input, name) {
+  const inputChars = Array.from(normalizeTextForSearch(input).replace(/\s+/g, ""));
+  const nameChars = Array.from(normalizeTextForSearch(name).replace(/\s+/g, ""));
+  let nameIndex = 0;
+  let ordered = 0;
+
+  for (const char of inputChars) {
+    while (nameIndex < nameChars.length && nameChars[nameIndex] !== char) {
+      nameIndex += 1;
+    }
+    if (nameIndex < nameChars.length) {
+      ordered += 1;
+      nameIndex += 1;
+    }
+  }
+
+  return ordered;
+}
+
+function toFiniteOrNull(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function createUniqueProductId(prefix = "product") {
+  const randomId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}-${randomId}`;
+}
+
+function getProductSourcePriority(source) {
+  return source === "database" || source === "ai" ? 1 : 0;
+}
+
+function buildProductSearchKey(product, index = 0) {
+  const source = product?.source || "database";
+  const sourceId =
+    product?.code || product?.productId || product?.id || product?._id || normalizeTextForSearch(product?.name);
+  return `${source}-${String(sourceId || "product")}-${index}`;
+}
+
+function scoreProductMatch(product, query) {
+  const normalizedQuery = normalizeTextForSearch(query);
+  const normalizedName = normalizeTextForSearch(
+    product?.name || product?.product_name || product?.brands || "",
+  );
+
+  if (!normalizedQuery || !normalizedName) return 0;
+
+  if (normalizedName === normalizedQuery) {
+    return 2000 + (getProductSourcePriority(product?.source) ? 20 : 0);
+  }
+
+  const exactWithoutSpaces =
+    normalizedName.replace(/\s+/g, "") === normalizedQuery.replace(/\s+/g, "");
+  const startsWithScore = normalizedName.startsWith(normalizedQuery) ? 250 : 0;
+  const substringScore = normalizedName.includes(normalizedQuery) ? 180 : 0;
+  const sharedLetters = countSharedLetters(normalizedQuery, normalizedName);
+  const orderedLetters = countOrderedLetters(normalizedQuery, normalizedName);
+  const levenshteinDistance = levenshtein(normalizedName, normalizedQuery);
+  const maxLength = Math.max(normalizedName.length, normalizedQuery.length, 1);
+  const levenshteinScore = Math.max(0, Math.round((1 - levenshteinDistance / maxLength) * 220));
+  const firstLetterScore = normalizedName[0] === normalizedQuery[0] ? 25 : 0;
+  const orderedRatioBonus = orderedLetters === normalizedQuery.replace(/\s+/g, "").length ? 140 : Math.round((orderedLetters / Math.max(normalizedQuery.replace(/\s+/g, "").length, 1)) * 140);
+  const sharedLettersScore = Math.round((sharedLetters / Math.max(normalizedQuery.replace(/\s+/g, "").length, 1)) * 120);
+
+  let score =
+    (exactWithoutSpaces ? 1500 : 0) +
+    startsWithScore +
+    substringScore +
+    orderedRatioBonus +
+    sharedLettersScore +
+    levenshteinScore +
+    firstLetterScore;
+
+  const sourceBoost = getProductSourcePriority(product?.source) ? 18 : 0;
+  if (score < 50) return 0;
+  return score + sourceBoost;
+}
+
+function normalizeOffFoodProduct(product) {
+  const n = product?.nutriments || {};
+  const weight = toFiniteOrNull(product?.product_quantity) || 0;
+
+  return {
+    productId: String(product?.code || product?.id || normalizeTextForSearch(product?.product_name) || createUniqueProductId("off")),
+    id: String(product?.code || product?.id || normalizeTextForSearch(product?.product_name) || createUniqueProductId("off")),
+    code: product?.code || null,
+    name: product?.product_name || product?.generic_name || product?.brands || "Neznámy produkt",
+    brand: product?.brands || "",
+    image: product?.image_url || product?.image_front_url || null,
+    category: product?.category || "",
+    source: "openfoodfacts",
+    isCustom: false,
+    expirationDate: null,
+    quantity: weight || 0,
+    originalQuantity: weight || 0,
+    remainingQuantity: weight || 0,
+    totalCalories: null,
+    totalProteins: null,
+    totalCarbs: null,
+    totalFat: null,
+    totalFiber: null,
+    totalSalt: null,
+    totalSugar: null,
+    calories: toFiniteOrNull(n?.["energy-kcal_100g"]) ?? 0,
+    proteins: toFiniteOrNull(n?.proteins_100g) ?? 0,
+    carbs: toFiniteOrNull(n?.carbohydrates_100g) ?? 0,
+    fat: toFiniteOrNull(n?.fat_100g) ?? 0,
+    fiber: toFiniteOrNull(n?.fiber_100g) ?? 0,
+    salt: toFiniteOrNull(n?.salt_100g) ?? 0,
+    sugar: toFiniteOrNull(n?.sugars_100g) ?? 0,
+    searchName: normalizeTextForSearch(product?.product_name || product?.generic_name || product?.brands || ""),
+    createdAt: null,
+  };
+}
+
+function normalizeStoredProduct(product) {
+  const normalizedName = normalizeTextForSearch(product?.name || product?.product_name || "");
+  return {
+    productId: String(product?.productId || product?._id || createUniqueProductId(product?.source || "database")),
+    id: String(product?.id || product?._id || product?.productId || ""),
+    _id: product?._id ? String(product._id) : undefined,
+    code: product?.code || product?.product_code || null,
+    name: product?.name || product?.product_name || "Neznámy produkt",
+    brand: product?.brand || product?.brands || "",
+    image: product?.image || null,
+    category: product?.category || "",
+    source: product?.source || "database",
+    isCustom: Boolean(product?.isCustom),
+    expirationDate: product?.expirationDate ?? null,
+    quantity: toFiniteOrNull(product?.quantity) ?? 0,
+    originalQuantity: toFiniteOrNull(product?.originalQuantity) ?? toFiniteOrNull(product?.quantity) ?? 0,
+    remainingQuantity: toFiniteOrNull(product?.remainingQuantity) ?? toFiniteOrNull(product?.quantity) ?? 0,
+    totalCalories: product?.totalCalories ?? null,
+    totalProteins: product?.totalProteins ?? null,
+    totalCarbs: product?.totalCarbs ?? null,
+    totalFat: product?.totalFat ?? null,
+    totalFiber: product?.totalFiber ?? null,
+    totalSalt: product?.totalSalt ?? null,
+    totalSugar: product?.totalSugar ?? null,
+    calories: product?.calories ?? null,
+    proteins: product?.proteins ?? null,
+    carbs: product?.carbs ?? null,
+    fat: product?.fat ?? null,
+    fiber: product?.fiber ?? null,
+    salt: product?.salt ?? null,
+    sugar: product?.sugar ?? null,
+    searchName: product?.searchName || normalizedName,
+    createdAt: product?.createdAt || null,
+    product_code: product?.product_code || "",
+  };
+}
+
+function buildSortedSearchResults(query, offProducts, dbProducts) {
+  const ranked = [...offProducts, ...dbProducts]
+    .map((product) => ({
+      ...product,
+      matchScore: scoreProductMatch(product, query),
+    }))
+    .filter((product) => product.matchScore > 0);
+
+  if (!ranked.length) return [];
+
+  ranked.sort((a, b) => {
+    if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+    const sourceDiff = getProductSourcePriority(b.source) - getProductSourcePriority(a.source);
+    if (sourceDiff !== 0) return sourceDiff;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+  const [top, ...rest] = ranked;
+  rest.sort((a, b) => {
+    const sourceDiff = getProductSourcePriority(b.source) - getProductSourcePriority(a.source);
+    if (sourceDiff !== 0) return sourceDiff;
+    if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+  const deduped = [];
+  const seenNames = new Set();
+
+  for (const product of [top, ...rest]) {
+    const normalizedName = normalizeTextForSearch(product?.name || product?.product_name || product?.brands || "");
+    if (!normalizedName || seenNames.has(normalizedName)) continue;
+    seenNames.add(normalizedName);
+    deduped.push(product);
+  }
+
+  return deduped.map((product, index) => ({
+    ...product,
+    searchKey: buildProductSearchKey(product, index),
+  }));
+}
+
 async function verifyGoogleIdToken(idToken) {
   if (!GOOGLE_ALLOWED_CLIENT_IDS.length) {
     const error = new Error("Google login is not configured on the server");
@@ -607,6 +822,9 @@ async function start() {
       email,
       image,
       product,
+      category,
+      source,
+      sourceProductId,
       expirationDate,
       totalCalories,
       totalProteins,
@@ -655,7 +873,9 @@ async function start() {
           : safeRemainingQuantity;
 
       const productObj = { // objekt produktu uložený do DB
-        productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        productId: createUniqueProductId(source || "product"),
+        source: source || "database",
+        sourceProductId: sourceProductId || null,
         name: product,
         image: image ?? null,
         isCustom: false,
@@ -677,6 +897,8 @@ async function start() {
         fiber: fiber ?? null,
         salt: salt ?? null,
         sugar: sugar ?? null,
+        category: category || "",
+        searchName: normalizeTextForSearch(product),
       };
 
       // Prvý produkt -> vytvorí nové pole
@@ -793,11 +1015,14 @@ async function start() {
       }
 
       const customProduct = { // vlastný produkt
-        productId: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        productId: createUniqueProductId("custom"),
         name: String(name).trim(),
         isCustom: true,
         image: null,
+        source: "custom",
         createdAt: new Date(),
+        category: "",
+        searchName: normalizeTextForSearch(name),
       };
 
       if (!user.products || user.products.length === 0) { // prvý produkt
@@ -918,7 +1143,7 @@ async function start() {
   app.get("/api/searchCombined", async (req, res) => {
     const query = String(req.query.q || "").trim();
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const pageSize = Math.min(20, Math.max(1, Number.parseInt(req.query.pageSize, 10) || 10));
+    const pageSize = Math.min(30, Math.max(1, Number.parseInt(req.query.pageSize, 10) || 20));
 
     if (query.length < 2) {
       return res.status(400).json({ error: "Search query is too short" });
@@ -944,7 +1169,9 @@ async function start() {
       let offProducts = [];
       if (offResponse.ok) {
         const offData = await offResponse.json().catch(() => ({}));
-        offProducts = Array.isArray(offData.products) ? offData.products : [];
+        offProducts = Array.isArray(offData.products)
+          ? offData.products.map(normalizeOffFoodProduct)
+          : [];
       }
 
       // 2) Our products collection (fuzzy matching)
@@ -953,71 +1180,29 @@ async function start() {
       const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(escapeRegex(normalizedQuery), "i");
 
+      const searchFragments = Array.from(
+        new Set([
+          normalizedQuery,
+          normalizedQuery.slice(0, 3),
+          normalizedQuery.slice(0, 2),
+          normalizedQuery.slice(0, 1),
+        ].filter((fragment) => fragment.length >= 1)),
+      );
+
       const dbCandidates = await productsCollection
-        .find({ searchName: { $regex: regex } })
+        .find({
+          $or: searchFragments.map((fragment) => ({
+            searchName: { $regex: new RegExp(fragment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+          })),
+        })
         .limit(50)
         .toArray();
 
-      const scored = dbCandidates.map((p) => {
-        const nameNorm = p.searchName || normalizeTextForSearch(p.name || "");
-        let score = 100;
-        if (nameNorm === normalizedQuery) score = 0;
-        else if (nameNorm.startsWith(normalizedQuery)) score = 1;
-        else if (nameNorm.includes(normalizedQuery)) score = 5;
-        else score = 10 + levenshtein(nameNorm, normalizedQuery);
+      const dbResults = dbCandidates.map((product) =>
+        normalizeStoredProduct(product),
+      );
 
-        return { score, product: p };
-      });
-
-      scored.sort((a, b) => a.score - b.score);
-      const dbResults = scored.slice(0, 20).map((s) => s.product);
-
-      // Normalize both sources to unified structure
-      const mapOff = (product) => {
-        const n = product?.nutriments || {};
-        const weight = (() => {
-          const quantityText = String(product?.quantity || product?.serving_size || "");
-          const m = quantityText.match(/(\d+(?:\.\d+)?)/);
-          return m ? Number(m[1]) : 0;
-        })();
-
-        return {
-          name: product?.product_name || product?.generic_name || product?.brands || "Neznámy produkt",
-          image: product?.image_url || product?.image_front_url || null,
-          calories: Number(n?.["energy-kcal_100g"]) || 0,
-          proteins: Number(n?.proteins_100g) || 0,
-          carbs: Number(n?.carbohydrates_100g) || 0,
-          fat: Number(n?.fat_100g) || 0,
-          fiber: Number(n?.fiber_100g) || 0,
-          salt: Number(n?.salt_100g) || 0,
-          sugar: Number(n?.sugars_100g) || 0,
-          quantity: weight || 0,
-          source: "off",
-        };
-      };
-
-      const mapDb = (product) => ({
-        name: product.name || "Neznámy produkt",
-        image: product.image || null,
-        calories: Number(product.calories) || 0,
-        proteins: Number(product.proteins) || 0,
-        carbs: Number(product.carbs) || 0,
-        fat: Number(product.fat) || 0,
-        fiber: Number(product.fiber) || 0,
-        salt: Number(product.salt) || 0,
-        sugar: Number(product.sugar) || 0,
-        quantity: Number(product.quantity) || 0,
-        category: product.category || "",
-        productId: product.productId || String(product._id),
-        source: "db",
-      });
-
-      // Build combined: OFF first (mapped), then DB (mapped), avoid exact normalized-name duplicates
-      const offMapped = offProducts.map(mapOff);
-      const seen = new Set(offMapped.map((p) => normalizeTextForSearch(p.name)));
-      const dbMapped = dbResults.map(mapDb).filter((p) => !seen.has(normalizeTextForSearch(p.name)));
-
-      const combined = [...offMapped, ...dbMapped];
+      const combined = buildSortedSearchResults(query, offProducts, dbResults);
 
       return res.json({ success: true, count: combined.length, products: combined });
     } catch (err) {
@@ -1070,12 +1255,17 @@ async function start() {
         return res.status(500).json({ error: "AI did not return valid product JSON" });
       }
 
-      const nowId = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const productDoc = {
-        productId: nowId,
+        productId: createUniqueProductId("ai"),
         name: String(parsed.name || name).trim(),
         image: parsed.image || null,
         category: parsed.category || category || "",
+        source: "ai",
+        isCustom: false,
+        expirationDate: null,
+        quantity: toFiniteOrNull(parsed.quantity) ?? 0,
+        originalQuantity: toFiniteOrNull(parsed.quantity) ?? 0,
+        remainingQuantity: toFiniteOrNull(parsed.quantity) ?? 0,
         calories: parsed.calories ?? null,
         proteins: parsed.proteins ?? null,
         carbs: parsed.carbs ?? null,
@@ -1083,15 +1273,30 @@ async function start() {
         fiber: parsed.fiber ?? null,
         salt: parsed.salt ?? null,
         sugar: parsed.sugar ?? null,
-        quantity: parsed.quantity ?? null,
+        totalCalories: null,
+        totalProteins: null,
+        totalCarbs: null,
+        totalFat: null,
+        totalFiber: null,
+        totalSalt: null,
+        totalSugar: null,
         createdAt: new Date(),
+        searchName: normalizeTextForSearch(parsed.name || name),
+        product_code: "",
       };
 
-      productDoc.searchName = normalizeTextForSearch(productDoc.name);
+      const insertResult = await productsCollection.insertOne(productDoc);
+      const responseProduct = {
+        ...productDoc,
+        _id: insertResult.insertedId ? String(insertResult.insertedId) : undefined,
+        id: insertResult.insertedId ? String(insertResult.insertedId) : undefined,
+      };
 
-      await productsCollection.insertOne(productDoc);
-
-      return res.json({ success: true, product: productDoc, warning: "Nutričné hodnoty vygenerované umelou inteligenciou nemusia byť presné." });
+      return res.json({
+        success: true,
+        product: responseProduct,
+        warning: "Nutričné hodnoty vygenerované umelou inteligenciou nemusia byť presné.",
+      });
     } catch (err) {
       console.error("Generate product AI error:", err);
       return res.status(500).json({ error: "Generate product AI error" });
