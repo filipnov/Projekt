@@ -75,6 +75,45 @@ function createGoogleNick(profile) {
   );
 }
 
+function normalizeTextForSearch(value) {
+  if (!value) return "";
+  try {
+    return String(value)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  } catch (e) {
+    return String(value).toLowerCase().trim();
+  }
+}
+
+function levenshtein(a, b) {
+  const A = String(a || "");
+  const B = String(b || "");
+  const matrix = [];
+  for (let i = 0; i <= B.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= A.length; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= B.length; i++) {
+    for (let j = 1; j <= A.length; j++) {
+      if (B.charAt(i - 1) === A.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1),
+        );
+      }
+    }
+  }
+  return matrix[B.length][A.length];
+}
+
 async function verifyGoogleIdToken(idToken) {
   if (!GOOGLE_ALLOWED_CLIENT_IDS.length) {
     const error = new Error("Google login is not configured on the server");
@@ -144,9 +183,16 @@ async function start() {
 
   const db = client.db("userdb"); // vybraná databáza
   const users = db.collection("users"); // kolekcia používateľov
+  const productsCollection = db.collection("products"); // kolekcia verejných produktov
 
   // Unikátny index pre email (bez duplicitných účtov)
   await users.createIndex({ email: 1 }, { unique: true }); // index pre email
+  // Index pre rýchle fulltext / prefix vyhľadávanie na normalized name
+  try {
+    await productsCollection.createIndex({ searchName: 1 });
+  } catch (e) {
+    console.warn("Could not create index on products.searchName", e);
+  }
 
   // ------------------- HEALTH CHECK -------------------
   // Rýchla kontrola dostupnosti DB
@@ -865,6 +911,190 @@ async function start() {
     } catch (err) {
       console.error("Open Food Facts search error:", err);
       return res.status(500).json({ error: "Open Food Facts search error" });
+    }
+  });
+
+  // ------------------ COMBINED SEARCH (OpenFoodFacts then products collection) ------------------
+  app.get("/api/searchCombined", async (req, res) => {
+    const query = String(req.query.q || "").trim();
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const pageSize = Math.min(20, Math.max(1, Number.parseInt(req.query.pageSize, 10) || 10));
+
+    if (query.length < 2) {
+      return res.status(400).json({ error: "Search query is too short" });
+    }
+
+    try {
+      // 1) OpenFoodFacts (reuse existing logic)
+      const searchParams = new URLSearchParams({
+        search_terms: query,
+        search_simple: "1",
+        action: "process",
+        json: "1",
+        page_size: String(pageSize),
+        page: String(page),
+        sort_by: "unique_scans_n",
+        fields: OPEN_FOOD_FACTS_SEARCH_FIELDS,
+      });
+
+      const offResponse = await fetch(`${OPEN_FOOD_FACTS_SEARCH_URL}?${searchParams.toString()}`, {
+        headers: { Accept: "application/json", "User-Agent": OPEN_FOOD_FACTS_USER_AGENT },
+      });
+
+      let offProducts = [];
+      if (offResponse.ok) {
+        const offData = await offResponse.json().catch(() => ({}));
+        offProducts = Array.isArray(offData.products) ? offData.products : [];
+      }
+
+      // 2) Our products collection (fuzzy matching)
+      const normalizedQuery = normalizeTextForSearch(query);
+
+      const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const regex = new RegExp(escapeRegex(normalizedQuery), "i");
+
+      const dbCandidates = await productsCollection
+        .find({ searchName: { $regex: regex } })
+        .limit(50)
+        .toArray();
+
+      const scored = dbCandidates.map((p) => {
+        const nameNorm = p.searchName || normalizeTextForSearch(p.name || "");
+        let score = 100;
+        if (nameNorm === normalizedQuery) score = 0;
+        else if (nameNorm.startsWith(normalizedQuery)) score = 1;
+        else if (nameNorm.includes(normalizedQuery)) score = 5;
+        else score = 10 + levenshtein(nameNorm, normalizedQuery);
+
+        return { score, product: p };
+      });
+
+      scored.sort((a, b) => a.score - b.score);
+      const dbResults = scored.slice(0, 20).map((s) => s.product);
+
+      // Normalize both sources to unified structure
+      const mapOff = (product) => {
+        const n = product?.nutriments || {};
+        const weight = (() => {
+          const quantityText = String(product?.quantity || product?.serving_size || "");
+          const m = quantityText.match(/(\d+(?:\.\d+)?)/);
+          return m ? Number(m[1]) : 0;
+        })();
+
+        return {
+          name: product?.product_name || product?.generic_name || product?.brands || "Neznámy produkt",
+          image: product?.image_url || product?.image_front_url || null,
+          calories: Number(n?.["energy-kcal_100g"]) || 0,
+          proteins: Number(n?.proteins_100g) || 0,
+          carbs: Number(n?.carbohydrates_100g) || 0,
+          fat: Number(n?.fat_100g) || 0,
+          fiber: Number(n?.fiber_100g) || 0,
+          salt: Number(n?.salt_100g) || 0,
+          sugar: Number(n?.sugars_100g) || 0,
+          quantity: weight || 0,
+          source: "off",
+        };
+      };
+
+      const mapDb = (product) => ({
+        name: product.name || "Neznámy produkt",
+        image: product.image || null,
+        calories: Number(product.calories) || 0,
+        proteins: Number(product.proteins) || 0,
+        carbs: Number(product.carbs) || 0,
+        fat: Number(product.fat) || 0,
+        fiber: Number(product.fiber) || 0,
+        salt: Number(product.salt) || 0,
+        sugar: Number(product.sugar) || 0,
+        quantity: Number(product.quantity) || 0,
+        category: product.category || "",
+        productId: product.productId || String(product._id),
+        source: "db",
+      });
+
+      // Build combined: OFF first (mapped), then DB (mapped), avoid exact normalized-name duplicates
+      const offMapped = offProducts.map(mapOff);
+      const seen = new Set(offMapped.map((p) => normalizeTextForSearch(p.name)));
+      const dbMapped = dbResults.map(mapDb).filter((p) => !seen.has(normalizeTextForSearch(p.name)));
+
+      const combined = [...offMapped, ...dbMapped];
+
+      return res.json({ success: true, count: combined.length, products: combined });
+    } catch (err) {
+      console.error("Combined search error:", err);
+      return res.status(500).json({ error: "Combined search error" });
+    }
+  });
+
+  // ------------------ GENERATE PRODUCT VIA AI + SAVE TO products collection ------------------
+  app.post("/api/generateProductAI", async (req, res) => {
+    try {
+      const { name, category } = req.body || {};
+      if (!name || String(name).trim().length < 1) {
+        return res.status(400).json({ error: "Missing product name" });
+      }
+
+      if (gptRequestCount >= GPT_REQUEST_LIMIT) {
+        return res.status(429).json({ error: "GPT request limit reached on server" });
+      }
+      gptRequestCount++;
+
+      const systemPrompt = `You are a helpful assistant that returns a single valid JSON object describing a food product. Return only JSON.`;
+      const userPrompt = `Provide a JSON object for a food product with the following fields: name, category, calories, proteins, carbs, fat, fiber, salt, sugar, quantity. Use numeric values for nutrition (per 100g). If unknown, use null or 0. Do not include extra fields or explanatory text.`;
+
+      const finalPrompt = `${userPrompt}\nProduct name: ${name}${category ? `\nCategory: ${category}` : ""}`;
+
+      let parsed = null;
+      let attempts = 0;
+      while (!parsed && attempts < 3) {
+        attempts++;
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: finalPrompt },
+          ],
+          max_tokens: 300,
+          temperature: 0.8,
+        });
+
+        const raw = completion.choices?.[0]?.message?.content;
+        try {
+          parsed = JSON.parse(raw);
+        } catch (e) {
+          parsed = null;
+        }
+      }
+
+      if (!parsed) {
+        return res.status(500).json({ error: "AI did not return valid product JSON" });
+      }
+
+      const nowId = `${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const productDoc = {
+        productId: nowId,
+        name: String(parsed.name || name).trim(),
+        image: parsed.image || null,
+        category: parsed.category || category || "",
+        calories: parsed.calories ?? null,
+        proteins: parsed.proteins ?? null,
+        carbs: parsed.carbs ?? null,
+        fat: parsed.fat ?? null,
+        fiber: parsed.fiber ?? null,
+        salt: parsed.salt ?? null,
+        sugar: parsed.sugar ?? null,
+        quantity: parsed.quantity ?? null,
+        createdAt: new Date(),
+      };
+
+      productDoc.searchName = normalizeTextForSearch(productDoc.name);
+
+      await productsCollection.insertOne(productDoc);
+
+      return res.json({ success: true, product: productDoc, warning: "Nutričné hodnoty vygenerované umelou inteligenciou nemusia byť presné." });
+    } catch (err) {
+      console.error("Generate product AI error:", err);
+      return res.status(500).json({ error: "Generate product AI error" });
     }
   });
 

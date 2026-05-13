@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Platform,
   Keyboard,
+  Linking,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "@react-navigation/native";
@@ -291,26 +292,25 @@ export default function CameraScreen() {
   async function fetchSearchResults(query, page = 1) {
     try {
       const response = await fetch(
-        `${SERVER_URL}/api/searchFoodFacts?q=${encodeURIComponent(
-          query,
-        )}&page=${page}`,
+        `${SERVER_URL}/api/searchCombined?q=${encodeURIComponent(query)}&page=${page}`,
       );
 
-      if (!response.ok) {
-        throw new Error("Server search failed");
-      }
+      if (!response.ok) throw new Error("Server search failed");
 
       return await response.json();
-    } catch {
-      const response = await fetch(buildOpenFoodFactsSearchUrl(query, page), {
-        headers: { Accept: "application/json" },
-      });
+    } catch (e) {
+      // Fallback: query Open Food Facts directly to preserve existing behavior
+      try {
+        const response = await fetch(buildOpenFoodFactsSearchUrl(query, page), {
+          headers: { Accept: "application/json" },
+        });
 
-      if (!response.ok) {
-        throw new Error("Open Food Facts search failed");
+        if (!response.ok) throw new Error("Open Food Facts search failed");
+
+        return await response.json();
+      } catch (err) {
+        throw err;
       }
-
-      return await response.json();
     }
   }
 
@@ -334,19 +334,44 @@ export default function CameraScreen() {
     try {
       const data = await fetchSearchResults(query, 1);
       const products = Array.isArray(data.products) ? data.products : [];
-      const visibleProducts = products.filter((product) => {
-        return Boolean(product?.product_name || product?.brands);
-      });
+      const visibleProducts = products.filter((product) => Boolean(product?.name));
 
       setSearchResults(visibleProducts);
       setHasMoreSearchResults(products.length >= 10);
-      setSearchError(
-        visibleProducts.length ? "" : "Nenašli sa žiadne produkty.",
-      );
+      setSearchError(visibleProducts.length ? "" : "Nenašli sa žiadne produkty.");
     } catch {
       setSearchResults([]);
       setHasMoreSearchResults(false);
       setSearchError("Vyhľadávanie sa nepodarilo. Skúste to znova.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGenerateAI() {
+    if (!searchQuery || String(searchQuery).trim().length < 1) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`${SERVER_URL}/api/generateProductAI`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: searchQuery.trim() }),
+      });
+
+      const data = await response.json();
+      if (data && data.success && data.product) {
+        showAlert(
+          "Upozornenie",
+          data.warning ||
+            "Nutričné hodnoty vygenerované umelou inteligenciou nemusia byť presné. Skontrolujte ich.",
+        );
+        setSearchResults([data.product]);
+        setHasMoreSearchResults(false);
+      } else {
+        setSearchError("AI generovanie zlyhalo. Skúste znova.");
+      }
+    } catch (err) {
+      setSearchError("AI generovanie zlyhalo. Skúste znova.");
     } finally {
       setLoading(false);
     }
@@ -363,14 +388,9 @@ export default function CameraScreen() {
       const nextPage = searchPage + 1;
       const data = await fetchSearchResults(query, nextPage);
       const products = Array.isArray(data.products) ? data.products : [];
-      const visibleProducts = products.filter((product) => {
-        return Boolean(product?.product_name || product?.brands);
-      });
+      const visibleProducts = products.filter((product) => Boolean(product?.name));
 
-      setSearchResults((currentResults) => [
-        ...currentResults,
-        ...visibleProducts,
-      ]);
+      setSearchResults((currentResults) => [...currentResults, ...visibleProducts]);
       setSearchPage(nextPage);
       setHasMoreSearchResults(products.length >= 10);
     } catch {
@@ -382,7 +402,8 @@ export default function CameraScreen() {
 
   function selectSearchProduct(product) {
     resetLookupState();
-    setSelectedProduct(mapOpenFoodFactsProduct(product));
+    // Server returns normalized product shape for combined search
+    setSelectedProduct(product);
   }
 
   function changeLookupMode(nextMode) {
@@ -533,12 +554,22 @@ export default function CameraScreen() {
     );
   };
 
+  const getCategoryEmoji = (category) => {
+    if (!category) return "🍽️";
+    const c = String(category).toLowerCase();
+    if (c.includes("pastry") || c.includes("pečiv") || c.includes("peciv")) return "🥐";
+    if (c.includes("meat") || c.includes("mäso") || c.includes("maso")) return "🥩";
+    if (c.includes("vegetable") || c.includes("zelenina") || c.includes("vegetables")) return "🥦";
+    if (c.includes("fruit") || c.includes("ovoc") || c.includes("fruits")) return "🍎";
+    return "🍽️";
+  };
+
   const renderSearchResult = (product, index) => {
-    const title = product?.product_name || product?.brands || "Neznámy produkt";
-    const brand = product?.brands;
+    const title = product?.name || "Neznámy produkt";
+    const brand = product?.brand || null;
     const quantity = product?.quantity;
-    const image = product?.image_url;
-    const key = product?.code || `${title}-${index}`;
+    const image = product?.image || null;
+    const key = product?.productId || `${title}-${index}`;
 
     return (
       <Pressable
@@ -562,16 +593,16 @@ export default function CameraScreen() {
           <View
             style={[
               styles.productSearchImagePlaceholder,
-              { backgroundColor: colors.surfaceAlt },
+              { backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center" },
             ]}
           >
             <Text
               style={[
-                styles.productSearchImagePlaceholderText,
-                { color: colors.mutedText },
+                styles.productSearchResultName,
+                { color: colors.mutedText, fontSize: 24 },
               ]}
             >
-              ?
+              {getCategoryEmoji(product?.category)}
             </Text>
           </View>
         )}
@@ -648,6 +679,25 @@ export default function CameraScreen() {
             <Text style={[styles.productSearchError, { color: colors.danger }]}>
               {searchError}
             </Text>
+          )}
+          {!loading && !searchResults.length && searchQuery.trim().length >= 2 && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={{ color: colors.text, marginBottom: 6 }}>
+                Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
+              </Text>
+              <Pressable
+                onPress={() => Linking.openURL("mailto:support.bitewise@gmail.com")}
+                style={[styles.primaryActionButton, { marginBottom: 8 }]}
+              >
+                <Text style={styles.primaryActionButtonText}>Napísať support</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleGenerateAI}
+                style={[styles.primaryActionButton, { backgroundColor: colors.surfaceAlt, marginTop: 6 }]}
+              >
+                <Text style={[styles.primaryActionButtonText, { color: colors.text }]}>Vygenerovať informácie o potravine pomocou AI</Text>
+              </Pressable>
+            </View>
           )}
         </View>
 

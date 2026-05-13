@@ -1,0 +1,79 @@
+# Produkt - štruktúra (template)
+
+Nižšie je presná štruktúra produktového dokumentu, ktorú používame v aplikácii.
+Ak nepoznáte hodnotu, ponechajte prázdny reťazec `""`, `null` alebo `0` podľa typu.
+
+{
+  "productId": "<string - unikátne id, napr. timestamp_random>",
+  "name": "<string - názov produktu>",
+  "image": "<string|null - URL obrázka alebo null>",
+  "isCustom": false,             # boolean - či ide o vlastný produkt
+  "expirationDate": null,        # ISO date string alebo null
+  "quantity": <number|null>,     # hmotnosť/objem produktu (g/ml) alebo null
+  "originalQuantity": <number|null>,
+  "remainingQuantity": <number|null>,
+
+  # Celkové nutričné hodnoty pre aktuálnu množinu (počet kcal a makro pre whole package)
+  "totalCalories": <number|null>,
+  "totalProteins": <number|null>,
+  "totalCarbs": <number|null>,
+  "totalFat": <number|null>,
+  "totalFiber": <number|null>,
+  "totalSalt": <number|null>,
+  "totalSugar": <number|null>,
+
+  # Hodnoty na 100g (per-100g) alebo per 100ml
+  "calories": <number|null>,
+  "proteins": <number|null>,
+  "carbs": <number|null>,
+  "fat": <number|null>,
+  "fiber": <number|null>,
+  "salt": <number|null>,
+  "sugar": <number|null>,
+
+  # Kategória (povinné pre naše produkty - môžu byť prázdne)
+  "category": "<string - napr. pastry|meat|vegetables|fruits>",
+
+  # Voliteľné, podporné polia
+  "createdAt": "<ISO date string>",
+  "product_code": "<string - kód/EAN ak je dostupný>",
+
+  # Indexovacie/pomocné polia (server používa pre search)
+  "searchName": "<string - normalized name, lowercase, bez diakritiky>",
+
+  # Poznámka: NEODSTRAŇAJTE polia, ktoré používajú existujúce funkcie.
+  # Ak políčko nepoznáte, radšej vlož `null`, prázdny reťazec alebo `0`.
+}
+
+Príklad (reálny JSON bez komentárov):
+
+{
+  "productId": "1650000000000_ab12c",
+  "name": "rožok",
+  "image": null,
+  "isCustom": false,
+  "expirationDate": null,
+  "quantity": 70,
+  "originalQuantity": 70,
+  "remainingQuantity": 70,
+  "totalCalories": 231,
+  "totalProteins": 6.3,
+  "totalCarbs": 40.6,
+  "totalFat": 3.1,
+  "totalFiber": 2.1,
+  "totalSalt": 1.0,
+  "totalSugar": 1.8,
+  "calories": 330,
+  "proteins": 9,
+  "carbs": 58,
+  "fat": 3,
+  "fiber": 3,
+  "salt": 1,
+  "sugar": 3,
+  "category": "pastry",
+  "createdAt": "2026-05-13T00:00:00.000Z",
+  "product_code": "",
+  "searchName": "rozok"
+}
+
+Použi tento template pri vkladaní produktov do kolekcie `products`.
