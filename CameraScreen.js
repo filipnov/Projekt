@@ -674,7 +674,7 @@ export default function CameraScreen() {
 
     return (
       <KeyboardWrapper
-        scroll={false}
+        scroll={true}
         style={styles.productSearchKeyboardArea}
         contentContainerStyle={styles.productSearchKeyboardContent}
         keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
@@ -709,71 +709,48 @@ export default function CameraScreen() {
               {searchError}
             </Text>
           )}
-          {!loading && searchAttempted && !searchResults.length && searchQuery.trim().length >= 2 && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={{ color: colors.text, marginBottom: 6 }}>
-                Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
-              </Text>
-              <Pressable
-                onPress={() => Linking.openURL("mailto:support.bitewise@gmail.com")}
-                style={[styles.primaryActionButton, { marginBottom: 8 }]}
-              >
-                <Text style={styles.primaryActionButtonText}>Napísať support</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleGenerateAI}
-                style={[styles.primaryActionButton, { backgroundColor: colors.surfaceAlt, marginTop: 6 }]}
-              >
-                <Text style={[styles.primaryActionButtonText, { color: colors.text }]}>Vygenerovať informácie o potravine pomocou AI</Text>
-              </Pressable>
-            </View>
-          )}
         </View>
 
         {searchAttempted && (
-          <ScrollView
-            style={styles.productSearchResults}
-            contentContainerStyle={styles.productSearchResultsContent}
-            keyboardShouldPersistTaps="handled"
-          >
+          <>
             {displayedSearchResults.map(renderSearchResult)}
-            <Pressable
-              onPress={loadMoreSearchResults}
-              style={styles.productSearchLoadMoreButton}
-              disabled={loadingMoreSearchResults}
-            >
-              <Text style={styles.productSearchLoadMoreText}>
-                {loadingMoreSearchResults
-                  ? "Načítavam..."
-                  : "Zobraziť ďalšie"}
-              </Text>
-            </Pressable>
+            {searchResults.length > 0 && (
+              <Pressable
+                onPress={loadMoreSearchResults}
+                style={styles.productSearchLoadMoreButton}
+                disabled={loadingMoreSearchResults}
+              >
+                <Text style={styles.productSearchLoadMoreText}>
+                  {loadingMoreSearchResults
+                    ? "Načítavam..."
+                    : "Zobraziť ďalšie"}
+                </Text>
+              </Pressable>
+            )}
             {showNoMoreSearchResults && !hasHiddenSearchResults && (
               <Text style={[styles.productSearchError, { color: colors.mutedText, textAlign: "center" }]}>Ďalšie produkty nie sú.</Text>
             )}
             {showNoMoreSearchResults && hasHiddenSearchResults && (
               <Text style={[styles.productSearchError, { color: colors.mutedText, textAlign: "center" }]}>Ďalšie produkty nie sú.</Text>
             )}
-            {searchAttempted && (
-              <View style={{ marginTop: 12, paddingHorizontal: 4, alignItems: "center" }}>
-                <Text style={{ color: colors.text, marginBottom: 6, textAlign: "center" }}>
-                  Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
-                </Text>
-                <Pressable
-                  onPress={() => Linking.openURL("mailto:support.bitewise@gmail.com")}
-                  style={[styles.primaryActionButton, { marginBottom: 8 }]}
-                >
-                  <Text style={styles.primaryActionButtonText}>Napísať support</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleGenerateAI}
-                  style={[styles.primaryActionButton, { backgroundColor: colors.surfaceAlt, marginTop: 6 }]}
-                >
-                  <Text style={[styles.primaryActionButtonText, { color: colors.text }]}>Vygenerovať informácie o potravine pomocou AI</Text>
-                </Pressable>
-              </View>
-            )}
-          </ScrollView>
+            <View style={{ marginTop: 12, paddingHorizontal: 4, alignItems: "center", marginBottom: 20 }}>
+              <Text style={{ color: colors.text, marginBottom: 6, textAlign: "center" }}>
+                Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
+              </Text>
+              <Pressable
+                onPress={() => Linking.openURL("mailto:support.bitewise@gmail.com")}
+                style={[styles.primaryActionButton, { marginBottom: 8, width: "100%" }]}
+              >
+                <Text style={styles.primaryActionButtonText}>Napísať support</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleGenerateAI}
+                style={[styles.primaryActionButton, { backgroundColor: colors.surfaceAlt, marginTop: 6, width: "100%", paddingVertical: 14, justifyContent: "center", alignItems: "center", minHeight: 56 }]}
+              >
+                <Text style={[styles.primaryActionButtonText, { color: colors.text, textAlign: "center" }]} numberOfLines={2}>Vygenerovať informácie o potravine pomocou AI</Text>
+              </Pressable>
+            </View>
+          </>
         )}
       </KeyboardWrapper>
     );
@@ -913,10 +890,11 @@ export default function CameraScreen() {
   const saveToDatabase = async (productOverride = null) => {
     const productToSave = productOverride || pendingPantryProduct || productData;
     if (!productToSave) return;
-    const expirationDateToSave =
-      awaitingExpirationDate || expiration
-        ? selectedExpirationDate?.toISOString?.()
-        : null;
+    // Expirácia: ak je selectedExpirationDate platný Date, ulož ho; inak ulož null
+    // Keď je null (klikol "Bez expirácie"), ulož null -> bude sa zobrazovať "Nezadané"
+    const expirationDateToSave = selectedExpirationDate
+      ? selectedExpirationDate.toISOString()
+      : null;
 
     try {
       await handleAddProduct(
@@ -1734,7 +1712,7 @@ export default function CameraScreen() {
                       setShowExpInput(false);
                       setShowDatePicker(false);
                       setAwaitingExpirationDate(false);
-                      setSelectedExpirationDate(new Date());
+                      setSelectedExpirationDate(null);
                     }}
                   >
                     <Text style={styles.primaryActionButtonText}>Zrušiť</Text>

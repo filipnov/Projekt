@@ -813,8 +813,18 @@ export default function PantryTab() {
         return item?.expirationDate;
       });
 
+      // Filtrej iba tie, ktoré nie sú null/undefined
+      const nonNullDates = expirationDates.filter((value) => {
+        return value !== null && value !== undefined && String(value).trim().length > 0;
+      });
+
+      // Ak žiadne dátumy nie sú, vrátim "Nezadané"
+      if (nonNullDates.length === 0) {
+        return "Nezadané";
+      }
+
       // Prevod na Date objekty.
-      const parsedDates = expirationDates.map((value) => {
+      const parsedDates = nonNullDates.map((value) => {
         return new Date(value);
       });
 
@@ -822,6 +832,11 @@ export default function PantryTab() {
       const validDates = parsedDates.filter((date) => {
         return !Number.isNaN(date.getTime());
       });
+
+      // Ak žiadne validné dátumy nie sú, vrátim "Nezadané"
+      if (validDates.length === 0) {
+        return "Nezadané";
+      }
 
       // Najskorší dátum exspirácie z listu.
       const sortedDates = validDates.sort((a, b) => {

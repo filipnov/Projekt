@@ -313,17 +313,11 @@ function buildSortedSearchResults(query, offProducts, dbProducts) {
     return String(a.name || "").localeCompare(String(b.name || ""));
   });
 
-  const deduped = [];
-  const seenNames = new Set();
+  // Ponechaj všetky relevantné produkty bez deduplikácie
+  // Produkty s rovnakým názvom ale iným ID, značkou alebo zdrojom sú legitímne rôzne produkty
+  const allResults = [top, ...rest];
 
-  for (const product of [top, ...rest]) {
-    const normalizedName = normalizeTextForSearch(product?.name || product?.product_name || product?.brands || "");
-    if (!normalizedName || seenNames.has(normalizedName)) continue;
-    seenNames.add(normalizedName);
-    deduped.push(product);
-  }
-
-  return deduped.map((product, index) => ({
+  return allResults.map((product, index) => ({
     ...product,
     searchKey: buildProductSearchKey(product, index),
   }));
@@ -1224,55 +1218,118 @@ async function start() {
       }
       gptRequestCount++;
 
-      const systemPrompt = `You are a helpful assistant that returns a single valid JSON object describing a food product. Return only JSON.`;
-      const userPrompt = `Provide a JSON object for a food product with the following fields: name, category, calories, proteins, carbs, fat, fiber, salt, sugar, quantity. Use numeric values for nutrition (per 100g). If unknown, use null or 0. Do not include extra fields or explanatory text.`;
+      // Presný prompt s kompletnou štruktúrou produktu a striktnými pokynmi
+      const systemPrompt = `You are a food nutrition expert. Your task is to return a VALID JSON object with exact product information. Return ONLY raw JSON - no markdown, no code blocks, no explanations, no text before or after. The response must be parseable with JSON.parse().`;
+      
+      const userPrompt = `Generate nutritional information for: ${name}${category ? ` (${category})` : ""}
 
-      const finalPrompt = `${userPrompt}\nProduct name: ${name}${category ? `\nCategory: ${category}` : ""}`;
+Return a JSON object with EXACTLY these fields:
+{
+  "name": "<string - product name>",
+  "category": "<string - one of: pastry, meat, vegetables, fruits, unknown>",
+  "quantity": <number - grams or null>,
+  "calories": <number - per 100g or 0>,
+  "proteins": <number - per 100g or 0>,
+  "carbs": <number - per 100g or 0>,
+  "fat": <number - per 100g or 0>,
+  "fiber": <number - per 100g or 0>,
+  "salt": <number - per 100g or 0>,
+  "sugar": <number - per 100g or 0>
+}
+
+RULES:
+- Return ONLY the JSON object, nothing else
+- No markdown code blocks
+- No explanations before or after
+- All numeric values must be numbers, not strings
+- If a value is unknown, use 0 (for numbers) or empty string (for strings)
+- Do not include extra fields
+- Category must be exactly one of: pastry, meat, vegetables, fruits, unknown`;
 
       let parsed = null;
       let attempts = 0;
       while (!parsed && attempts < 3) {
         attempts++;
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: finalPrompt },
-          ],
-          max_tokens: 300,
-          temperature: 0.8,
-        });
-
-        const raw = completion.choices?.[0]?.message?.content;
         try {
+          const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            max_tokens: 500,
+            temperature: 0.7,
+          });
+
+          let raw = completion.choices?.[0]?.message?.content || "";
+          
+          // Robustný JSON parsing s odsúvom code fences a markdown
+          raw = raw.trim();
+          
+          // Odstráň markdown code blocks ak sú
+          if (raw.startsWith("```json")) {
+            raw = raw.substring(7);
+          } else if (raw.startsWith("```")) {
+            raw = raw.substring(3);
+          }
+          
+          if (raw.endsWith("```")) {
+            raw = raw.substring(0, raw.length - 3);
+          }
+          
+          raw = raw.trim();
+          
+          // Skúsi extrahovať JSON objekt ak je v texte
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            raw = jsonMatch[0];
+          }
+          
           parsed = JSON.parse(raw);
         } catch (e) {
           parsed = null;
+          if (attempts === 3) {
+            console.error(`AI JSON parse failed after ${attempts} attempts:`, e);
+          }
         }
       }
 
       if (!parsed) {
-        return res.status(500).json({ error: "AI did not return valid product JSON" });
+        return res.status(500).json({ error: "AI did not return valid product JSON after multiple attempts" });
       }
+
+      // Normalizuj kategóriu na jednu z povolených
+      let normalizedCategory = String(parsed.category || "").toLowerCase().trim();
+      if (!["pastry", "meat", "vegetables", "fruits", "unknown"].includes(normalizedCategory)) {
+        normalizedCategory = "unknown";
+      }
+
+      // Bezpečná konverzia čísel
+      const safeNumber = (value) => {
+        const num = Number(value);
+        return Number.isFinite(num) && num >= 0 ? num : 0;
+      };
 
       const productDoc = {
         productId: createUniqueProductId("ai"),
         name: String(parsed.name || name).trim(),
-        image: parsed.image || null,
-        category: parsed.category || category || "",
+        image: null,
+        category: normalizedCategory,
         source: "ai",
         isCustom: false,
         expirationDate: null,
-        quantity: toFiniteOrNull(parsed.quantity) ?? 0,
-        originalQuantity: toFiniteOrNull(parsed.quantity) ?? 0,
-        remainingQuantity: toFiniteOrNull(parsed.quantity) ?? 0,
-        calories: parsed.calories ?? null,
-        proteins: parsed.proteins ?? null,
-        carbs: parsed.carbs ?? null,
-        fat: parsed.fat ?? null,
-        fiber: parsed.fiber ?? null,
-        salt: parsed.salt ?? null,
-        sugar: parsed.sugar ?? null,
+        quantity: safeNumber(parsed.quantity),
+        originalQuantity: safeNumber(parsed.quantity),
+        remainingQuantity: safeNumber(parsed.quantity),
+        // Per 100g nutrition
+        calories: safeNumber(parsed.calories),
+        proteins: safeNumber(parsed.proteins),
+        carbs: safeNumber(parsed.carbs),
+        fat: safeNumber(parsed.fat),
+        fiber: safeNumber(parsed.fiber),
+        salt: safeNumber(parsed.salt),
+        sugar: safeNumber(parsed.sugar),
+        // Total nutrition (nie sú známe bez hmotnosti)
         totalCalories: null,
         totalProteins: null,
         totalCarbs: null,
@@ -1295,7 +1352,7 @@ async function start() {
       return res.json({
         success: true,
         product: responseProduct,
-        warning: "Nutričné hodnoty vygenerované umelou inteligenciou nemusia byť presné.",
+        warning: "Nutričné hodnoty vygenerované umelou inteligenciou nemusia byť presné. Prosím, skontrolujte ich.",
       });
     } catch (err) {
       console.error("Generate product AI error:", err);
