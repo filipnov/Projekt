@@ -11,25 +11,11 @@ import bcrypt from "bcryptjs"; // hashovanie hesiel
 import dotenv from "dotenv"; // načítanie .env súboru
 import { Resend } from "resend"; // odosielanie emailov
 import crypto from "crypto"; // generovanie tokenov
-import fs from "fs"; // kontrola existencie suboru
 import path from "path"; // práca s cestami
-import { fileURLToPath } from "url"; // urcenie cesty k suboru
 import OpenAI from "openai"; // OpenAI SDK
 
 // Načítanie .env (kľúče, heslá, URL)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const envCandidates = [
-  path.resolve(process.cwd(), ".env"),
-  path.resolve(process.cwd(), "server", ".env"),
-  path.resolve(__dirname, ".env"),
-];
-for (const envPath of envCandidates) {
-  if (fs.existsSync(envPath)) {
-    dotenv.config({ path: envPath });
-    break;
-  }
-}
+dotenv.config({ path: path.resolve("../server/.env") }); // načítanie env premenných
 // Rýchla kontrola, či .env premenné existujú
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const RESEND_FROM = process.env.RESEND_FROM || "support.bitewise@gmail.com";
