@@ -728,7 +728,7 @@ async function start() {
       // Nastavenie e‑mailového klienta
       const transporter = nodemailer.createTransport({ // SMTP klient
         host: "smtp.gmail.com",
-        port: 465, // SSL port
+        port: 587, // SSL port
         secure: true, // šifrované pripojenie
         auth: {
           user: process.env.EMAIL_USER, // email účet
