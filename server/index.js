@@ -9,19 +9,16 @@ import cors from "cors"; // povolenie CORS pre klienta
 import { MongoClient } from "mongodb"; // MongoDB klient
 import bcrypt from "bcryptjs"; // hashovanie hesiel
 import dotenv from "dotenv"; // načítanie .env súboru
-import { Resend } from "resend"; // odosielanie emailov
+import nodemailer from "nodemailer"; // odosielanie emailov
 import crypto from "crypto"; // generovanie tokenov
 import path from "path"; // práca s cestami
 import OpenAI from "openai"; // OpenAI SDK
 
 // Načítanie .env (kľúče, heslá, URL)
-dotenv.config({ path: path.resolve("../server/.env") }); // načítanie env premenných
+dotenv.config({ path: path.resolve("./server/.env") }); // načítanie env premenných
 // Rýchla kontrola, či .env premenné existujú
-const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-const RESEND_FROM = process.env.RESEND_FROM || "support.bitewise@gmail.com";
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
-console.log("RESEND_API_KEY:", RESEND_API_KEY ? "SET" : "MISSING"); // kontrola API kluca
-console.log("RESEND_FROM:", RESEND_FROM); // kontrola odosielatela
+console.log("EMAIL_USER:", process.env.EMAIL_USER); // kontrola email user
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING"); // kontrola hesla
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL); // kontrola FE URL
 
 
@@ -726,11 +723,18 @@ async function start() {
         { $set: { resetToken: token, resetTokenExpires: expiresAt } },
       );
 
-      if (!resend) {
-        return res
-          .status(500)
-          .json({ error: "RESEND_API_KEY is not configured" });
-      }
+      console.log("EMAIL_USER:", process.env.EMAIL_USER); // debug
+      console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "SET" : "MISSING"); // debug
+      // Nastavenie e‑mailového klienta
+      const transporter = nodemailer.createTransport({ // SMTP klient
+        host: "smtp.gmail.com",
+        port: 465, // SSL port
+        secure: true, // šifrované pripojenie
+        auth: {
+          user: process.env.EMAIL_USER, // email účet
+          pass: process.env.EMAIL_PASS, // heslo / app password
+        },
+      });
 
       // Reset link (otvorí appku s tokenom)
       if (!FRONTEND_URL) {
@@ -741,18 +745,18 @@ async function start() {
       const resetLink = `${FRONTEND_URL}/reset-password?token=${token}`;
 
       // Odoslanie e‑mailu
-      await resend.emails.send({
-        from: RESEND_FROM,
-        to: email,
-        subject: "Požiadavka na resetovanie",
-        html: `
-          <p>Požiadali ste o reset hesla.</p>
-          <p>Kliknite na odkaz nižšie (platí 15 minút):</p>
-          <a href="${resetLink}" style="color: blue; text-decoration: underline;">
-            Resetovať heslo
-          </a>
-        `,
-      });
+      await transporter.sendMail({
+  from: `"Bitewise" <${process.env.EMAIL_USER}>`,
+  to: email,
+  subject: "Požiadavka na resetovanie ",
+  html: `
+    <p>Požiadali ste o reset hesla.</p>
+    <p>Kliknite na odkaz nižšie (platí 15 minút):</p>
+    <a href="${resetLink}" style="color: blue; text-decoration: underline;">
+      Resetovať heslo
+    </a>
+  `,
+});
 
       res.json({ ok: true, message: "Reset link sent to email. " }); // odpoveď pre klienta
     } catch (err) {
