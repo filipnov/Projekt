@@ -44,14 +44,6 @@ const MONGO_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017"; // Mon
 const client = new MongoClient(MONGO_URI); // MongoDB klient
 const FRONTEND_URL = String(process.env.FRONTEND_URL || "").replace(/\/+$/, "");
 const WEB_ROOT = path.join(path.resolve(), "Web");
-const OPEN_FOOD_FACTS_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
-const OPEN_FOOD_FACTS_SEARCH_FIELDS =
-  "code,product_name,brands,quantity,product_quantity,image_url,nutriments";
-const OPEN_FOOD_FACTS_USER_AGENT =
-  process.env.OPEN_FOOD_FACTS_USER_AGENT ||
-  (FRONTEND_URL ? `Bitewise/1.0 (${FRONTEND_URL})` : "Bitewise/1.0");
-const FOOD_FACTS_SEARCH_CACHE_MS = 10 * 60 * 1000;
-const foodFactsSearchCache = new Map();
 const GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo";
 const GOOGLE_ALLOWED_CLIENT_IDS = (
   process.env.GOOGLE_CLIENT_IDS ||
@@ -212,43 +204,6 @@ function scoreProductMatch(product, query) {
   const sourceBoost = getProductSourcePriority(product?.source) ? 18 : 0;
   if (score < 50) return 0;
   return score + sourceBoost;
-}
-
-function normalizeOffFoodProduct(product) {
-  const n = product?.nutriments || {};
-  const weight = toFiniteOrNull(product?.product_quantity) || 0;
-
-  return {
-    productId: String(product?.code || product?.id || normalizeTextForSearch(product?.product_name) || createUniqueProductId("off")),
-    id: String(product?.code || product?.id || normalizeTextForSearch(product?.product_name) || createUniqueProductId("off")),
-    code: product?.code || null,
-    name: product?.product_name || product?.generic_name || product?.brands || "Neznámy produkt",
-    brand: product?.brands || "",
-    image: product?.image_url || product?.image_front_url || null,
-    category: product?.category || "",
-    source: "openfoodfacts",
-    isCustom: false,
-    expirationDate: null,
-    quantity: weight || 0,
-    originalQuantity: weight || 0,
-    remainingQuantity: weight || 0,
-    totalCalories: null,
-    totalProteins: null,
-    totalCarbs: null,
-    totalFat: null,
-    totalFiber: null,
-    totalSalt: null,
-    totalSugar: null,
-    calories: toFiniteOrNull(n?.["energy-kcal_100g"]) ?? 0,
-    proteins: toFiniteOrNull(n?.proteins_100g) ?? 0,
-    carbs: toFiniteOrNull(n?.carbohydrates_100g) ?? 0,
-    fat: toFiniteOrNull(n?.fat_100g) ?? 0,
-    fiber: toFiniteOrNull(n?.fiber_100g) ?? 0,
-    salt: toFiniteOrNull(n?.salt_100g) ?? 0,
-    sugar: toFiniteOrNull(n?.sugars_100g) ?? 0,
-    searchName: normalizeTextForSearch(product?.product_name || product?.generic_name || product?.brands || ""),
-    createdAt: null,
-  };
 }
 
 function normalizeStoredProduct(product) {
@@ -846,7 +801,7 @@ async function start() {
       }
 
       // Bezpečné parsovanie dátumu spotreby
-      let expirationDateValue = null;
+      let expirationDateValue = "Nezadané";
       if (expirationDate) { // ak prišiel dátum spotreby
         const parsed = new Date(expirationDate);
         if (!Number.isNaN(parsed.getTime())) {
@@ -1061,82 +1016,9 @@ async function start() {
     }
   });
 
-  // Vyhľadanie produktov v Open Food Facts podľa textu.
-  app.get("/api/searchFoodFacts", async (req, res) => {
-    const query = String(req.query.q || "").trim();
-    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-    const pageSize = Math.min(
-      20,
-      Math.max(1, Number.parseInt(req.query.pageSize, 10) || 10),
-    );
-
-    if (query.length < 2) {
-      return res.status(400).json({ error: "Search query is too short" });
-    }
-
-    const cacheKey = `${query.toLowerCase()}::${page}::${pageSize}`;
-    const cached = foodFactsSearchCache.get(cacheKey);
-
-    if (cached && cached.expiresAt > Date.now()) {
-      return res.json(cached.payload);
-    }
-
-    try {
-      const searchParams = new URLSearchParams({
-        search_terms: query,
-        search_simple: "1",
-        action: "process",
-        json: "1",
-        page_size: String(pageSize),
-        page: String(page),
-        sort_by: "unique_scans_n",
-        fields: OPEN_FOOD_FACTS_SEARCH_FIELDS,
-      });
-      const response = await fetch(
-        `${OPEN_FOOD_FACTS_SEARCH_URL}?${searchParams.toString()}`,
-        {
-          headers: {
-            Accept: "application/json",
-            "User-Agent": OPEN_FOOD_FACTS_USER_AGENT,
-          },
-        },
-      );
-
-      if (!response.ok) {
-        return res.status(response.status).json({
-          error: "Open Food Facts search failed",
-        });
-      }
-
-      const data = await response.json();
-      const products = Array.isArray(data.products) ? data.products : [];
-      const payload = {
-        success: true,
-        count: data.count ?? products.length,
-        products,
-      };
-
-      foodFactsSearchCache.set(cacheKey, {
-        expiresAt: Date.now() + FOOD_FACTS_SEARCH_CACHE_MS,
-        payload,
-      });
-
-      if (foodFactsSearchCache.size > 100) {
-        const oldestKey = foodFactsSearchCache.keys().next().value;
-        foodFactsSearchCache.delete(oldestKey);
-      }
-
-      return res.json(payload);
-    } catch (err) {
-      console.error("Open Food Facts search error:", err);
-      return res.status(500).json({ error: "Open Food Facts search error" });
-    }
-  });
-
-  // ------------------ COMBINED SEARCH (OpenFoodFacts then products collection) ------------------
+  // ------------------ SEARCH (products collection only) ------------------
   app.get("/api/searchCombined", async (req, res) => {
     const query = String(req.query.q || "").trim();
-    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
     const pageSize = Math.min(30, Math.max(1, Number.parseInt(req.query.pageSize, 10) || 20));
 
     if (query.length < 2) {
@@ -1144,35 +1026,9 @@ async function start() {
     }
 
     try {
-      // 1) OpenFoodFacts (reuse existing logic)
-      const searchParams = new URLSearchParams({
-        search_terms: query,
-        search_simple: "1",
-        action: "process",
-        json: "1",
-        page_size: String(pageSize),
-        page: String(page),
-        sort_by: "unique_scans_n",
-        fields: OPEN_FOOD_FACTS_SEARCH_FIELDS,
-      });
-
-      const offResponse = await fetch(`${OPEN_FOOD_FACTS_SEARCH_URL}?${searchParams.toString()}`, {
-        headers: { Accept: "application/json", "User-Agent": OPEN_FOOD_FACTS_USER_AGENT },
-      });
-
-      let offProducts = [];
-      if (offResponse.ok) {
-        const offData = await offResponse.json().catch(() => ({}));
-        offProducts = Array.isArray(offData.products)
-          ? offData.products.map(normalizeOffFoodProduct)
-          : [];
-      }
-
-      // 2) Our products collection (fuzzy matching)
+      // Our products collection (fuzzy matching)
       const normalizedQuery = normalizeTextForSearch(query);
-
       const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const regex = new RegExp(escapeRegex(normalizedQuery), "i");
 
       const searchFragments = Array.from(
         new Set([
@@ -1183,20 +1039,21 @@ async function start() {
         ].filter((fragment) => fragment.length >= 1)),
       );
 
+      const resultLimit = Math.max(10, Math.min(50, pageSize));
       const dbCandidates = await productsCollection
         .find({
           $or: searchFragments.map((fragment) => ({
             searchName: { $regex: new RegExp(fragment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
           })),
         })
-        .limit(50)
+        .limit(resultLimit)
         .toArray();
 
       const dbResults = dbCandidates.map((product) =>
         normalizeStoredProduct(product),
       );
 
-      const combined = buildSortedSearchResults(query, offProducts, dbResults);
+      const combined = buildSortedSearchResults(query, [], dbResults);
 
       return res.json({ success: true, count: combined.length, products: combined });
     } catch (err) {

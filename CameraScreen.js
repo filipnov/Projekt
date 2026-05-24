@@ -8,7 +8,7 @@ import {
   Pressable,
   Image,
   TextInput,
-  ScrollView,
+  FlatList,
   Modal,
   ActivityIndicator,
   Platform,
@@ -38,9 +38,6 @@ import {
 import { SERVER_URL } from "./config/serverConfig";
 
 const API_URL = "https://world.openfoodfacts.org/api/v0/product";
-const OFF_SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl";
-const OFF_SEARCH_FIELDS =
-  "code,product_name,brands,quantity,product_quantity,image_url,nutriments";
 
 export default function CameraScreen() {
   const getTodayKey = (date = new Date()) => {
@@ -53,10 +50,8 @@ export default function CameraScreen() {
   const { colors, isDark } = useAppTheme();
   const { showAlert } = useAlert();
   const [permission, requestPermission] = useCameraPermissions();
-  const [showContent, setShowContent] = useState(false);
   const [lookupMode, setLookupMode] = useState("search");
   const [scanned, setScanned] = useState(false);
-  const [code, setCode] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [searchError, setSearchError] = useState("");
@@ -75,9 +70,7 @@ export default function CameraScreen() {
   const [expiration, setExpiration] = useState();
   const [isPer100g, setIsPer100g] = useState();
   const [showExpInput, setShowExpInput] = useState(false);
-  const [selectedExpirationDate, setSelectedExpirationDate] = useState(
-    new Date(),
-  );
+  const [selectedExpirationDate, setSelectedExpirationDate] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [awaitingExpirationDate, setAwaitingExpirationDate] = useState(false);
   const [searchAttempted, setSearchAttempted] = useState(false);
@@ -188,7 +181,7 @@ export default function CameraScreen() {
     setShowExpInput(false);
     setShowDatePicker(false);
     setAwaitingExpirationDate(false);
-    setSelectedExpirationDate(new Date());
+    setSelectedExpirationDate(null);
     setSearchError("");
     setShowNoMoreSearchResults(false);
   }
@@ -262,14 +255,21 @@ export default function CameraScreen() {
   function mapOpenFoodFactsProduct(product) {
     const n = product?.nutriments || {};
     const weight = getProductWeight(product);
+    const code = product?.code || product?.id || null;
 
     return {
+      code: code ? String(code) : null,
       name:
         product?.product_name ||
         product?.generic_name ||
         product?.brands ||
         "Neznámy produkt",
+      brand: product?.brands || "",
       image: product?.image_url || product?.image_front_url || null,
+      category: product?.category || "",
+      source: "openfoodfacts",
+      sourceProductId: code ? String(code) : null,
+      isCustom: false,
       calories: toNumber(n?.["energy-kcal_100g"]),
       fat: toNumber(n?.fat_100g),
       carbs: toNumber(n?.carbohydrates_100g),
@@ -277,7 +277,9 @@ export default function CameraScreen() {
       proteins: toNumber(n?.proteins_100g),
       salt: toNumber(n?.salt_100g),
       fiber: toNumber(n?.fiber_100g),
-      quantity: weight,
+      quantity: weight || 0,
+      originalQuantity: weight || 0,
+      remainingQuantity: weight || 0,
     };
   }
 
@@ -296,44 +298,53 @@ export default function CameraScreen() {
     setSearchError("");
   }
 
-  function buildOpenFoodFactsSearchUrl(query, page = 1) {
-    return `${OFF_SEARCH_URL}?search_terms=${encodeURIComponent(
-      query,
-    )}&search_simple=1&action=process&json=1&page_size=10&page=${page}&sort_by=unique_scans_n&fields=${encodeURIComponent(
-      OFF_SEARCH_FIELDS,
-    )}`;
+  async function fetchSearchResults(query, page = 1) {
+    const response = await fetch(
+      `${SERVER_URL}/api/searchCombined?q=${encodeURIComponent(query)}&page=${page}`,
+    );
+
+    if (!response.ok) throw new Error("Server search failed");
+
+    return await response.json();
   }
 
-  async function fetchSearchResults(query, page = 1) {
-    try {
-      const response = await fetch(
-        `${SERVER_URL}/api/searchCombined?q=${encodeURIComponent(query)}&page=${page}`,
-      );
+  async function fetchBarcodeProduct(barcode) {
+    const response = await fetch(`${API_URL}/${barcode}.json`);
+    const data = await response.json();
 
-      if (!response.ok) throw new Error("Server search failed");
-
-      return await response.json();
-    } catch (e) {
-      // Fallback: query Open Food Facts directly to preserve existing behavior
-      try {
-        const response = await fetch(buildOpenFoodFactsSearchUrl(query, page), {
-          headers: { Accept: "application/json" },
-        });
-
-        if (!response.ok) throw new Error("Open Food Facts search failed");
-
-        return await response.json();
-      } catch (err) {
-        throw err;
-      }
+    if (data.status === 1 && data.product) {
+      return mapOpenFoodFactsProduct(data.product);
     }
+
+    return null;
   }
 
   async function searchProductsByName() {
-    const query = searchQuery.trim();
+    const query = String(searchQuery || "").trim();
+    const compactQuery = query.replace(/\s+/g, "");
+    const isNumericQuery = /^\d+$/.test(compactQuery);
+    const isEanQuery = /^\d{8,14}$/.test(compactQuery);
     Keyboard.dismiss();
 
-    if (query.length < 2) {
+    if (!query) {
+      setSearchError("Zadajte aspoň 2 znaky.");
+      setSearchResults([]);
+      setHasMoreSearchResults(false);
+      setSearchAttempted(true);
+      setShowNoMoreSearchResults(false);
+      return;
+    }
+
+    if (isNumericQuery && !isEanQuery) {
+      setSearchError("EAN musí mať aspoň 8 číslic.");
+      setSearchResults([]);
+      setHasMoreSearchResults(false);
+      setSearchAttempted(true);
+      setShowNoMoreSearchResults(false);
+      return;
+    }
+
+    if (!isNumericQuery && query.length < 2) {
       setSearchError("Zadajte aspoň 2 znaky.");
       setSearchResults([]);
       setHasMoreSearchResults(false);
@@ -341,26 +352,44 @@ export default function CameraScreen() {
     }
 
     setLoading(true);
-  setLoadingMessage("Hľadám produkt…");
+    setLoadingMessage(isEanQuery ? "Hľadám podľa EAN…" : "Hľadám produkt…");
     resetLookupState();
     setScanned(false);
     setSearchPage(1);
     setHasMoreSearchResults(false);
-  setSearchAttempted(true);
+    setSearchAttempted(true);
     setVisibleSearchCount(10);
 
     try {
-      const data = await fetchSearchResults(query, 1);
-      const products = Array.isArray(data.products) ? data.products : [];
-      const visibleProducts = products.filter((product) => Boolean(product?.name));
+      if (isEanQuery) {
+        const product = await fetchBarcodeProduct(compactQuery);
 
-      setSearchResults(visibleProducts);
-      setHasMoreSearchResults(visibleProducts.length > 10);
-      setSearchError(visibleProducts.length ? "" : "Nenašli sa žiadne produkty.");
+        if (product) {
+          setSearchResults([product]);
+          setSearchError("");
+        } else {
+          setSearchResults([]);
+          setSearchError("Produkt s EAN sa nenašiel.");
+        }
+
+        setHasMoreSearchResults(false);
+      } else {
+        const data = await fetchSearchResults(query, 1);
+        const products = Array.isArray(data.products) ? data.products : [];
+        const visibleProducts = products.filter((product) => Boolean(product?.name));
+
+        setSearchResults(visibleProducts);
+        setHasMoreSearchResults(visibleProducts.length > 10);
+        setSearchError(visibleProducts.length ? "" : "Nenašli sa žiadne produkty.");
+      }
     } catch {
       setSearchResults([]);
       setHasMoreSearchResults(false);
-      setSearchError("Vyhľadávanie sa nepodarilo. Skúste to znova.");
+      setSearchError(
+        isEanQuery
+          ? "Vyhľadávanie podľa EAN zlyhalo. Skúste to znova."
+          : "Vyhľadávanie sa nepodarilo. Skúste to znova.",
+      );
     } finally {
       setLoading(false);
     }
@@ -438,7 +467,6 @@ export default function CameraScreen() {
 
   function changeLookupMode(nextMode) {
     setLookupMode(nextMode);
-    setShowContent(false);
     setScanned(false);
     setSearchError("");
     setNotFound(false);
@@ -454,7 +482,7 @@ export default function CameraScreen() {
     setShowExpInput(false);
     setShowDatePicker(false);
     setAwaitingExpirationDate(false);
-    setSelectedExpirationDate(new Date());
+    setSelectedExpirationDate(null);
   }
 
   function returnToProductResults() {
@@ -483,11 +511,10 @@ export default function CameraScreen() {
     setLoading(true);
     resetLookupState();
     try {
-      const response = await fetch(`${API_URL}/${barcode}.json`);
-      const data = await response.json();
+      const product = await fetchBarcodeProduct(barcode);
 
-      if (data.status === 1) {
-        setSelectedProduct(mapOpenFoodFactsProduct(data.product));
+      if (product) {
+        setSelectedProduct(product);
       } else {
         showProductNotFound();
       }
@@ -504,38 +531,6 @@ export default function CameraScreen() {
     setScanned(true);
     fetchProductData(data);
   }
-
-  const renderContent = () => {
-    if (!showContent || productData) return null;
-
-    return (
-      <KeyboardWrapper
-        scroll={false}
-        style={[styles.manualAddContainer, themedPanelStyle]}
-      >
-        <Text style={[styles.manualAddText, { color: colors.text }]}>
-          Zadajte EAN pre pridanie produktu.
-        </Text>
-
-        <TextInput
-          style={[styles.manualAddInput, themedInputStyle]}
-          value={code}
-          onChangeText={setCode}
-          keyboardType="numeric"
-          placeholderTextColor={colors.placeholder}
-        />
-
-        <Pressable
-          onPress={() => {
-            fetchProductData(code);
-          }}
-          style={styles.primaryActionButton}
-        >
-          <Text style={styles.primaryActionButtonText}>Pridať</Text>
-        </Pressable>
-      </KeyboardWrapper>
-    );
-  };
 
   const renderLookupModeSwitch = () => {
     if (productData) return null;
@@ -590,16 +585,18 @@ export default function CameraScreen() {
     );
   };
 
-  const renderSearchResult = (product, index) => {
+  const renderSearchResult = ({ item: product }) => {
     const title = product?.name || "Neznámy produkt";
     const brand = product?.brand || null;
     const quantity = product?.quantity;
+    const numericQuantity = Number(quantity);
+    const quantityLabel = Number.isFinite(numericQuantity) && numericQuantity > 0
+      ? `${Math.round(numericQuantity)} g`
+      : quantity;
     const image = product?.image || null;
-    const key = buildProductListKey(product, index, product?.source || "openfoodfacts");
 
     return (
       <Pressable
-        key={key}
         onPress={() => selectSearchProduct(product)}
         style={[
           styles.productSearchResult,
@@ -650,7 +647,7 @@ export default function CameraScreen() {
               {brand}
             </Text>
           )}
-          {!!quantity && (
+          {!!quantityLabel && (
             <Text
               style={[
                 styles.productSearchResultMeta,
@@ -658,7 +655,7 @@ export default function CameraScreen() {
               ]}
               numberOfLines={1}
             >
-              {quantity}
+              {quantityLabel}
             </Text>
           )}
         </View>
@@ -671,87 +668,142 @@ export default function CameraScreen() {
 
     const displayedSearchResults = searchResults.slice(0, visibleSearchCount);
     const hasHiddenSearchResults = searchResults.length > visibleSearchCount;
+    const searchHeader = (
+      <View style={[styles.productSearchContainer, themedPanelStyle]}>
+        <Text style={[styles.manualAddText, { color: colors.text }]}>
+          Vyhľadajte produkt podľa názvu alebo EAN.
+        </Text>
+
+        <TextInput
+          style={[styles.productSearchInput, themedInputStyle]}
+          value={searchQuery}
+          onChangeText={(value) => {
+            setSearchQuery(value);
+            setSearchError("");
+          }}
+          placeholder="napr. horalky alebo 858"
+          placeholderTextColor={colors.placeholder}
+          returnKeyType="search"
+          onSubmitEditing={searchProductsByName}
+        />
+
+        <Pressable
+          onPress={searchProductsByName}
+          style={styles.primaryActionButton}
+        >
+          <Text style={styles.primaryActionButtonText}>Hľadať</Text>
+        </Pressable>
+
+        {!!searchError && (
+          <Text style={[styles.productSearchError, { color: colors.danger }]}>
+            {searchError}
+          </Text>
+        )}
+      </View>
+    );
+
+    const renderSearchFooter = () => {
+      if (!searchAttempted) return null;
+
+      return (
+        <View style={{ width: "100%", paddingHorizontal: 4 }}>
+          {searchResults.length > 0 && hasMoreSearchResults && (
+            <Pressable
+              onPress={loadMoreSearchResults}
+              style={styles.productSearchLoadMoreButton}
+              disabled={loadingMoreSearchResults}
+            >
+              <Text style={styles.productSearchLoadMoreText}>
+                {loadingMoreSearchResults
+                  ? "Načítavam..."
+                  : "Zobraziť ďalšie"}
+              </Text>
+            </Pressable>
+          )}
+
+          {showNoMoreSearchResults && !hasHiddenSearchResults && (
+            <Text
+              style={[
+                styles.productSearchError,
+                { color: colors.mutedText, textAlign: "center" },
+              ]}
+            >
+              Ďalšie produkty nie sú.
+            </Text>
+          )}
+
+          <View
+            style={{
+              marginTop: 12,
+              paddingHorizontal: 4,
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <Text style={{ color: colors.text, marginBottom: 6, textAlign: "center" }}>
+              Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
+            </Text>
+            <Pressable
+              onPress={() => Linking.openURL("mailto:support.bitewise@gmail.com")}
+              style={[styles.primaryActionButton, { marginBottom: 8, width: "100%" }]}
+            >
+              <Text style={styles.primaryActionButtonText}>Napísať support</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleGenerateAI}
+              style={[
+                styles.primaryActionButton,
+                {
+                  backgroundColor: colors.surfaceAlt,
+                  marginTop: 6,
+                  width: "100%",
+                  paddingVertical: 14,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  minHeight: 56,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.primaryActionButtonText,
+                  { color: colors.text, textAlign: "center" },
+                ]}
+                numberOfLines={2}
+              >
+                Vygenerovať informácie o potravine pomocou AI
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      );
+    };
 
     return (
       <KeyboardWrapper
-        scroll={true}
+        scroll={false}
         style={styles.productSearchKeyboardArea}
         contentContainerStyle={styles.productSearchKeyboardContent}
         keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
       >
-        <View style={[styles.productSearchContainer, themedPanelStyle]}>
-          <Text style={[styles.manualAddText, { color: colors.text }]}>
-            Vyhľadajte produkt podľa názvu.
-          </Text>
-
-          <TextInput
-            style={[styles.productSearchInput, themedInputStyle]}
-            value={searchQuery}
-            onChangeText={(value) => {
-              setSearchQuery(value);
-              setSearchError("");
-            }}
-            placeholder="napr. horalky"
-            placeholderTextColor={colors.placeholder}
-            returnKeyType="search"
-            onSubmitEditing={searchProductsByName}
+        <View style={{ flex: 1, width: "100%" }}>
+          {searchHeader}
+          <FlatList
+            data={searchAttempted ? displayedSearchResults : []}
+            renderItem={renderSearchResult}
+            keyExtractor={(item, index) =>
+              buildProductListKey(item, index, item?.source || "database")
+            }
+            numColumns={2}
+            columnWrapperStyle={styles.productSearchColumn}
+            style={styles.productSearchResults}
+            contentContainerStyle={styles.productSearchResultsContent}
+            ListFooterComponent={renderSearchFooter}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
           />
-
-          <Pressable
-            onPress={searchProductsByName}
-            style={styles.primaryActionButton}
-          >
-            <Text style={styles.primaryActionButtonText}>Hľadať</Text>
-          </Pressable>
-
-          {!!searchError && (
-            <Text style={[styles.productSearchError, { color: colors.danger }]}>
-              {searchError}
-            </Text>
-          )}
         </View>
-
-        {searchAttempted && (
-          <>
-            {displayedSearchResults.map(renderSearchResult)}
-            {searchResults.length > 0 && (
-              <Pressable
-                onPress={loadMoreSearchResults}
-                style={styles.productSearchLoadMoreButton}
-                disabled={loadingMoreSearchResults}
-              >
-                <Text style={styles.productSearchLoadMoreText}>
-                  {loadingMoreSearchResults
-                    ? "Načítavam..."
-                    : "Zobraziť ďalšie"}
-                </Text>
-              </Pressable>
-            )}
-            {showNoMoreSearchResults && !hasHiddenSearchResults && (
-              <Text style={[styles.productSearchError, { color: colors.mutedText, textAlign: "center" }]}>Ďalšie produkty nie sú.</Text>
-            )}
-            {showNoMoreSearchResults && hasHiddenSearchResults && (
-              <Text style={[styles.productSearchError, { color: colors.mutedText, textAlign: "center" }]}>Ďalšie produkty nie sú.</Text>
-            )}
-            <View style={{ marginTop: 12, paddingHorizontal: 4, alignItems: "center", marginBottom: 20 }}>
-              <Text style={{ color: colors.text, marginBottom: 6, textAlign: "center" }}>
-                Nenašli ste správnu potravinu? Napíšte nám a pridáme ju.
-              </Text>
-              <Pressable
-                onPress={() => Linking.openURL("mailto:support.bitewise@gmail.com")}
-                style={[styles.primaryActionButton, { marginBottom: 8, width: "100%" }]}
-              >
-                <Text style={styles.primaryActionButtonText}>Napísať support</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleGenerateAI}
-                style={[styles.primaryActionButton, { backgroundColor: colors.surfaceAlt, marginTop: 6, width: "100%", paddingVertical: 14, justifyContent: "center", alignItems: "center", minHeight: 56 }]}
-              >
-                <Text style={[styles.primaryActionButtonText, { color: colors.text, textAlign: "center" }]} numberOfLines={2}>Vygenerovať informácie o potravine pomocou AI</Text>
-              </Pressable>
-            </View>
-          </>
-        )}
       </KeyboardWrapper>
     );
   };
@@ -887,14 +939,14 @@ export default function CameraScreen() {
     );
   };
 
-  const saveToDatabase = async (productOverride = null) => {
+  const saveToDatabase = async (productOverride = null, expirationOverride = undefined) => {
     const productToSave = productOverride || pendingPantryProduct || productData;
     if (!productToSave) return;
-    // Expirácia: ak je selectedExpirationDate platný Date, ulož ho; inak ulož null
-    // Keď je null (klikol "Bez expirácie"), ulož null -> bude sa zobrazovať "Nezadané"
-    const expirationDateToSave = selectedExpirationDate
-      ? selectedExpirationDate.toISOString()
-      : null;
+    // Expirácia: ulož len explicitne zvolený dátum, inak null ("Nezadané")
+    const expirationSource =
+      expirationOverride !== undefined ? expirationOverride : selectedExpirationDate;
+    const expirationDateToSave =
+      expirationSource instanceof Date ? expirationSource.toISOString() : null;
 
     try {
       await handleAddProduct(
@@ -929,7 +981,7 @@ export default function CameraScreen() {
       setAwaitingExpirationDate(false);
       setAwaitingEatenQuantity(false);
       setShowDatePicker(false);
-      setSelectedExpirationDate(new Date());
+      setSelectedExpirationDate(null);
       setEatenQuantityInput("");
       setPendingPantryProduct(null);
       clearSearchState();
@@ -1016,7 +1068,7 @@ export default function CameraScreen() {
         if (expiration) {
           setPendingPantryProduct(remainingProduct);
           setProductData(remainingProduct);
-          setSelectedExpirationDate(new Date());
+          setSelectedExpirationDate(null);
           setAwaitingExpirationDate(true);
           setShowDatePicker(true);
         } else {
@@ -1030,7 +1082,7 @@ export default function CameraScreen() {
       setAwaitingExpirationDate(false);
       setAwaitingEatenQuantity(false);
       setShowDatePicker(false);
-      setSelectedExpirationDate(new Date());
+      setSelectedExpirationDate(null);
       setEatenQuantityInput("");
       setPendingPantryProduct(null);
       clearSearchState();
@@ -1103,26 +1155,6 @@ export default function CameraScreen() {
           justifyContent: productData ? "center" : "flex-end",
         }}
       >
-        {lookupMode === "scan" && renderContent()}
-
-        {!productData && lookupMode === "scan" && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.manualAddButton,
-              {
-                backgroundColor: pressed ? colors.surfacePressed : colors.surface,
-                borderColor: colors.border,
-                borderWidth: 1,
-              },
-            ]}
-            onPress={() => setShowContent((prev) => !prev)}
-          >
-            <Text style={[styles.manualAddButtonText, { color: colors.text }]}>
-              Zadať manuálne
-            </Text>
-          </Pressable>
-        )}
-
         {productData && (
           <View
             style={{
@@ -1546,7 +1578,7 @@ export default function CameraScreen() {
                     setPendingPantryProduct(null);
                     setAwaitingEatenQuantity(false);
                     if (expiration) {
-                      setSelectedExpirationDate(new Date());
+                      setSelectedExpirationDate(null);
                       setAwaitingExpirationDate(true);
                       setShowDatePicker(true);
                     } else {
@@ -1609,33 +1641,33 @@ export default function CameraScreen() {
                   📅 Dátum spotreby
                 </Text>
 
-                {selectedExpirationDate && (
-                  <View
+                <View
+                  style={{
+                    backgroundColor: colors.surface,
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 12,
+                    alignItems: "center",
+                    borderWidth: 2,
+                    borderColor: colors.primary,
+                  }}
+                >
+                  <Text style={{ color: colors.mutedText, fontSize: 12 }}>
+                    Vybrané:
+                  </Text>
+                  <Text
                     style={{
-                      backgroundColor: colors.surface,
-                      borderRadius: 12,
-                      padding: 12,
-                      marginBottom: 12,
-                      alignItems: "center",
-                      borderWidth: 2,
-                      borderColor: colors.primary,
+                      color: colors.primary,
+                      fontSize: 18,
+                      fontWeight: "700",
+                      marginTop: 4,
                     }}
                   >
-                    <Text style={{ color: colors.mutedText, fontSize: 12 }}>
-                      Vybrané:
-                    </Text>
-                    <Text
-                      style={{
-                        color: colors.primary,
-                        fontSize: 18,
-                        fontWeight: "700",
-                        marginTop: 4,
-                      }}
-                    >
-                      {selectedExpirationDate.toLocaleDateString("sk-SK")}
-                    </Text>
-                  </View>
-                )}
+                    {selectedExpirationDate
+                      ? selectedExpirationDate.toLocaleDateString("sk-SK")
+                      : "Nezadané"}
+                  </Text>
+                </View>
 
                 {Platform.OS === "android" && (
                   <Pressable
@@ -1686,7 +1718,7 @@ export default function CameraScreen() {
                     setAwaitingExpirationDate(false);
                     setShowDatePicker(false);
                     setShowExpInput(false);
-                    await saveToDatabase();
+                    await saveToDatabase(null, null);
                   }}
                 >
                   <Text style={[styles.primaryActionButtonText, { color: colors.text }]}>Bez expirácie</Text>
@@ -1729,11 +1761,11 @@ export default function CameraScreen() {
                       },
                     ]}
                     onPress={async () => {
-                      await saveToDatabase();
+                      await saveToDatabase(null, selectedExpirationDate);
                       setShowExpInput(false);
                       setShowDatePicker(false);
                       setAwaitingExpirationDate(false);
-                      setSelectedExpirationDate(new Date());
+                      setSelectedExpirationDate(null);
                     }}
                   >
                     <Text style={styles.primaryActionButtonText}>Uložiť</Text>
