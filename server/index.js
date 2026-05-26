@@ -1026,24 +1026,20 @@ async function start() {
     }
 
     try {
-      // Our products collection (fuzzy matching)
       const normalizedQuery = normalizeTextForSearch(query);
       const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const tokens = normalizedQuery.split(" ").filter(Boolean);
 
-      const searchFragments = Array.from(
-        new Set([
-          normalizedQuery,
-          normalizedQuery.slice(0, 3),
-          normalizedQuery.slice(0, 2),
-          normalizedQuery.slice(0, 1),
-        ].filter((fragment) => fragment.length >= 1)),
-      );
+      if (!tokens.length) {
+        return res.json({ success: true, count: 0, products: [] });
+      }
 
+      const tokenRegexes = tokens.map((token) => new RegExp(escapeRegex(token), "i"));
       const resultLimit = Math.max(10, Math.min(50, pageSize));
       const dbCandidates = await productsCollection
         .find({
-          $or: searchFragments.map((fragment) => ({
-            searchName: { $regex: new RegExp(fragment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") },
+          $and: tokenRegexes.map((regex) => ({
+            searchName: { $regex: regex },
           })),
         })
         .limit(resultLimit)

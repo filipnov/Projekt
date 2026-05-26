@@ -380,7 +380,7 @@ export default function CameraScreen() {
 
         setSearchResults(visibleProducts);
         setHasMoreSearchResults(visibleProducts.length > 10);
-        setSearchError(visibleProducts.length ? "" : "Nenašli sa žiadne produkty.");
+        setSearchError(visibleProducts.length ? "" : "Položka neexistuje.");
       }
     } catch {
       setSearchResults([]);
